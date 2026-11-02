@@ -274,7 +274,8 @@
   var RC_LAZY_SECTION_RENDERERS = {
     admin: function (token) { renderAdminSection(token); },
     league: function (token) { renderLeagueManagementSection(token); },
-    stewarding: function (token) { renderStewardingSection(token); }
+    stewarding: function (token) { renderStewardingSection(token); },
+    editprofile: function (token) { renderEditProfileSection(token); }
   };
 
   // "reload". rcReloadAfterSave() below is the one place that clears it -- a save happened, so
@@ -361,7 +362,7 @@
       if (currentProfile && currentProfile.profileId) window.location.href = 'profile.html?id=' + encodeURIComponent(currentProfile.profileId);
     }));
     var settingsItem = NAV_ITEMS[NAV_ITEMS.length - 1];
-    nav.appendChild(makeNavButton(settingsItem.id, settingsItem.label, settingsItem.icon, null, false, function () { openEditProfileModal(currentProfile, currentToken); }));
+    nav.appendChild(makeNavButton(settingsItem.id, settingsItem.label, settingsItem.icon, null, false, function () { showLazySection('editprofile', currentToken); }));
     nav.appendChild(navDivider());
     // Links off-page to the public league.html, not another in-page section, so it navigates
     // directly instead of going through showSection/ showLazySection.
@@ -2344,6 +2345,30 @@
   // to the `updateOwnProfile` action, plus the existing passwordChangeSection() embedded underneath
   // so Change Password lives in the same popup.
   // ---------------------------------------------------------------------
+  // Edit Profile as its own page (Matt, 2026-11-02): the same form, drawn into the Edit Profile section instead of a popup. The
+  // avatar menu's Edit Profile link goes here from every page (Account.html#editprofile). After a save the page stays put and
+  // shows the new values.
+  function renderEditProfileSection(token) {
+    var section = document.getElementById('rc-section-editprofile');
+    if (!section || !currentProfile) return;
+    section.innerHTML = '';
+    section.appendChild(el('h2', 'margin-top:0;', 'Edit Profile'));
+    var host = el('div');
+    section.appendChild(host);
+    _rcEPOpenEditProfileModal(currentProfile, token, {
+      el: el,
+      showModal: showModal,          // used by the Customize Helmet popups
+      passwordSection: passwordChangeSection,
+      inline: host,
+      afterSave: function (newProfile) {
+        if (newProfile) currentProfile = newProfile;
+        if (typeof renderHeader === 'function') renderHeader();
+        showToast('Profile updated.', 'success');
+        renderEditProfileSection(currentToken);
+      }
+    });
+  }
+
   function openEditProfileModal(profile, token) {
     // The form itself lives in js/edit-profile.js (one copy for every page). Account.html gives it its own popup shell, element
     // helper and Change Password section, and reloads the section the member is on after a save.

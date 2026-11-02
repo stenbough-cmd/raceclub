@@ -208,11 +208,10 @@ function _rcBuildAccountMenuSectionLinks(role) {
   var EXT = '<svg class="rc-nav-ext" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7"></path><path d="M8 7h9v9"></path></svg>';
   var DIV = '<hr class="rc-header-menu-divider">';
   // Same grouping and order as Account.html's sidebar (reorganized 2026-10-17):
-  //   Me: Dashboard, Edit Profile | The league: League Hub, Championship |
+  //   Me: Dashboard | The league: League Hub, Championship |
   //   Staff (only the ones this role unlocks): League Tools, Stewarding, Admin.
   // The caller adds a divider, then League Help / Feedback / Discord, a divider, and Logout.
   var html = link('dashboard', 'Dashboard', 'dash');
-  html += '<button type="button" class="rc-header-menu-item" id="rc-header-menu-editprofile">' + _rcMenuIcon_('edit') + '<span>Edit Profile</span></button>';
   html += DIV;
   html += '<a class="rc-header-menu-item" href="league.html">' + _rcMenuIcon_('hub') + '<span>League Hub</span>' + EXT + '</a>';
   // Championship (CHAMP chat, 2026-10-08): the driver's own offline championship page. Open to Admins and to anyone
@@ -540,6 +539,7 @@ function renderHeader(opts) {
             '<div class="rc-header-account-menu" id="rc-header-account-menu" style="display:none;">' +
               _rcBuildAccountMenuSectionLinks(role) +
               '<hr class="rc-header-menu-divider">' +
+              '<a class="rc-header-menu-item" href="Account.html#editprofile" data-rc-section="editprofile">' + _rcMenuIcon_('edit') + '<span>Edit Profile</span></a>' +
               '<button type="button" class="rc-header-menu-item" id="rc-header-menu-help">' + _rcMenuIcon_('help') + '<span>Help</span></button>' +
               '<button type="button" class="rc-header-menu-item" id="rc-header-menu-feedback">' + _rcMenuIcon_('feedback') + '<span>Feedback</span></button>' +
               // Discord link, right under Feedback (same order as the Account.html sidebar), opening in a new tab.
@@ -631,14 +631,8 @@ function renderHeader(opts) {
       });
     });
 
-    // Edit Profile -- works from any page, not just Account.html's own sidebar.
-    // window.rcOpenEditProfileModal is a bridge Account.html sets once its profile/token are
-    // actually loaded (see buildFullProfileUI there); when it's there, call it directly -- no
-    // navigation, the modal just opens in place.
-    document.getElementById('rc-header-menu-editprofile').addEventListener('click', function () {
-      closeAccountMenu();
-      _rcOpenEditProfileFromHeader();
-    });
+    // Edit Profile is a link (data-rc-section above): on Account.html it shows the Edit Profile page in place, from any other page it
+    // goes to Account.html#editprofile.
 
     // League Help -- Account.html: its in-page Help section. Any other page: the same Help popup league.html
     // opens (rulebook-content.js), in place.
