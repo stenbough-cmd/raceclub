@@ -409,6 +409,9 @@ html.rc-pending .rcc-actionbar, html.rc-pending .rcl-main, html.rc-pending .rc-s
 /* Layout                                                                */
 /* -------------------------------------------------------------------- */
 .rcl-main { max-width: 1180px; margin: 0 auto; padding: 36px 32px 80px; }
+/* Half the old gap between the bottom of the black bar and the first container (36px + 48px row margin = 84px; now 42px). */
+.rcl-main { padding-top: 42px; }
+.rcl-main > .rcl-row-full:first-child { margin-top: 0; }
 /* Full-width rows below the two-column grid -- same vertical rhythm as .rcl-grid's own row gap. */
 .rcl-row-full { margin-top: 48px; }
 /* League News (1/3) + Last Race (2/3) on one row. Each .rcl-panel's own background already fills
