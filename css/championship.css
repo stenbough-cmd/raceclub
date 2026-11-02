@@ -966,14 +966,14 @@ body.rc-league-page.rcc-page .rcl-hero {
 /* Ticker: light entries on the dark strip. */
 .rcc-page .rcl-ticker-driver-rank, .rcc-page .rcc-ticker-plain { color: var(--rcl-ink); }
 
-/* Gold instead of blue in the ticker, hero and black link bar (Matt, 2026-11-02), and the hero's text in the hub's own colors:
-   red eyebrow and title, gold "Season N", red slash, white season name. */
+/* Gold instead of blue in the ticker, hero and black link bar (Matt, 2026-11-02). Hero text: white title, gold "Season N", red
+   eyebrow and slash, white season name. */
 body.rc-league-page.rcc-page .rcl-ticker-wrap,
 body.rc-league-page.rcc-page .rcl-hero { --rc-red: #e0b64c; }
 .rcc-page .rcl-ticker-label { color: #141416; }
 .rcc-page .rcl-ticker-item-tag, .rcc-page .rcc-ticker-lead { color: #e0b64c; }
 .rcc-page .rcc-actionbar { border-bottom-color: #e0b64c; }
-.rcc-page .rcl-hero-title-hub { color: var(--rcc-true-red); -webkit-text-stroke-color: var(--rcc-true-red); }
+.rcc-page .rcl-hero-title-hub { color: var(--rcl-ink); -webkit-text-stroke-color: var(--rcl-ink); }
 .rcc-page .rcl-hero-season-num { color: #e0b64c; }
 
 /* Navigation look for the page links: same tab style as the League Hub's bar, with a gold bar for the hovered and current page. */
@@ -991,3 +991,9 @@ body.rc-league-page.rcc-page .rcl-hero { --rc-red: #e0b64c; }
 .rcc-actionbar-link:hover:not(:disabled), a.rcc-actionbar-link:hover { color: var(--rc-white); background: rgba(255, 255, 255, 0.08); box-shadow: inset 0 -3px 0 #e0b64c; }
 .rcc-page .rcc-actionbar-current, .rcc-page .rcc-actionbar-current:hover { color: var(--rc-white); background: rgba(255, 255, 255, 0.1); box-shadow: inset 0 -3px 0 #e0b64c; }
 @media (max-width: 640px), (orientation: portrait) { .rcc-actionbar-link, a.rcc-actionbar-link { min-height: 44px; padding: 0 12px; } .rcc-actionbar-link:first-child { padding-left: 12px; } }
+
+/* The Championship's own banner photo instead of the League Hub's (Matt, 2026-11-02). */
+.rcc-page .rcl-hero::before {
+  background-image: url('../assets/images/championship_header.jpg');
+  background-image: image-set(url('../assets/images/championship_header.webp') type('image/webp'), url('../assets/images/championship_header.jpg') type('image/jpeg'));
+}

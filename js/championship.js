@@ -545,7 +545,7 @@ function rccRenderTicker(page) {
     if (row.manufacturer) entry.appendChild(_rccLogo('rcl-ticker-driver-logo', row.manufacturer));
     // Car number before the driver name (Matt, 2026-10-13).
     if (row.carNumber) entry.appendChild(_rccText('span', 'rcl-ticker-driver-num rcc-ticker-num-first', '#' + row.carNumber + ' '));
-    entry.appendChild(_rccText('span', 'rcl-ticker-driver-name' + (row.isPlayer ? ' rcc-me-text' : ''), row.name));
+    entry.appendChild(_rccText('span', 'rcl-ticker-driver-name', row.name));
     return entry;
   }
   function rowList(rows, ranked) {
@@ -597,7 +597,7 @@ function rccRenderTicker(page) {
           if (g.manufacturer) entry.appendChild(_rccLogo('rcl-ticker-driver-logo', g.manufacturer));
           var label = g.isMine ? (g.crew || []).join(', ') : ((g.crew || []).length ? g.crew[0] : g.teamName);
           if (g.carNumber) entry.appendChild(_rccText('span', 'rcl-ticker-driver-num rcc-ticker-num-first', '#' + g.carNumber + ' '));
-          entry.appendChild(_rccText('span', 'rcl-ticker-driver-name' + (g.isMine ? ' rcc-me-text' : ''), label));
+          entry.appendChild(_rccText('span', 'rcl-ticker-driver-name', label));
           cl.appendChild(entry);
         });
         el.appendChild(cl);
