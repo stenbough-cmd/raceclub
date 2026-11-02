@@ -344,3 +344,33 @@ body.rc-league-page .rc-profile-navbar .rcl-navbar-season { background: #1b1c1f;
 
 .rc-profile-navbar:not(:has(select)) { display: none; }
 .rc-profile-navbar .rcl-navbar-season { margin-left: auto; }
+
+/* ===== RACE CLUB DESIGN DIRECTION on the driver profile (Matt, 2026-11-03) =====
+   White cards with a barely-there shadow, small radius, plain uppercase headers with a thin red rule (no picture banners, no slash mark),
+   flat brand colors (no gradients): warm grey tiles, steel for labels, red for links and the rule. */
+.rcc-page .rcl-panel { border: 1px solid var(--rc-silver); border-radius: 12px; box-shadow: 0 1px 4px rgba(23, 23, 23, 0.05); }
+.rcc-page .rcl-panel-head { margin: 0 24px; padding: 20px 0 12px; background: none; border-bottom: 2px solid var(--rc-red); }
+.rcc-page .rcl-panel-body { padding: 20px 24px 24px; }
+.rcc-page .rdp-form-body { padding: 20px 24px 24px; }
+.rcc-page .rcl-panel-title, .rcc-page .rdp-head-avatar .rcl-panel-title, .rcc-page .rdp-head-season .rcl-panel-title, .rcc-page .rdp-head-team .rcl-panel-title { font-size: 18px; letter-spacing: 0.04em; color: var(--rc-carbon); text-shadow: none; }
+.rcc-page .rcl-panel-title::before { content: none; }
+.rcc-page .rdp-head-pic::before { display: none; }
+.rcc-page .rdp-panel-note { font-size: 12px; font-weight: 700; letter-spacing: 0.06em; color: var(--rc-steel); }
+.rcc-page .rdp-helmets-title { font-size: 18px; letter-spacing: 0.04em; }
+.rcc-page .rdp-helmets-title::before { content: none; }
+/* tiles: warm grey, no border, no gradient */
+.rcc-page .rdp-ach, .rcc-page .rdp-tile, .rcc-page .rdp-team, .rcc-page .rdp-rival-season { background: var(--rc-offwhite); border: 0; border-radius: 10px; box-shadow: none; }
+.rcc-page .rdp-tile-label, .rcc-page .rdp-team-stat span, .rcc-page .rdp-rival-season-title, .rcc-page .rdp-rival-season-cell span { color: var(--rc-steel); }
+/* form guide and rank badges: flat colors */
+.rcc-page .rdp-form-sq, .rcc-page .rdp-rival-rank { background: var(--rc-steel); border: 0; color: #fff; }
+.rcc-page .rdp-form-p1 { background: #C9A227; color: var(--rc-carbon); }
+.rcc-page .rdp-form-p2 { background: #C4CAD0; color: var(--rc-carbon); }
+.rcc-page .rdp-form-p3 { background: #B7793F; color: #fff; }
+/* labels in steel, links in red */
+.rcc-page .rdp-seat-label, .rcc-page .rdp-catline-text { color: var(--rc-steel); }
+.rcc-page .rdp-catline::before, .rcc-page .rdp-catline::after { background: var(--rc-silver); }
+.rcc-page .rdp-story-more, .rcc-page .rdp-see-more { color: var(--rc-red); }
+@media (orientation: portrait) {
+  .rcc-page .rcl-panel-head { margin: 0 16px; padding-top: 16px; }
+  .rcc-page .rcl-panel-body, .rcc-page .rdp-form-body { padding: 16px; }
+}
