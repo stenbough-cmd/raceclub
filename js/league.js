@@ -639,7 +639,7 @@ function _rclBuildDriverIdentity_(row, dnf) {
   if (row.manufacturer && typeof manufacturerLogoSrc === 'function') {
     var logoImg = document.createElement('img');
     logoImg.className = 'rcl-standings-mfr-logo';
-    logoImg.src = manufacturerLogoSrc(row.manufacturer, 'white');
+    logoImg.src = manufacturerLogoSrc(row.manufacturer, 'black');
     logoImg.alt = '';
     manufacturerLogoFallback(logoImg, row.manufacturer, function () { logoSlot.style.display = 'none'; });
     logoSlot.appendChild(logoImg);
@@ -730,7 +730,7 @@ function _rclBoardIdentityCells_(row, kind, carYear, carSeries, showTeam) {
     var img = document.createElement('img');
     img.className = 'rcl-standings-mfr-logo';
     img.alt = '';
-    img.src = manufacturerLogoSrc(row.manufacturer, 'white');
+    img.src = manufacturerLogoSrc(row.manufacturer, 'black');
     manufacturerLogoFallback(img, row.manufacturer, function () { img.style.display = 'none'; });
     slot.appendChild(img);
   }
@@ -1527,7 +1527,7 @@ function _rclRenderManufacturerStandings(hub) {
     var boxInner = _rclEl('div', 'rcl-mfr-tile-box-inner');
     var img = document.createElement('img');
     img.className = 'rcl-mfr-tile-logo';
-    img.src = manufacturerLogoSrc(entry.manufacturer, 'white');
+    img.src = manufacturerLogoSrc(entry.manufacturer, 'black');
     img.alt = entry.manufacturer;
     // Same onerror-hide convention as every other manufacturer logo on this page
     // (manufacturerLogoFallback -- tries a .svg before giving up and hiding the <img> entirely).
@@ -1570,7 +1570,7 @@ function _rclRenderManufacturerStandings(hub) {
       var restImg = document.createElement('img');
       restImg.className = 'rcl-mfr-rest-logo';
       restImg.alt = '';
-      restImg.src = manufacturerLogoSrc(entry.manufacturer, 'white');
+      restImg.src = manufacturerLogoSrc(entry.manufacturer, 'black');
       manufacturerLogoFallback(restImg, entry.manufacturer, function () { restImg.style.display = 'none'; });
       logoSlot.appendChild(restImg);
       row.appendChild(logoSlot);

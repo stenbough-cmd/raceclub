@@ -759,12 +759,11 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
 /* Current Seat popup (Matt, 2026-10-14). */
 .rcc-current-seat .rcc-seat-line { margin: 0; }
 .rcc-current-seat-desc { margin: 16px 0 0; font-size: 15px; line-height: 1.6; color: var(--rc-carbon); }
-/* Phones: Season Preview, Current Seat, Season Tools and Help fit on one line (Matt, 2026-10-14). */
-@media (max-width: 640px), (orientation: portrait) {
+/* Portrait (phones and tablets alike): link bar fits on one line (Matt, 2026-10-14; 2026-11-02 portrait-only). */
+@media (orientation: portrait) {
   .rcc-actionbar-inner { padding: 0 12px; }
   .rcc-actionbar-link { padding-left: 6px; padding-right: 6px; font-size: 11px; letter-spacing: 0.03em; }
   
-  .rcc-actionbar-links > .rcc-actionbar-link:first-child { padding-left: 0; }
   
 }
 
@@ -944,7 +943,7 @@ body.rcc-page { --rcc-true-red: #F21B0C; }
 .rcc-actionbar-link:disabled { color: var(--rc-steel); box-shadow: none; background: none; }
 .rcc-actionbar-link:hover:not(:disabled), a.rcc-actionbar-link:hover { color: var(--rc-white); background: rgba(255, 255, 255, 0.08); box-shadow: inset 0 -2px 0 #e0b64c; }
 .rcc-page .rcc-actionbar-current, .rcc-page .rcc-actionbar-current:hover { color: var(--rc-white); background: rgba(255, 255, 255, 0.1); box-shadow: inset 0 -2px 0 #e0b64c; }
-@media (max-width: 640px), (orientation: portrait) { .rcc-actionbar-link, a.rcc-actionbar-link { min-height: 44px; padding: 0 12px; } .rcc-actionbar-link:first-child { padding-left: 12px; } }
+@media (orientation: portrait) { .rcc-actionbar-link, a.rcc-actionbar-link { min-height: 44px; padding: 0 12px; } .rcc-actionbar-link:first-child { padding-left: 12px; } }
 
 /* The Championship's own banner photo instead of the League Hub's (Matt, 2026-11-02). */
 .rcc-page .rcl-hero::before {

@@ -2146,7 +2146,7 @@ a.rcl-navbar-link.rcl-navbar-gold[href="login.html"] { color: var(--rc-white); }
 a.rcl-navbar-link.rcl-navbar-gold[href="login.html"]:hover { color: var(--rc-red); }
 .rcl-navbar-link:hover { color: var(--rc-red); }
 .rcl-navbar-link:focus-visible { outline: 2px solid var(--rc-white); outline-offset: -2px; }
-@media (max-width: 640px), (orientation: portrait) {
+@media (orientation: portrait) {
   .rcl-navbar-inner { padding: 0 16px; }
   .rcl-navbar-link { padding: 10px 8px; }
 }
@@ -2619,4 +2619,4 @@ body.rc-league-page:not(.rcc-page) .rcl-navbar { position: sticky; top: 70px; bo
 .rcl-navbar-link:first-child { padding-left: 18px; }
 .rcl-navbar-link:hover, a.rcl-navbar-link:hover, a.rcl-navbar-link.rcl-navbar-gold[href="login.html"]:hover { color: var(--rc-white); background: rgba(255, 255, 255, 0.08); box-shadow: inset 0 -2px 0 #e0b64c; }
 a.rcl-navbar-link.rcl-navbar-active, a.rcl-navbar-link.rcl-navbar-active:hover { color: var(--rc-white); background: rgba(255, 255, 255, 0.1); box-shadow: inset 0 -2px 0 #e0b64c; }
-@media (max-width: 640px), (orientation: portrait) { .rcl-navbar-link, a.rcl-navbar-link { min-height: 44px; padding: 0 12px; } .rcl-navbar-link:first-child { padding-left: 12px; } }
+@media (orientation: portrait) { .rcl-navbar-link, a.rcl-navbar-link { min-height: 44px; padding: 0 12px; } .rcl-navbar-link:first-child { padding-left: 12px; } }

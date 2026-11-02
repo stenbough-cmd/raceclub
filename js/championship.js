@@ -92,7 +92,8 @@ function _rccLogo(className, manufacturer, onFail) {
   img.alt = manufacturer || '';
   if (!manufacturer || typeof manufacturerLogoSrc !== 'function') { img.style.display = 'none'; return img; }
   // Black logo variants -- this page is light, the League Hub's white logos would vanish here.
-  img.src = manufacturerLogoSrc(manufacturer, 'black');
+  // The Highlights ticker is dark (like the hub's), so its logos are the white variants.
+  img.src = manufacturerLogoSrc(manufacturer, /ticker/.test(className) ? 'white' : 'black');
   manufacturerLogoFallback(img, manufacturer, onFail || function () { img.style.display = 'none'; });
   return img;
 }

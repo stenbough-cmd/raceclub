@@ -77,7 +77,7 @@
     if (seat.manufacturer && typeof manufacturerLogoSrc === 'function') {
       var logo = el('img', 'rdp-team-logo');
       logo.alt = seat.manufacturer;
-      logo.src = manufacturerLogoSrc(seat.manufacturer, 'white');
+      logo.src = manufacturerLogoSrc(seat.manufacturer, 'black');
       manufacturerLogoFallback(logo, seat.manufacturer, function () { logo.style.display = 'none'; });
       model.appendChild(logo);
     }
