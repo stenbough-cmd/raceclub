@@ -1204,7 +1204,7 @@ canvas.rc-helmet { display: block; max-width: 100%; height: auto; filter: drop-s
    fit a fixed box. */
 .rc-cs-logo-wrap { flex: none; min-width: 60px; height: 50px; display: flex; align-items: center; justify-content: center; }
 .rc-cs-logo { max-width: 150px; max-height: 50px; object-fit: contain; }
-@media (orientation: portrait) { .rc-cs-logo { max-width: 100px; } }
+@media (orientation: portrait) and (max-aspect-ratio: 3/5) { .rc-cs-logo { max-width: 100px; } }
 .rc-cs-textcol { flex: 1 1 auto; min-width: 0; }
 /* Matches .rc-regstatus-headline's weight/letter-spacing/uppercase treatment, just sized up
    slightly. */
@@ -1677,7 +1677,7 @@ canvas.rc-helmet { display: block; max-width: 100%; height: auto; filter: drop-s
   padding: 0 0 0 4px;
 }
 .rc-toast-close:hover { opacity: 1; }
-@media (orientation: portrait) {
+@media (orientation: portrait) and (max-aspect-ratio: 3/5) {
   .rc-toast-container { left: 12px; right: 12px; max-width: none; bottom: 14px; }
 }
 
@@ -1867,7 +1867,7 @@ canvas.rc-helmet { display: block; max-width: 100%; height: auto; filter: drop-s
 }
 .rc-discord-cta-btn:hover { background: #4752c4; color: var(--rc-white); transform: translateY(-1px); }
 .rc-discord-cta-logo { height: 22px; width: auto; flex: none; }
-@media (orientation: portrait) {
+@media (orientation: portrait) and (max-aspect-ratio: 3/5) {
   .rc-discord-cta-heading { font-size: 20px; }
   .rc-discord-cta-btn { padding: 13px 22px; font-size: 13px; }
 }
@@ -2099,7 +2099,7 @@ a.rc-needs-item:hover { background: rgba(255, 255, 255, 0.06); }
 @media (orientation: portrait) {
   .rc-steps-row { grid-template-columns: repeat(2, 1fr); }
 }
-@media (orientation: portrait) {
+@media (orientation: portrait) and (max-aspect-ratio: 3/5) {
   .rc-steps-row { grid-template-columns: 1fr; }
 }
 .rc-step-card { text-align: center; }
@@ -2178,7 +2178,7 @@ a.rc-needs-item:hover { background: rgba(255, 255, 255, 0.06); }
 @media (orientation: portrait) {
   .rc-tier-row { grid-template-columns: repeat(2, 1fr); }
 }
-@media (orientation: portrait) {
+@media (orientation: portrait) and (max-aspect-ratio: 3/5) {
   .rc-tier-row { grid-template-columns: 1fr; }
 }
 .rc-tier-card {
@@ -3139,7 +3139,7 @@ body.rc-modal-scroll-locked {
 .rc-helmet-card h3 { font-size: 15px; letter-spacing: 0.03em; }
 .rc-helmet-card p { font-size: 14px; color: var(--rc-steel); margin: 8px 0 0; line-height: 1.55; }
 @media (orientation: portrait) { .rc-helmet-showcase { grid-template-columns: repeat(2, 1fr); } }
-@media (orientation: portrait) { .rc-helmet-showcase { grid-template-columns: 1fr; } }
+@media (orientation: portrait) and (max-aspect-ratio: 3/5) { .rc-helmet-showcase { grid-template-columns: 1fr; } }
 
 /* ---- Index: combined intro + two paths; helmet cards without a stage ---- */
 .rc-path-heading { font-family: var(--rc-font-heading); font-size: 12px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; margin: 44px 0 18px; display: flex; align-items: center; gap: 14px; }
@@ -3183,7 +3183,7 @@ body.rc-modal-scroll-locked {
   transition: background 0.12s ease;
 }
 .rc-path-btn:hover { background: var(--rc-red-dark); color: var(--rc-white); }
-@media (orientation: portrait) { .rc-path-grid { grid-template-columns: 1fr; } }
+@media (orientation: portrait) and (max-aspect-ratio: 3/5) { .rc-path-grid { grid-template-columns: 1fr; } }
 
 .rc-helmet-card { transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease; }
 .rc-helmet-card:hover { transform: translateY(-4px); box-shadow: var(--rc-shadow-md); border-color: var(--rc-carbon); }
@@ -3247,7 +3247,7 @@ body.rc-modal-scroll-locked {
 .rc-stat-value { font-family: var(--rc-font-heading); font-size: 12px; font-weight: 800; letter-spacing: 0.05em; color: var(--rc-steel); margin-top: 2px; }
 .rc-stat-row-empty .rc-stat-driver, .rc-stat-row-empty .rc-stat-value { color: var(--rc-silver); }
 .rc-stat-empty { font-size: 13px; color: var(--rc-steel); padding: 14px 0; }
-@media (orientation: portrait) { .rc-stat-row { flex-direction: column; align-items: flex-start; gap: 4px; } .rc-stat-right { text-align: left; max-width: 100%; } }
+@media (orientation: portrait) and (max-aspect-ratio: 3/5) { .rc-stat-row { flex-direction: column; align-items: flex-start; gap: 4px; } .rc-stat-right { text-align: left; max-width: 100%; } }
 
 /* Section bars: a thick red bar butts up against the bottom of the dark band above the Online League and the Offline Championship sections. */
 .rc-why-section { border-top: 18px solid var(--rc-red); }
@@ -3265,7 +3265,7 @@ body.rc-modal-scroll-locked {
 .rc-showcase-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255, 255, 255, 0.35); transition: background 0.3s ease; }
 .rc-showcase-dot-on { background: var(--rc-white); }
 .rc-showcase-caption { text-align: center; font-size: 14px; line-height: 1.45; color: var(--rc-steel); padding-top: 12px; min-height: 2.9em; }
-@media (orientation: portrait) { .rc-showcase-pill { bottom: 10px; padding: 6px 14px; gap: 8px; } }
+@media (orientation: portrait) and (max-aspect-ratio: 3/5) { .rc-showcase-pill { bottom: 10px; padding: 6px 14px; gap: 8px; } }
 
 /* On/off switch (Account > Admin > Data Management > Staged League Hub). Gray when off, carbon when on:
    it saves nothing to the Sheet, so it never takes the red save color. */
@@ -3326,9 +3326,9 @@ button.rc-switch { display: inline-flex; align-items: center; gap: 12px; width: 
 .rc-home-navbar-link:first-child { padding-left: 18px; }
 @media (orientation: portrait) { .rc-home-navbar-link:first-child { padding-left: 12px; } }
 
-/* Portrait: the header's account button is just the helmet and the menu arrow in its light gray box; the name and membership tier are
+/* Tall portrait (phones): the header's account button is just the helmet and the menu arrow in its light gray box; the name and membership tier are
    gone (Matt, 2026-11-02). */
-@media (orientation: portrait) {
+@media (orientation: portrait) and (max-aspect-ratio: 3/5) {
   .rc-header-account-text { display: none !important; }
   .rc-header-account-toggle { gap: 4px; }
 }

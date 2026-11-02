@@ -117,7 +117,7 @@
 
 /* Report card + owner line (Championship recap and League Hub). */
 .rcr-card { background: var(--rc-white); border: 1px solid var(--rcl-line); border-radius: 8px; padding: 18px 20px; min-width: 0; overflow-x: auto; }
-@media (orientation: portrait) { .rcr-card { padding: 14px 12px; } }
+@media (orientation: portrait) and (max-aspect-ratio: 3/5) { .rcr-card { padding: 14px 12px; } }
 .rcr-report-who { margin: 0 0 14px; } /* padding, not margin: a margin here would merge with the dropdown row's 18px and add nothing. +10px under the recap dropdowns (Matt, 2026-11-01) */
 .rcr-report-who + .rcr-report { margin-top: 8px; } /* gap down to the Driver Report heading is 14px, same as the League Hub */
 .rcr-who-name .rcr-who-driver { font-weight: 700; color: var(--rc-carbon); }

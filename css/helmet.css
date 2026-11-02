@@ -48,7 +48,7 @@
 .rch-slot-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
 .rch-slot-head .rch-label { margin: 0; }
 .rch-swatches { display: grid; grid-template-columns: repeat(17, 1fr); gap: 4px; align-items: center; }
-@media (orientation: portrait) { .rch-swatches { grid-template-columns: repeat(9, 1fr); } }
+@media (orientation: portrait) and (max-aspect-ratio: 3/5) { .rch-swatches { grid-template-columns: repeat(9, 1fr); } }
 .rch-sw, .rch-sw-custom { aspect-ratio: 1; width: 100%; min-width: 0; border-radius: 50%; border: 2px solid var(--rc-silver); cursor: pointer; padding: 0; }
 .rch-sw.sel, .rch-sw-custom.sel { border-color: var(--rc-red); box-shadow: 0 0 0 2px var(--rc-white), 0 0 0 3.5px var(--rc-red); }
 .rch-sw-custom { position: relative; display: block; background: conic-gradient(red, yellow, lime, cyan, blue, magenta, red); overflow: hidden; }
@@ -101,7 +101,7 @@
 .rch-player { background: var(--rc-white); color: var(--rc-carbon); border-radius: 8px; padding: 14px; }
 .rch-player .rch-stage { min-height: 300px; }
 .rch-swatches16 { grid-template-columns: repeat(16, 1fr); }
-@media (orientation: portrait) { .rch-swatches16 { grid-template-columns: repeat(8, 1fr); } }
+@media (orientation: portrait) and (max-aspect-ratio: 3/5) { .rch-swatches16 { grid-template-columns: repeat(8, 1fr); } }
 .rch-pbtns { margin-top: 4px; }
 .rch-shapecolor { margin-top: 10px; width: 100%; }
 

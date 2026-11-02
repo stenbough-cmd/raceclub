@@ -2041,7 +2041,6 @@ body.rc-league-page:not(.rcc-page) .rcl-allresults-session-select { min-width: 1
 
   /* Ticker label -- the label's shape comes from its clip-path, unchanged: a rectangle with the
      trailing (right) edge cut diagonally in by 14px (.rcl-ticker-label above). */
-  .rcl-ticker-label { width: 24px; padding: 0; font-size: 0; }
 
   /* Hero's big diagonal red accent -- narrowed and pushed further right/off-screen than the desktop
      -6%/220px version so only a slim sliver shows on a phone-width hero instead of the bar
@@ -2637,3 +2636,8 @@ a.rcl-navbar-link.rcl-navbar-active, a.rcl-navbar-link.rcl-navbar-active:hover {
 
 /* League News header (League Hub): white title with a soft shadow over the news photo (Matt, 2026-11-02), like Season Stories on the Championship page. */
 .rcl-panel-head-news .rcl-panel-title { color: #ffffff; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55); }
+
+/* Tall portrait (phones): the ticker's HIGHLIGHTS label shrinks to a small tab with no text; portrait (tablets) keeps the full label. */
+@media (orientation: portrait) and (max-aspect-ratio: 3/5) {
+  .rcl-ticker-label { width: 24px; padding: 0; font-size: 0; }
+}
