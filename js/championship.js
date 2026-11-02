@@ -426,7 +426,7 @@ function rccRenderActionBar(page) {
   // have no calendar dates in championship mode). Picking one swaps the page in place.
   var barTitle = null;
   if (page && page.seasons && page.seasons.length) {
-    barTitle = _rccText('div', 'rcc-actionbar-title', 'Championship');
+    barTitle = _rccText('div', 'rcc-actionbar-title', 'Single Player Championship');
     inner.appendChild(barTitle);
     var sel = document.createElement('select');
     sel.className = 'rcc-actionbar-season';

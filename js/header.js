@@ -433,14 +433,18 @@ function rcWireBarTitle_(bar, titleEl, aboveEl) {
     queued = false;
     var t = bar._rcTitleEl, a = bar._rcTitleAbove;
     if (!t || !a || !a.getBoundingClientRect) return;
-    var bottom = a.getBoundingClientRect().bottom;
-    var p = (130 - bottom) / 60;
+    var r = a.getBoundingClientRect();
+    // Not on screen yet (hidden or not laid out, e.g. while the page is still loading): stay transparent.
+    if (!r.width && !r.height) { t.style.opacity = '0'; return; }
+    var p = (130 - r.bottom) / 60;
     t.style.opacity = String(Math.max(0, Math.min(1, p)));
   }
   bar._rcTitleUpdate = update;
   function schedule() { if (!queued) { queued = true; (window.requestAnimationFrame || setTimeout)(update); } }
   window.addEventListener('scroll', schedule, { passive: true });
   window.addEventListener('resize', schedule);
+  // The section above can appear or change size without any scroll (content loads in), so re-check when it does.
+  try { if (window.ResizeObserver) new ResizeObserver(schedule).observe(aboveEl); } catch (e) {}
   update();
 }
 

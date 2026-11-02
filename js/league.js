@@ -3464,7 +3464,7 @@ function _rclRenderNavbar_(hub) {
   }
   var navTitle = null;
   if (_rclSeasonList_.length) {
-    navTitle = _rclEl('div', 'rcl-navbar-title', 'League Hub');
+    navTitle = _rclEl('div', 'rcl-navbar-title', 'Online League Hub');
     inner.appendChild(navTitle);
     var pick = document.createElement('select');
     pick.className = 'rcl-navbar-season';
