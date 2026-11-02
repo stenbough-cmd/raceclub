@@ -2569,7 +2569,7 @@ a.rcl-navbar-link.rcl-navbar-active { color: var(--rc-white); }
 
 /* League Hub navbar works like the home page one (Matt, 2026-10-27): it rides up with the page, then stays pinned
    right under the 70px fixed header while the page keeps scrolling beneath it. Also rests on the bottom edge on a very short window. */
-body.rc-league-page:not(.rcc-page) .rcl-navbar { position: sticky; top: 70px; bottom: 0; z-index: 50; }
+body.rc-league-page:not(.rcc-page) .rcl-navbar { position: sticky; top: 69px; bottom: 0; z-index: 50; }
 
 /* League News tiles and labels (ECO chat, 2026-10-27): no red bottom strip any more. Tiles get a thin light outline and a soft
    sheen; a News post's red tile carries a pair of racing stripes across its lower right corner; story tiles keep the checkered
@@ -2624,3 +2624,16 @@ a.rcl-navbar-link.rcl-navbar-active, a.rcl-navbar-link.rcl-navbar-active:hover {
 /* Bar left only for the season picker: gone when there is none. */
 .rcl-navbar:empty { display: none !important; }
 .rcl-navbar-inner > .rcl-navbar-season { margin-left: auto; }
+
+/* Page title at the left of the season bar. It fades in as the bar slides up under the header and out again as the bar leaves it
+   (opacity is set by js/header.js, rcWireBarTitle_). The bar sticks 1px UNDER the header (top: 69px) so no sliver of page text can
+   show between them while scrolling. */
+.rcl-navbar-title, .rcc-actionbar-title {
+  margin-right: auto; align-self: center; opacity: 0; pointer-events: none;
+  font-family: var(--rc-font-heading); font-size: 13px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: #ffffff;
+  white-space: nowrap;
+}
+@media (orientation: portrait) { .rcl-navbar-title, .rcc-actionbar-title { display: none; } }
+
+/* League News header (League Hub): white title with a soft shadow over the news photo (Matt, 2026-11-02), like Season Stories on the Championship page. */
+.rcl-panel-head-news .rcl-panel-title { color: #ffffff; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55); }

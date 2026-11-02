@@ -424,7 +424,10 @@ function rccRenderActionBar(page) {
   // Season picker (Matt, 2026-10-20, same as the League Hub's): every season, newest first, at the
   // right end of the bar, shown once any season exists. Labels are "Season N: Name" (no dates: rounds
   // have no calendar dates in championship mode). Picking one swaps the page in place.
+  var barTitle = null;
   if (page && page.seasons && page.seasons.length) {
+    barTitle = _rccText('div', 'rcc-actionbar-title', 'Championship');
+    inner.appendChild(barTitle);
     var sel = document.createElement('select');
     sel.className = 'rcc-actionbar-season';
     sel.setAttribute('aria-label', 'Season');
@@ -436,6 +439,7 @@ function rccRenderActionBar(page) {
     });
     inner.appendChild(sel);
     bar.appendChild(inner);
+    if (typeof rcWireBarTitle_ === 'function') rcWireBarTitle_(bar, barTitle, document.querySelector('.rcl-hero'));
   }
 }
 

@@ -297,7 +297,7 @@ function _rcMfrLogoSlug_(manufacturerName) {
 // {slug}-white). Every other manufacturer has one plain {slug} file. Asking for a pair that does not
 // exist cost 4 missing-file requests per logo (.webp, .jpg, .jpeg, .png) before the plain file was tried.
 // ADD A SLUG HERE whenever a new -black / -white pair is uploaded.
-var RC_MFR_VARIANTS = { 'genesis': true, 'mclaren': true, 'toyota': true };
+var RC_MFR_VARIANTS = { 'genesis': true, 'mclaren': true, 'oreca': true, 'toyota': true };
 
 function manufacturerLogoSrc(manufacturerName, variant) {
   var v = (variant === 'white') ? 'white' : 'black';

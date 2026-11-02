@@ -420,6 +420,30 @@ function _rcChampBadgeHtml_() {
          '</span>';
 }
 
+
+// A page title inside a sticky bar that fades in as the bar slides up under the fixed header and fades out as it leaves it (Matt, 2026-11-02).
+// bar: the sticky bar; titleEl: the title inside it; aboveEl: the section right above the bar (the hero), whose bottom edge is where the bar
+// would sit if it were not stuck. Opacity goes from 0 (the hero's bottom edge is 60px below the header) to 1 (the bar touches the header).
+function rcWireBarTitle_(bar, titleEl, aboveEl) {
+  if (!bar || !titleEl || !aboveEl) return;
+  if (bar._rcTitleWired) { bar._rcTitleEl = titleEl; bar._rcTitleAbove = aboveEl; if (bar._rcTitleUpdate) bar._rcTitleUpdate(); return; }
+  bar._rcTitleWired = true; bar._rcTitleEl = titleEl; bar._rcTitleAbove = aboveEl;
+  var queued = false;
+  function update() {
+    queued = false;
+    var t = bar._rcTitleEl, a = bar._rcTitleAbove;
+    if (!t || !a || !a.getBoundingClientRect) return;
+    var bottom = a.getBoundingClientRect().bottom;
+    var p = (130 - bottom) / 60;
+    t.style.opacity = String(Math.max(0, Math.min(1, p)));
+  }
+  bar._rcTitleUpdate = update;
+  function schedule() { if (!queued) { queued = true; (window.requestAnimationFrame || setTimeout)(update); } }
+  window.addEventListener('scroll', schedule, { passive: true });
+  window.addEventListener('resize', schedule);
+  update();
+}
+
 // opts.forceLoggedOut: renders the logged-OUT nav (HOME · LOGIN/REGISTER) even if a token is
 // present in localStorage. This never clears the token itself (that would force a real re-login
 // over what might just be a momentary connection problem) -- it only affects what the header LOOKS

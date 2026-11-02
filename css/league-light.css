@@ -60,3 +60,4 @@ body.rc-league-page.rcl-light {
 }
 /* Footer + legal link read on the light page like Championship's. */
 .rcl-light .rc-footer-legal-link { color: #F21B0C; }
+.rcl-light .rcl-panel-head-news .rcl-panel-title { color: #ffffff; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55); }

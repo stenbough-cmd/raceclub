@@ -3462,7 +3462,10 @@ function _rclRenderNavbar_(hub) {
     _rclSeasonList_ = hub.seasons;
     _rclDefaultSeasonId_ = hub.seasonId || '';
   }
+  var navTitle = null;
   if (_rclSeasonList_.length) {
+    navTitle = _rclEl('div', 'rcl-navbar-title', 'League Hub');
+    inner.appendChild(navTitle);
     var pick = document.createElement('select');
     pick.className = 'rcl-navbar-season';
     pick.setAttribute('aria-label', 'Season');
@@ -3477,6 +3480,7 @@ function _rclRenderNavbar_(hub) {
     inner.appendChild(pick);
   }
   if (inner.childNodes.length) nav.appendChild(inner);
+  if (navTitle && typeof rcWireBarTitle_ === 'function') rcWireBarTitle_(nav, navTitle, document.querySelector('.rcl-hero'));
 }
 
 // Full-page loading overlay -- markup/CSS live in league.html and css/league.css; this just locks
