@@ -3283,7 +3283,7 @@ button.rc-switch { display: inline-flex; align-items: center; gap: 12px; width: 
    white links, red line underneath (copied from .rcl-navbar in css/league.css). */
 /* Always visible: it sits right under the hero image in the page, but is sticky on both edges, so on a short window it
    rests on the bottom edge of the screen, rises as you scroll, and then stays pinned just under the fixed 70px header. */
-.rc-home-navbar { background: #141416; border-bottom: 2px solid #e0b64c; position: sticky; top: 69px; bottom: 0; z-index: 3; }
+.rc-home-navbar { background: #141416; border-bottom: 1px solid #2c2d31; position: sticky; top: 69px; bottom: 0; z-index: 3; }
 .rc-home-navbar-inner { max-width: 1180px; margin: 0 auto; padding: 0 32px; display: flex; align-items: center; flex-wrap: wrap; min-height: 48px; }
 .rc-home-navbar-link { padding: 14px 14px; font-family: var(--rc-font-heading); font-size: 12px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--rc-white); text-decoration: none; position: relative; }
 .rc-home-navbar-link:hover { color: var(--rc-white); }

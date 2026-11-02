@@ -905,7 +905,7 @@ body.rcc-page { --rcc-true-red: #F21B0C; }
 .rcc-page .rcl-hero-season-sep,
 .rcc-page .rcl-panel-title::before { color: var(--rcc-true-red); }
 .rcc-page .rcl-panel-head { border-bottom-color: var(--rcc-true-red); }
-.rcc-page .rcc-actionbar { border-bottom-color: #5f7d99; border-bottom-width: 2px; }
+.rcc-page .rcc-actionbar { border-bottom-color: #2c2d31; border-bottom-width: 1px; }
 /* Red again too (Matt): the SINGLE PLAYER MODE eyebrow and links (text links, plus the black link
    bar's hover and open states). Links styled as buttons keep the blue-gray. */
 .rcc-page .rcl-hero-eyebrow { color: var(--rcc-true-red); }
@@ -927,7 +927,7 @@ body.rcc-page { --rcc-true-red: #F21B0C; }
 .rcc-page .rcc-help-body { --rc-red: #F21B0C; --rc-red-dark: #c81509; }
 
 /* Black link bar: gold line under it (kept when the ticker and hero went back to the light Championship look). */
-.rcc-page .rcc-actionbar { border-bottom-color: #e0b64c; }
+.rcc-page .rcc-actionbar { border-bottom: 1px solid #2c2d31; }
 
 /* Navigation look for the page links: same tab style as the League Hub's bar, with a gold bar for the hovered and current page. */
 .rcc-actionbar-links { align-self: stretch; align-items: stretch; }

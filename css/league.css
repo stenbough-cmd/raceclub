@@ -2107,7 +2107,7 @@ body.rc-league-page:not(.rcc-page) .rcl-allresults-session-select { min-width: 1
    the gray of the Standings column headings (--rcl-ink-faint), white links, red line underneath. */
 .rcl-navbar {
   background: var(--rcl-bg-raised); /* same as the page's containers (.rcl-panel) */
-  border-bottom: 2px solid #e0b64c;   /* gold line, same as the Championship's black bar (Matt, 2026-11-02) */
+  border-bottom: 1px solid #2c2d31;   /* same dark line as the one above the bar (the header's bottom line) */
 }
 .rcl-navbar-inner {
   max-width: 1180px;
