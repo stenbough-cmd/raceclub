@@ -3454,7 +3454,7 @@ button.rc-switch { display: inline-flex; align-items: center; gap: 12px; width: 
 .rc-ol-season-count-unit { font-size: inherit; letter-spacing: inherit; text-transform: uppercase; }
 
 /* ===== ADMINISTRATION container (League Tools on the Dashboard, 2026-11-03). Graphite accent. ===== */
-.rc-adm { --rc-adm-accent: #3b3f45; gap: 0; }
+.rc-adm { --rc-adm-accent: #B8891A; gap: 0; }
 .rc-adm-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
 .rc-adm-eyebrow { font-family: var(--rc-font-heading); font-size: 14px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--rc-adm-accent); }
 .rc-adm-title { margin-top: 6px; font-family: var(--rc-font-heading); font-size: 30px; font-weight: 800; letter-spacing: 0.01em; text-transform: uppercase; color: var(--rc-carbon); line-height: 1.1; }
@@ -3480,3 +3480,10 @@ button.rc-switch { display: inline-flex; align-items: center; gap: 12px; width: 
 @media (orientation: portrait) and (max-aspect-ratio: 3/5) { .rc-adm-title { font-size: 22px; } .rc-adm-icon { display: none; } .rc-adm-season { padding: 16px; } }
 .rc-adm-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; margin-top: 18px; }
 @media (orientation: portrait) { .rc-adm-tiles { grid-template-columns: 1fr; } }
+
+/* Collapsible containers (Single Player, Administration): the header stays, the body hides until the arrow in front of the subtitle is pressed. */
+.rc-coll-sub { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+.rc-coll-sub .rcd-sub, .rc-coll-sub .rc-adm-sub { margin: 0; }
+.rc-collapsed > .rc-coll-body { display: none; }
+.rc-collapsed { gap: 0; }
+.rc-collapsed .rc-adm-head { margin-bottom: 0; }

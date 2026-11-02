@@ -371,19 +371,33 @@
 
   window.rcBuildChampionshipDashboard = function (opts) {
     addStyle();
-    var panel = mk('div', 'rcd-panel');
+    var panel = mk('div', 'rcd-panel rc-collapsed');
     var head = mk('div', 'rcd-head');
     var headText = mk('div', 'rcd-head-text');
     headText.appendChild(mk('div', 'rcd-eyebrow', 'Single Player'));
     headText.appendChild(mk('div', 'rcd-title', 'Your championships.'));
-    headText.appendChild(mk('p', 'rcd-sub', 'Create, manage and follow your own racing seasons.'));
+    // Loads collapsed (Matt, 2026-11-03): only this header shows until the arrow in front of the subtitle is pressed.
+    var subRow = mk('div', 'rc-coll-sub');
+    var toggle = mk('button', 'rc-disclosure-btn');
+    toggle.type = 'button';
+    toggle.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>';
+    toggle.setAttribute('aria-expanded', 'false');
+    toggle.setAttribute('aria-label', 'Show your championships');
+    toggle.addEventListener('click', function () {
+      var collapsed = panel.classList.toggle('rc-collapsed');
+      toggle.classList.toggle('rc-disclosure-open', !collapsed);
+      toggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+    });
+    subRow.appendChild(toggle);
+    subRow.appendChild(mk('p', 'rcd-sub', 'Create, manage and follow your own racing seasons.'));
+    headText.appendChild(subRow);
     head.appendChild(headText);
     var flag = mk('div', 'rcd-flag');
     flag.setAttribute('aria-hidden', 'true');
     flag.innerHTML = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4h12l-2 4 2 4H5"></path></svg>';
     head.appendChild(flag);
     panel.appendChild(head);
-    var body = mk('div', '');
+    var body = mk('div', 'rc-coll-body');
     panel.appendChild(body);
     // Own loading markup, drawn straight on the container (no card, no popup look): the site's start lights in the site red.
     // The red is set inline on the element so nothing else on the page can recolor it.

@@ -1261,13 +1261,13 @@
   // "View Season Details" popup -- identical in width (820px, same as league.html's own non-wide
   // .rcl-modal-dialog) and header treatment (bold uppercase title, red 2px underline) to the rest
   // of the account page's popups.
-  function openSeasonFormatModal() {
+  function openSeasonFormatModal(seasonId) {
     var modal = showModal('Season Details', { wide: true });
     // 50px wider than the plain .rc-modal-wide -- the race-card list below needs the extra room the
     // Season Format list above it doesn't.
     modal.el.classList.add('rc-modal-calendar-wide');
     modal.body.appendChild(buildSpinner('Loading season details...'));
-    _rcFetchLeagueHubCsvFirst_().then(function (hub) {
+    (seasonId ? fetchApi('getLeagueHub', { params: { seasonId: seasonId, noArchive: '1' } }) : _rcFetchLeagueHubCsvFirst_()).then(function (hub) {
       modal.body.innerHTML = '';
       if (!hub || !hub.success || !hub.hasSeason) {
         modal.body.appendChild(buildEmptyStatePanel('No Data To Display', 'Season details show up here once a season is underway.'));
@@ -2682,50 +2682,51 @@
   // button on the right" shape the Data Management Cars/Tracks lists already use, just under its
   // own .rc-group-row class since it's indented one level deeper (year -> season) than those lists
   // ever go.
-  function buildSeasonRow(s, races, token, reload, defaultExpanded) {
-    var container = el('div', 'rc-adm-season');
-    var row = el('div', 'rc-group-row rc-season-record');
-    var info = el('div', 'rc-dm-row-info');
-    var textCol = el('div', null);
-
-    // Status pill removed entirely from this row -- _rcSeasonStatusBadge itself is untouched, still
-    // used by the Career page's own season cards.
-    var nameLine = el('div', 'display:flex;align-items:center;gap:8px;flex-wrap:wrap;');
-    var seasonRowNum = seasonNumberLabel(s.seasonId);
-    var seasonRowLabel = (seasonRowNum ? ('Season ' + seasonRowNum) : (s.seasonId || 'Season')) + (s.name ? (': ' + s.name) : '');
-    nameLine.appendChild(el('span', 'rc-dm-row-label', escapeHtml(seasonRowLabel)));
-    textCol.appendChild(nameLine);
-
-    var metaParts = [];
-    // Season stage: Finished once ended; In progress once the first race's date/time has arrived; otherwise Registration.
+  function buildSeasonRow(s, races, token, reload, isCurrent) {
+    // Same look as a season in the Single Player Championship container (.rcd-season-box): year pill and status pill, name, one
+    // meta line, a button row, then the round list. The newest season shows its rounds; older ones open them with the arrow.
+    var container = el('div', 'rcd-season-box rc-adm-season');
+    var isEnded = s.status === 'Completed';
     var firstStart = null;
     (races || []).forEach(function (r) {
       if (r.kind === 'bye' || !r.startUtc) return;
       var t = new Date(r.startUtc).getTime();
       if (!isNaN(t) && (firstStart === null || t < firstStart)) firstStart = t;
     });
-    metaParts.push(s.status === 'Completed' ? 'Finished' : ((firstStart !== null && firstStart <= Date.now()) ? 'In progress' : 'Registration'));
-    metaParts.push(s.classes && s.classes.length ? s.classes.join(', ') : 'No classes selected');
-    metaParts.push(s.raceCount + ' race' + (s.raceCount === 1 ? '' : 's'));
-    metaParts.push(s.registrationCount + ' driver' + (s.registrationCount === 1 ? '' : 's') + ' registered');
+    var stage = isEnded ? 'Finished' : ((firstStart !== null && firstStart <= Date.now()) ? 'In progress' : 'Registration');
+    var top = el('div', 'rcd-season-top');
+    top.appendChild(el('span', 'rc-badge-chip rc-badge-graphite', escapeHtml(s.createdAt ? String(s.createdAt).slice(0, 4) : 'Unknown Year')));
+    top.appendChild(el('span', 'rcd-status-pill ' + ((stage === 'In progress' || stage === 'Finished') ? 'rcd-status-ok' : 'rcd-status-neutral'), stage));
+    container.appendChild(top);
+    var seasonRowNum = seasonNumberLabel(s.seasonId);
+    container.appendChild(el('div', 'rcd-season-name', escapeHtml((seasonRowNum ? ('Season ' + seasonRowNum) : (s.seasonId || 'Season')) + (s.name ? (': ' + s.name) : ''))));
+    var done = (races || []).filter(function (r) { return r.hasResults; }).length;
+    var metaParts = [];
+    metaParts.push(isCurrent && done ? (done + (done === 1 ? ' round completed' : ' rounds completed')) : (s.raceCount + (s.raceCount === 1 ? ' round' : ' rounds')));
+    metaParts.push(s.registrationCount + (s.registrationCount === 1 ? ' driver' : ' drivers') + ' registered');
+    if (s.classes && s.classes.length) metaParts.push(s.classes.join(', '));
     if (s.createdAt) metaParts.push('Created ' + formatDateLabel(String(s.createdAt).slice(0, 10)));
-    textCol.appendChild(el('div', 'rc-hint', escapeHtml(metaParts.join(' · '))));
+    container.appendChild(el('div', 'rcd-season-meta', escapeHtml(metaParts.join(' · '))));
 
-    info.appendChild(textCol);
-    row.appendChild(info);
+    var btnGroup = el('div', 'rcd-season-actions');
+    var editBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Edit Season');
+    editBtn.type = 'button';
+    if (isEnded) {
+      editBtn.disabled = true;
+      withTooltip(editBtn, 'This season has ended, so its details can no longer be edited.');
+    } else if (currentProfile && (currentProfile.role === 'Admin' || currentProfile.role === 'Organizer')) {
+      editBtn.addEventListener('click', function () { openSeasonEditWizardWithLoad(token, s.seasonId); });
+    } else {
+      editBtn.disabled = true;
+      withTooltip(editBtn, 'Only Admins and Organizers can edit season details.');
+    }
+    btnGroup.appendChild(editBtn);
+    // SEASON PREVIEW -- the same Season Details popup drivers see (season format and race calendar; no Current Seat).
+    var previewBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Season Preview');
+    previewBtn.type = 'button';
+    previewBtn.addEventListener('click', function () { openSeasonFormatModal(s.seasonId); });
+    btnGroup.appendChild(previewBtn);
 
-    var btnGroup = el('div', 'display:flex;gap:8px;flex:none;');
-
-    // Once a season has ended, every button on its row (and on each of its round rows below)
-    // disappears except the races disclosure toggle -- an ended season is read-only history at this
-    // point, so Recompute Season and Edit Season (both below) are skipped entirely rather than just
-    // disabled, and buildSeasonRaceRow does the same for its own Import Results/Review &
-    // Finalize/Delete Results buttons.
-    var isEnded = s.status === 'Completed';
-
-    // RECOMPUTE SEASON -- only offered once the season has at least one round with results
-    // (s.locked -- same "has actually raced" gate End Season/Delete already use). Stays available
-    // after the season ends so a past season can still be recomputed.
     if (s.locked) {
       // Styled to match Edit Season -- a deliberate one-off exception to the "gray unless it saves"
       // color rule, same kind of explicit override as the red File Protest button and the gray
@@ -2761,60 +2762,24 @@
       btnGroup.appendChild(recomputeBtn);
     }
 
-    // Admin-only. The backend already required Admin here (handleUpdateSeason, Seasons.gs,
-    // requireRole(admin, ['Admin'])). Always renders now -- an Organizer viewer sees the button but
-    // it's disabled with a tooltip instead of missing entirely.
-    var editBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Edit Season');
-    editBtn.type = 'button';
-    if (isEnded) {
-      editBtn.disabled = true;
-      withTooltip(editBtn, 'This season has ended, so its details can no longer be edited.');
-    } else if (currentProfile && (currentProfile.role === 'Admin' || currentProfile.role === 'Organizer')) {
-      editBtn.addEventListener('click', function () { openSeasonEditWizardWithLoad(token, s.seasonId); });
-    } else {
-      editBtn.disabled = true;
-      withTooltip(editBtn, 'Only Admins and Organizers can edit season details.');
-    }
-    btnGroup.appendChild(editBtn);
-
-    // STATISTICS -- the season's 8 awards per class in a popup (adminGetSeasonStatistics, Seasons.gs). Opens a
-    // read-only list, so it is gray; stays available after the season ends.
-    var statsBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Statistics');
-    statsBtn.type = 'button';
-    statsBtn.addEventListener('click', function () { openSeasonStatisticsModal(token, s.seasonId); });
-    btnGroup.appendChild(statsBtn);
-
-    // Delete removed from this row entirely -- only Edit Season and the races disclosure arrow
-    // remain per-row. adminDeleteSeason (Seasons.gs) is untouched server-side; there's just no
-    // button wired to it here anymore.
-
-    // No bordered box around this -- just an indented plain container, relying on .rc-group-row's
-    // own border-bottom (the season row sitting right above it) as the only separator. `races`
-    // already loaded.
-    var racesBox = el('div', 'padding-left:20px;' + (defaultExpanded ? '' : 'display:none;'));
+    var racesBox = el('div', 'rcd-past-rounds' + '');
     racesBox.appendChild(buildSeasonRacesList(races || [], token, reload, isEnded));
-    // The race count isn't lost, it's already shown right above in this row's own meta line
-    // (metaParts, "N races · N drivers registered"), so the button itself only needs to say
-    // open/closed, which a rotating chevron does without any text at all.
-    var racesToggleBtn = el('button', 'rc-disclosure-btn' + (defaultExpanded ? ' rc-disclosure-open' : ''), ICON_CHEVRON_DOWN);
-    racesToggleBtn.type = 'button';
-    racesToggleBtn.setAttribute('aria-expanded', defaultExpanded ? 'true' : 'false');
-    racesToggleBtn.setAttribute('aria-label', defaultExpanded ? 'Hide races' : 'Show races');
-    racesToggleBtn.addEventListener('click', function () {
-      var isOpen = racesBox.style.display !== 'none';
-      racesBox.style.display = isOpen ? 'none' : '';
-      racesToggleBtn.classList.toggle('rc-disclosure-open', !isOpen);
-      racesToggleBtn.setAttribute('aria-expanded', isOpen ? 'false' : 'true');
-      racesToggleBtn.setAttribute('aria-label', isOpen ? 'Show races' : 'Hide races');
-    });
-    btnGroup.appendChild(racesToggleBtn);
-
-    // See openEndSeasonModal/renderAdminSection for the replacement (a season-picker popup there,
-    // since Admin doesn't already have a specific season's row in hand the way this one did).
-
-    // Buttons live underneath the info (not beside it) so the text can use the full row width.
-    if (btnGroup.childNodes.length) { btnGroup.style.marginTop = '8px'; btnGroup.style.flexWrap = 'wrap'; textCol.appendChild(btnGroup); }
-    container.appendChild(row);
+    if (!isCurrent) {
+      racesBox.style.display = 'none';
+      var racesToggleBtn = el('button', 'rc-disclosure-btn rcd-past-toggle', ICON_CHEVRON_DOWN);
+      racesToggleBtn.type = 'button';
+      racesToggleBtn.setAttribute('aria-expanded', 'false');
+      racesToggleBtn.setAttribute('aria-label', 'Show rounds');
+      racesToggleBtn.addEventListener('click', function () {
+        var isOpen = racesBox.style.display !== 'none';
+        racesBox.style.display = isOpen ? 'none' : '';
+        racesToggleBtn.classList.toggle('rc-disclosure-open', !isOpen);
+        racesToggleBtn.setAttribute('aria-expanded', isOpen ? 'false' : 'true');
+        racesToggleBtn.setAttribute('aria-label', isOpen ? 'Show rounds' : 'Hide rounds');
+      });
+      btnGroup.appendChild(racesToggleBtn);
+    }
+    container.appendChild(btnGroup);
     container.appendChild(racesBox);
     return container;
   }
@@ -2825,26 +2790,25 @@
   // real Round (a Special Event has no RoundID to import against until that system is designed for
   // real.gs).
   function buildSeasonRacesList(races, token, reload, isEnded) {
-    var box = el('div');
     var real = (races || []).filter(function (r) { return r.kind !== 'bye'; });
-    if (!real.length) {
-      box.appendChild(el('div', 'rc-dm-empty', 'No races scheduled for this season yet.'));
-      return box;
-    }
-    // Sequential import gating -- only the earliest round that isn't finalized yet gets working
-    // Import Results/Delete Results buttons; every round after it stays locked until every round
-    // before it is finalized, so results can never land out of order.
+    var wrap = el('div', 'rcd-cal');
+    var ch = el('div', 'rcd-cal-head');
+    ch.appendChild(el('div', 'rcd-cal-title', 'Championship calendar'));
+    ch.appendChild(el('div', 'rcd-cal-count', real.length + (real.length === 1 ? ' round' : ' rounds')));
+    wrap.appendChild(ch);
+    var list = el('div', 'rcd-cal-list');
+    if (!real.length) list.appendChild(el('div', 'rc-dm-empty', 'No races scheduled for this season yet.'));
+    // Sequential import gating -- only the earliest round that isn't finalized yet gets working Upload/Erase Results buttons;
+    // every round after it stays locked until every round before it is finalized, so results can never land out of order.
     var priorFinalized = true;
-    // Special Event counter -- counts only special-kind entries, in the same order this list
-    // already renders them, so a season with a special event before and after its rounds still gets
-    // "Special Event 1"/"Special Event 2" in order rather than numbering off the round list too.
     var specialCount = 0;
     real.forEach(function (r) {
       if (r.kind === 'special') specialCount++;
-      box.appendChild(buildSeasonRaceRow(r, token, reload, priorFinalized, specialCount, isEnded));
+      list.appendChild(buildSeasonRaceRow(r, token, reload, priorFinalized, specialCount, isEnded));
       if (r.kind !== 'special') priorFinalized = priorFinalized && !!r.resultsFinalized;
     });
-    return box;
+    wrap.appendChild(list);
+    return wrap;
   }
 
   // Round status line -- one line summarizing exactly where a round's results stand, in a fixed
@@ -2882,130 +2846,65 @@
   // round isn't actionable right now."
 
   function buildSeasonRaceRow(r, token, reload, priorFinalized, specialNumber, isEnded) {
-    var row = el('div', 'rc-group-row');
-    var info = el('div', 'rc-dm-row-info');
-    var textCol = el('div', null);
-
+    // Same look as a round in the Single Player Championship container (.rcd-round): number pill, event name, "Track · date",
+    // status circle, status text, then the buttons: Upload Results, Erase Results, Finalize Results.
+    var row = el('div', 'rcd-round');
     var isSpecial = r.kind === 'special';
-    // "Special Event N: <event name>" -- matches the "Round N: <event name>" pattern championship
-    // rounds already use, instead of just the bare event name with no numbering.
-    var title = isSpecial ? ('Special Event ' + (specialNumber || 1) + ': ' + (r.eventName || 'Untitled')) : ('Round ' + r.roundNumber + ': ' + (r.eventName || r.track || ''));
     var roundLabel = 'Round ' + r.roundNumber + (r.track ? ': ' + r.track : '');
+    var top = el('div', 'rcd-round-top');
+    top.appendChild(el('span', 'rcd-round-num', isSpecial ? 'SP' : ((r.roundNumber < 10 ? '0' : '') + r.roundNumber)));
+    var col = el('div', 'rcd-round-main');
+    col.appendChild(el('div', 'rcd-round-name', escapeHtml(isSpecial ? ('Special Event ' + (specialNumber || 1) + ': ' + (r.eventName || 'Untitled')) : (r.eventName || r.track || ('Round ' + r.roundNumber)))));
+    var bits = [];
+    if (r.track) bits.push(r.track);
+    if (r.startUtc) bits.push(formatRaceDateTime(r.startUtc, ''));
+    col.appendChild(el('div', 'rcd-round-sub', escapeHtml(bits.join(' · ') || 'Date/time not set')));
+    top.appendChild(col);
 
-    // Status pill AND the Finalized chip removed entirely from this row.
-    // r.finished/r.hasResults/r.resultsFinalized still drive the button logic below exactly as
-    // before -- only the visible pills are gone.
-    var nameLine = el('div', 'display:flex;align-items:center;gap:8px;flex-wrap:wrap;');
-    nameLine.appendChild(el('span', 'rc-dm-row-label rc-round-title', escapeHtml(title)));
-    textCol.appendChild(nameLine);
-
-    // Sequential gating -- true once every real round before this one in the season has been
-    // finalized. Only then does this round's Import Results/Delete Results row show up at all; a
-    // round waiting on an earlier one stays locked regardless of its own import state.
     var locked = !isSpecial && !priorFinalized;
-
-    // Not-yet-raced gating -- separate from the sequential lock above: a round can be next in line
-    // and still be a future date on the calendar, and there's nothing to import/delete/be-awaiting
-    // yet either way.
-    var notYetRaced = !isSpecial && !!r.startUtc && !r.hasAnySessionImported &&
-      new Date(r.startUtc).getTime() > Date.now();
+    var notYetRaced = !isSpecial && !!r.startUtc && !r.hasAnySessionImported && new Date(r.startUtc).getTime() > Date.now();
     var suppressUnstarted = locked || notYetRaced;
 
-    // Track now shows for Special Events too, same as championship rounds -- was round-only;
-    // Special Event entries already carry their own r.track (Seasons.gs), it just wasn't being read
-    // here.
-    var metaParts = [];
-    if (r.track) metaParts.push(r.track);
-    if (r.startUtc) metaParts.push(formatRaceDateTime(r.startUtc, ''));
-    textCol.appendChild(el('div', 'rc-hint', escapeHtml(metaParts.join(' · ') || 'Date/time not set')));
-
-    if (!isSpecial) {
-      var statusLine = buildRoundStatusLine(r, suppressUnstarted);
-      if (statusLine) textCol.appendChild(statusLine);
-    }
-
-    info.appendChild(textCol);
-    row.appendChild(info);
-
-    var btnGroup = el('div', 'display:flex;gap:8px;flex:none;');
+    var icon, text = '', tone = '';
+    if (isSpecial) { icon = el('span', 'rc-protest-dash-icon rc-protest-dash-icon-pending'); }
+    else if (r.resultsFinalized) { text = 'Results finalized · Standings updated'; tone = ' rcd-round-status-ok'; icon = el('span', 'rc-protest-dash-icon rc-statuscircle-green', '✓'); }
+    else if (r.hasResults) { text = 'Results uploaded · Awaiting finalization'; tone = ' rcd-round-status-part'; icon = el('span', 'rc-protest-dash-icon rc-statuscircle-yellow'); }
+    else if (r.hasAnySessionImported) { text = r.hasRaceResults ? 'Race results uploaded · Awaiting qualifying results' : 'Qualifying results uploaded · Awaiting race results'; tone = ' rcd-round-status-part'; icon = el('span', 'rc-protest-dash-icon rc-statuscircle-yellow'); }
+    else { text = 'Awaiting results'; icon = el('span', 'rc-protest-dash-icon rc-protest-dash-icon-pending'); }
+    top.appendChild(icon);
+    row.appendChild(top);
+    if (text) row.appendChild(el('div', 'rcd-round-status' + tone, text));
 
     if (!isSpecial && r.roundId && !isEnded) {
-      // No round picker in either popup below -- the click that opened this row already knows
-      // exactly which round it's for, so openImportXmlModal/openEraseRoundIngestionModal go
-      // straight to the upload/erase form.
-      // The status line above (buildRoundStatusLine) is what now tells the organizer why.
-      if (!suppressUnstarted) {
-        var addBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Import Results');
-        addBtn.type = 'button';
-        if (r.hasResults) {
-          // Grayed out once BOTH Qualify and Race are in for this round -- makes it obvious at a
-          // glance that this round is fully done; Delete first (right next to it) to re-import.
-          addBtn.disabled = true;
-          addBtn.title = 'Results already imported for this round. Delete them first to re-import.';
-          addBtn.style.cssText = 'opacity:0.5;';
-        } else {
-          addBtn.addEventListener('click', function () {
-            openImportXmlModal(token, { roundId: r.roundId, roundLabel: roundLabel, roundNumber: r.roundNumber, eventLabel: (r.eventName || '') + (r.track ? ' (' + r.track + ')' : ''), hasRace: !!r.hasRaceResults, hasQuali: !!(r.hasAnySessionImported && !r.hasRaceResults) });
-          });
-        }
-        btnGroup.appendChild(addBtn);
+      var lockWhy = locked ? 'Finalize the earlier rounds first.' : (notYetRaced ? 'This round has not been raced yet.' : '');
+      var bg = el('div', 'rcd-round-actions');
+      function btn(label, enabled, why, onClick) {
+        var b = el('button', 'rc-btn-secondary rc-btn-row', label);
+        b.type = 'button';
+        if (enabled) b.addEventListener('click', onClick);
+        else { b.disabled = true; if (why) withTooltip(b, why); }
+        bg.appendChild(b);
       }
-
-      // REVIEW & FINALIZE. Only meaningful once a round actually has results.
-      if (r.hasResults) {
-        var editFinalizeBtn = el('button', 'rc-btn-secondary rc-btn-row', 'REVIEW & FINALIZE');
-        editFinalizeBtn.type = 'button';
-        if (r.resultsFinalized) {
-          editFinalizeBtn.disabled = true;
-          editFinalizeBtn.title = 'This round is finalized and can no longer be reviewed.';
-          editFinalizeBtn.style.cssText = 'opacity:0.5;';
-        } else {
-          editFinalizeBtn.addEventListener('click', function () {
-            openRoundEditFinalizeModal(token, { roundId: r.roundId, roundLabel: roundLabel, resultsFinalized: r.resultsFinalized }, reload);
-          });
-        }
-        btnGroup.appendChild(editFinalizeBtn);
-      }
-
-      // Left out of the row entirely while locked or not yet raced, same as Import Results above.
-      // Safe to gate on suppressUnstarted here too -- notYetRaced is only ever true when
-      // hasAnySessionImported is false, and the branch below already disables this button in that
-      // exact case anyway.
-      if (!suppressUnstarted) {
-        var delBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Delete Results');
-        delBtn.type = 'button';
-        // Both Delete's own target (_rcEraseRoundIngestion_, Results.gs) and the Erase Round
-        // Ingestion popup already wipe every session type for a round in one shot, so this was
-        // always safe to allow -- it just used to be wrongly gated on the "both types in" flag
-        // instead.
-        if (r.resultsFinalized) {
-          delBtn.disabled = true;
-          delBtn.title = 'This round is finalized and its results can no longer be deleted.';
-          delBtn.style.cssText = 'opacity:0.5;';
-        } else if (r.hasAnySessionImported) {
-          // Plain gray, not red -- opens the erase popup, doesn't erase by
-          // itself (see the Delete Season comment above for why).
-          delBtn.addEventListener('click', function () {
-            openEraseRoundIngestionModal(token, { roundId: r.roundId, roundLabel: roundLabel });
-          });
-        } else {
-          delBtn.disabled = true;
-          delBtn.title = 'No results imported yet for this round.';
-          delBtn.style.cssText = 'opacity:0.5;';
-        }
-        btnGroup.appendChild(delBtn);
-      }
+      btn('Upload Results', !suppressUnstarted && !r.hasResults, lockWhy || 'Results already uploaded for this round. Erase them first to upload again.', function () {
+        openImportXmlModal(token, { roundId: r.roundId, roundLabel: roundLabel, roundNumber: r.roundNumber, eventLabel: (r.eventName || '') + (r.track ? ' (' + r.track + ')' : ''), hasRace: !!r.hasRaceResults, hasQuali: !!(r.hasAnySessionImported && !r.hasRaceResults) });
+      });
+      btn('Erase Results', !suppressUnstarted && !r.resultsFinalized && !!r.hasAnySessionImported,
+        lockWhy || r.resultsFinalized ? 'This round is finalized and its results can no longer be erased.' : 'No results uploaded yet for this round.', function () {
+        openEraseRoundIngestionModal(token, { roundId: r.roundId, roundLabel: roundLabel });
+      });
+      btn('Finalize Results', !suppressUnstarted && !!r.hasResults && !r.resultsFinalized,
+        lockWhy || r.resultsFinalized ? 'This round is already finalized.' : 'Upload both qualifying and race results first.', function () {
+        openRoundEditFinalizeModal(token, { roundId: r.roundId, roundLabel: roundLabel, resultsFinalized: r.resultsFinalized }, reload);
+      });
+      row.appendChild(bg);
     }
-
-    // Buttons live underneath the info (not beside it) so the text can use the full row width.
-    if (btnGroup.childNodes.length) { btnGroup.style.marginTop = '8px'; btnGroup.style.flexWrap = 'wrap'; textCol.appendChild(btnGroup); }
     return row;
   }
 
   // Every season, grouped by the year it was CREATED (not the season's own in-game year/number) --
   // same black-pill-plus-indented-children shape the Cars list uses for Class -> Season.
   function buildSeasonsListFragment(seasons, racesBySeasonId, token, reload) {
-    var wrap = el('div');
+    var wrap = el('div', 'rcd-list');
     if (!seasons.length) {
       wrap.appendChild(el('div', 'rc-dm-empty', 'No seasons yet.'));
       return wrap;
@@ -3026,13 +2925,8 @@
     // most current one -- that's the row that starts with its races already shown on page load.
     var mostCurrentSeasonId = seasons[0] && seasons[0].seasonId;
 
-    years.forEach(function (year) {
-      var yearHead = el('div', 'rc-group-head');
-      yearHead.appendChild(el('span', 'rc-badge-chip rc-badge-graphite', escapeHtml(year)));
-      wrap.appendChild(yearHead);
-      byYear[year].forEach(function (s) {
-        wrap.appendChild(buildSeasonRow(s, racesBySeasonId[s.seasonId] || [], token, reload, s.seasonId === mostCurrentSeasonId));
-      });
+    seasons.forEach(function (s) {
+      wrap.appendChild(buildSeasonRow(s, racesBySeasonId[s.seasonId] || [], token, reload, s.seasonId === mostCurrentSeasonId));
     });
 
     return wrap;
@@ -3207,16 +3101,29 @@
     if (!host) return;
     if (!(currentProfile && (currentProfile.role === 'Admin' || currentProfile.role === 'Organizer'))) { host.innerHTML = ''; return; }
     host.innerHTML = '';
-    var box = el('div', 'rc-ol-section rc-adm');
+    var box = el('div', 'rc-ol-section rc-adm rc-collapsed');
     var head = el('div', 'rc-adm-head');
     var ht = el('div', '');
     ht.appendChild(el('div', 'rc-adm-eyebrow', 'Administration'));
     ht.appendChild(el('div', 'rc-adm-title', 'League tools.'));
-    ht.appendChild(el('p', 'rc-adm-sub', 'Run the season, the calendar, the results and the league news.'));
+    // Loads collapsed: only this header shows until the arrow in front of the subtitle is pressed.
+    var subRow = el('div', 'rc-coll-sub');
+    var toggle = el('button', 'rc-disclosure-btn', ICON_CHEVRON_DOWN);
+    toggle.type = 'button';
+    toggle.setAttribute('aria-expanded', 'false');
+    toggle.setAttribute('aria-label', 'Show administration');
+    toggle.addEventListener('click', function () {
+      var collapsed = box.classList.toggle('rc-collapsed');
+      toggle.classList.toggle('rc-disclosure-open', !collapsed);
+      toggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+    });
+    subRow.appendChild(toggle);
+    subRow.appendChild(el('p', 'rc-adm-sub', 'Run the season, the calendar, the results and the league news.'));
+    ht.appendChild(subRow);
     head.appendChild(ht);
     head.appendChild(el('div', 'rc-adm-icon', ICON_LEAGUE.replace('width="16" height="16"', 'width="26" height="26"')));
     box.appendChild(head);
-    var body = el('div', '');
+    var body = el('div', 'rc-coll-body');
     body.appendChild(buildSpinner('Loading league tools...'));
     box.appendChild(body);
     host.appendChild(box);
@@ -3234,7 +3141,7 @@
       var seasons = data.seasons || [];
       var newsRows = data.news || [];
       var stories = data.stories || [];
-      body.appendChild(sectionHead('Seasons', seasons.length + (seasons.length === 1 ? ' season' : ' seasons')));
+      body.appendChild(sectionHead('Online seasons', seasons.length + (seasons.length === 1 ? ' season' : ' seasons')));
       body.appendChild(buildSeasonsPanel(seasons, data.racesBySeasonId || {}, token, reload, currentProfile.role === 'Admin'));
       var items = newsRows.length + stories.length;
       var newsWrap = el('div', 'rc-adm-news');
@@ -6527,61 +6434,6 @@
     }, function (driversData, reload) {
       return buildDriversPanel(driversData && driversData.success ? driversData.drivers : [], token, reload);
     }, { label: 'Add Driver', onClick: function (reload) { openAddDriverModal(token, reload); } });
-  }
-
-  // League Tools > Statistics: one graphite season pill, then a class pill per class with its 8 season awards
-  // as lines (Season Leader/Champion, Most Dominant, Qualifying Beast, Hard Charger, Cleanest Driver, Ironman,
-  // Most Improved, Wrecking Ball). Same list look as the Tracks/Cars popups.
-  function openSeasonStatisticsModal(token, seasonId) {
-    var modal = showModal('Statistics', { wide: true });
-    modal.body.appendChild(buildSpinner('Loading statistics...'));
-    fetchApi('adminGetSeasonStatistics', { token: token, params: { seasonId: seasonId } }).then(function (data) {
-      modal.body.innerHTML = '';
-      if (!data || !data.success) {
-        modal.body.appendChild(el('div', 'rc-message rc-error', (data && data.message) || 'Could not load statistics.'));
-        return;
-      }
-      var panel = el('div', '');
-      var seasonHead = el('div', 'rc-dm-season-head');
-      seasonHead.style.paddingLeft = '0';
-      var label = (data.seasonNumber ? 'Season ' + data.seasonNumber : 'Season') + (data.seasonName ? ': ' + data.seasonName : '');
-      seasonHead.appendChild(el('span', 'rc-badge-chip rc-badge-graphite', escapeHtml(label.toUpperCase())));
-      panel.appendChild(seasonHead);
-      if (!data.classes || !data.classes.length) {
-        panel.appendChild(el('div', 'rc-stat-empty', 'No race results yet. Statistics appear once a round has been scored.'));
-        modal.body.appendChild(panel);
-        return;
-      }
-      var order = ['Hypercar', 'LMP2', 'LMP3', 'LMGTE', 'LMGT3'];
-      var classes = data.classes.slice().sort(function (x, y) {
-        var xi = order.indexOf(x.className), yi = order.indexOf(y.className);
-        return (xi === -1 ? 99 : xi) - (yi === -1 ? 99 : yi);
-      });
-      classes.forEach(function (c) {
-        var classHead = el('div', 'rc-dm-season-head');
-        classHead.style.paddingLeft = '0';
-        classHead.style.paddingTop = '14px';
-        classHead.appendChild(_rcClassBadge(c.className));
-        panel.appendChild(classHead);
-        (c.awards || []).forEach(function (a) {
-          var winner = (a.drivers || [])[0];
-          var row = el('div', 'rc-stat-row' + (winner ? '' : ' rc-stat-row-empty'));
-          var left = el('div', 'rc-stat-left');
-          left.appendChild(el('div', 'rc-stat-title', escapeHtml(a.title || '')));
-          left.appendChild(el('div', 'rc-stat-narr', escapeHtml(a.narrative || '')));
-          row.appendChild(left);
-          var right = el('div', 'rc-stat-right');
-          right.appendChild(el('div', 'rc-stat-driver', winner ? escapeHtml(winner.name || '') + (winner.carNumber ? ' #' + escapeHtml(String(winner.carNumber)) : '') : '—'));
-          right.appendChild(el('div', 'rc-stat-value', escapeHtml(a.stat || '')));
-          row.appendChild(right);
-          panel.appendChild(row);
-        });
-      });
-      modal.body.appendChild(panel);
-    }).catch(function () {
-      modal.body.innerHTML = '';
-      modal.body.appendChild(el('div', 'rc-message rc-error', 'Could not load statistics. Try again in a moment.'));
-    });
   }
 
   function openTracksModal(token) {
