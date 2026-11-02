@@ -968,11 +968,10 @@ body.rc-league-page.rcc-page .rcl-hero {
 
 /* Gold instead of blue in the ticker, hero and black link bar (Matt, 2026-11-02). Hero text: white title, gold "Season N", red
    eyebrow and slash, white season name. */
+body.rc-league-page.rcc-page .rcl-ticker-wrap,
 body.rc-league-page.rcc-page .rcl-hero { --rc-red: #e0b64c; }
-/* The ticker's accents are red (Matt, 2026-11-02): label, line under it, category tags, welcome line and dots. */
-body.rc-league-page.rcc-page .rcl-ticker-wrap { --rc-red: #F21B0C; }
-.rcc-page .rcl-ticker-label { color: var(--rc-white); }
-.rcc-page .rcl-ticker-item-tag, .rcc-page .rcc-ticker-lead { color: #F21B0C; }
+.rcc-page .rcl-ticker-label { color: #141416; }
+.rcc-page .rcl-ticker-item-tag, .rcc-page .rcc-ticker-lead { color: #e0b64c; }
 .rcc-page .rcc-actionbar { border-bottom-color: #e0b64c; }
 .rcc-page .rcl-hero-title-hub { color: var(--rcl-ink); -webkit-text-stroke-color: var(--rcl-ink); }
 .rcc-page .rcl-hero-season-num { color: #e0b64c; }
