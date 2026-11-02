@@ -936,3 +936,35 @@ body.rcc-page { --rcc-true-red: #F21B0C; }
 .rcc-page .rcc-mfr-me { color: #5f7d99; font-weight: 700; }
 /* Help popup keeps its red circles, accents and links (Matt). */
 .rcc-page .rcc-help-body { --rc-red: #F21B0C; --rc-red-dark: #c81509; }
+
+/* -------------------------------------------------------------------- */
+/* Ticker and hero in the League Hub's dark look (Matt, 2026-11-02)      */
+/* Same background, banner photo, text colors and shadows as league.css; */
+/* only the accents stay the Championship's own (blue-gray bar and label, */
+/* light navy tags, red eyebrow and slash).                               */
+/* -------------------------------------------------------------------- */
+body.rc-league-page.rcc-page .rcl-ticker-wrap,
+body.rc-league-page.rcc-page .rcl-hero {
+  --rcl-bg: #0a0a0b;
+  --rcl-bg-raised: #141416;
+  --rcl-bg-raised-2: #1b1c1f;
+  --rcl-line: #2c2d31;
+  --rcl-line-bright: #45474d;
+  --rcl-ink: #f2f2f0;
+  --rcl-ink-dim: #b4b7bd;
+  --rcl-ink-faint: #7d8088;
+}
+/* Banner photo: 90% (the hub's own is 50%). */
+.rcc-page .rcl-hero::before { opacity: 0.9; }
+/* Title and season line: the hub's colors and shadows. */
+.rcc-page .rcl-hero-title { text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45); }
+.rcc-page .rcl-hero-title-hub { color: var(--rcl-ink); -webkit-text-stroke-color: var(--rcl-ink); }
+.rcc-page .rcl-hero-season { text-shadow: 0 2px 4px rgba(0, 0, 0, 0.45); }
+.rcc-page .rcl-hero-season-num { color: var(--rcc-accent-light); }
+/* Seat line under the season line (team, car, maker logo): light text; the black maker logos are turned white. */
+.rcc-page .rcl-hero .rc-cs-team-name, .rcc-page .rcl-hero .rcr-who-team, .rcc-page .rcl-hero .rcr-who-driver { color: var(--rcl-ink); }
+.rcc-page .rcl-hero .rc-cs-car-line, .rcc-page .rcl-hero .rcc-hero-meta { color: var(--rcl-ink-dim); }
+.rcc-page .rcl-hero .rc-cs-maker-logo, .rcc-page .rcl-ticker-wrap .rcl-ticker-driver-logo { filter: brightness(0) invert(1); }
+/* Ticker: light entries on the dark strip; category tags and the welcome line in the light accent blue. */
+.rcc-page .rcl-ticker-item-tag, .rcc-page .rcc-ticker-lead { color: var(--rcc-accent-light); }
+.rcc-page .rcl-ticker-driver-rank, .rcc-page .rcc-ticker-plain { color: var(--rcl-ink); }
