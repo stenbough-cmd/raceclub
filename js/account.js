@@ -273,7 +273,6 @@
   // unconditionally up front, so they don't need an entry here).
   var RC_LAZY_SECTION_RENDERERS = {
     admin: function (token) { renderAdminSection(token); },
-    league: function (token) { renderLeagueManagementSection(token); },
     stewarding: function (token) { renderStewardingSection(token); }
   };
 
@@ -384,12 +383,7 @@
     staffLabel.className = 'rc-nav-group-label';
     staffLabel.textContent = 'Staff';
     nav.appendChild(staffLabel);
-    // League Management is real content now (renderLeagueManagementSection), same
-    // lazy-fetch-on-click pattern as Admin.
-    var leagueBtn = makeNavButton('league', 'League Tools', ICON_LEAGUE, 'rc-nav-league', false, function () {
-      showLazySection('league', currentToken);
-    });
-    nav.appendChild(leagueBtn);
+    // League Tools now lives on the Dashboard, in the ADMINISTRATION container (renderLeagueManagementSection).
     // Sits right below League Tools, Steward-and-above (same Driver<Steward<Organizer<Admin
     // cumulative access hierarchy every other gated nav item on this page already follows) -- and
     // unlike League Tools, a Steward DOES see this one.
@@ -729,6 +723,7 @@
     // the Apps Script call below, and shown as soon as it is here (or the "no season yet" panel when there is none).
     try { if (typeof rcPrefetchChampionshipPage === 'function') rcPrefetchChampionshipPage({ token: token, spinner: buildSpinner }, profile.profileId); } catch (preErr) { /* ignore */ }
     var champHost = el('div', 'margin-top:20px;');
+    var admHost = el('div', 'margin-top:20px;'); admHost.id = 'rc-adm-host';
     var champBody = el('div', '');
     champHost.appendChild(champBody);
     function buildChampPanel(page) {
@@ -800,6 +795,7 @@
     Promise.all([_rcDashboardAllSettled_(dashboardData), champReady.catch(function () {})]).then(function () {
       spinner.remove();
       section.appendChild(champHost);
+      if (profile.role === 'Admin' || profile.role === 'Organizer') { section.appendChild(admHost); currentProfile = currentProfile || profile; renderLeagueManagementSection(token); }
       rows = paintRows(dashboardData, onRegisteredRebuild);
     });
   }
@@ -2367,7 +2363,7 @@
               // so this uses the same rcReloadAfterSave() mechanism every other save on the site
               // goes through (a real navigation/reload, landing back on League Tools), rather than
               // just refreshing this one panel.
-              rcActiveSectionId = 'league';
+              rcActiveSectionId = 'dashboard';
               rcReloadAfterSave();
             }).catch(function () {
               showToast('Could not reach the server -- season not ended.', 'error');
@@ -2687,7 +2683,7 @@
   // own .rc-group-row class since it's indented one level deeper (year -> season) than those lists
   // ever go.
   function buildSeasonRow(s, races, token, reload, defaultExpanded) {
-    var container = el('div', null);
+    var container = el('div', 'rc-adm-season');
     var row = el('div', 'rc-group-row rc-season-record');
     var info = el('div', 'rc-dm-row-info');
     var textCol = el('div', null);
@@ -3204,40 +3200,50 @@
     });
   }
 
+  // ADMINISTRATION container on the Dashboard (Organizer and Admin only). It holds what used to be the League Tools page: the
+  // seasons (with their race calendars) and League News. Same container look as Online League / Single Player, graphite accent.
   function renderLeagueManagementSection(token) {
-    var section = document.getElementById('rc-section-league');
-    if (!section) return;
-    section.innerHTML = '';
-    // Page-level guard. The server enforces it regardless.
-    if (!(currentProfile && (currentProfile.role === 'Admin' || currentProfile.role === 'Organizer'))) {
-      section.appendChild(el('h2', 'margin-top:0;', 'League Tools'));
-      section.appendChild(buildEmptyStatePanel('Access Restricted', 'League Tools requires Organizer or Admin access.'));
-      return;
+    var host = document.getElementById('rc-adm-host');
+    if (!host) return;
+    if (!(currentProfile && (currentProfile.role === 'Admin' || currentProfile.role === 'Organizer'))) { host.innerHTML = ''; return; }
+    host.innerHTML = '';
+    var box = el('div', 'rc-ol-section rc-adm');
+    var head = el('div', 'rc-adm-head');
+    var ht = el('div', '');
+    ht.appendChild(el('div', 'rc-adm-eyebrow', 'Administration'));
+    ht.appendChild(el('div', 'rc-adm-title', 'League tools.'));
+    ht.appendChild(el('p', 'rc-adm-sub', 'Run the season, the calendar, the results and the league news.'));
+    head.appendChild(ht);
+    head.appendChild(el('div', 'rc-adm-icon', ICON_LEAGUE.replace('width="16" height="16"', 'width="26" height="26"')));
+    box.appendChild(head);
+    var body = el('div', '');
+    body.appendChild(buildSpinner('Loading league tools...'));
+    box.appendChild(body);
+    host.appendChild(box);
+
+    function sectionHead(title, count) {
+      var h = el('div', 'rc-adm-sec-head');
+      h.appendChild(el('div', 'rc-adm-sec-title', title));
+      if (count) h.appendChild(el('div', 'rcd-count-pill', count));
+      return h;
     }
-
-    // Nothing else renders until the season list has actually loaded -- no flash of buttons
-    // appearing before the list underneath them is ready.
-    section.appendChild(buildPageSpinner('Loading league tools...'));
-
+    var reload = function () { renderLeagueManagementSection(token); };
     fetchApi('adminListSeasonsWithRaces', { token: token }).then(function (data) {
-      if (!data.success) {
-        section.innerHTML = '';
-        section.appendChild(el('h2', 'margin-top:0;', 'League Tools'));
-        section.appendChild(el('p', 'color:var(--rc-red);', 'Could not load seasons.'));
-        return;
-      }
+      body.innerHTML = '';
+      if (!data.success) { body.appendChild(el('p', 'color:var(--rc-red);', 'Could not load seasons.')); return; }
       var seasons = data.seasons || [];
-      var racesBySeasonId = data.racesBySeasonId || {};
       var newsRows = data.news || [];
-
-      section.innerHTML = '';
-      section.appendChild(el('h2', 'margin-top:0;', 'League Tools'));
-      section.appendChild(buildSeasonsPanel(seasons, racesBySeasonId, token, function () { renderLeagueManagementSection(token); }, !!(currentProfile && currentProfile.role === 'Admin')));
-      section.appendChild(buildLeagueNewsPanel(newsRows, token, function () { renderLeagueManagementSection(token); }, data.stories || []));
+      var stories = data.stories || [];
+      body.appendChild(sectionHead('Seasons', seasons.length + (seasons.length === 1 ? ' season' : ' seasons')));
+      body.appendChild(buildSeasonsPanel(seasons, data.racesBySeasonId || {}, token, reload, currentProfile.role === 'Admin'));
+      var items = newsRows.length + stories.length;
+      var newsWrap = el('div', 'rc-adm-news');
+      newsWrap.appendChild(sectionHead('League news', items + (items === 1 ? ' post' : ' posts')));
+      newsWrap.appendChild(buildLeagueNewsPanel(newsRows, token, reload, stories));
+      body.appendChild(newsWrap);
     }).catch(function () {
-      section.innerHTML = '';
-      section.appendChild(el('h2', 'margin-top:0;', 'League Tools'));
-      section.appendChild(el('p', 'color:var(--rc-red);', 'Could not reach the server.'));
+      body.innerHTML = '';
+      body.appendChild(el('p', 'color:var(--rc-red);', 'Could not reach the server.'));
     });
   }
 
@@ -8553,7 +8559,6 @@
     // These three items always render now; this block only decides which ones are clickable for
     // this driver, via disabled + a tooltip explaining why, instead of removing them from the
     // sidebar.
-    setNavAccess('rc-nav-league', profile.role === 'Admin' || profile.role === 'Organizer', 'Requires Organizer or Admin access.');
     // Stewarding -- Steward and above (cumulative hierarchy: Steward < Organizer < Admin), same
     // level Protests RULING already requires server-side (Protests.gs).
     setNavAccess('rc-nav-stewarding', profile.role === 'Admin' || profile.role === 'Organizer' || profile.role === 'Steward', 'Requires Steward, Organizer, or Admin access.');
