@@ -2689,16 +2689,19 @@ function _rccPageShell(showParts) {
   if (bar) bar.style.display = showParts ? '' : 'none';
 }
 
-// One container under the site header and nothing else: no ticker, hero, link bar or panels (Matt, 2026-11-01 for the
+// One container under the site header and the black link bar, nothing else: no ticker, hero or panels (Matt, 2026-11-01 for the
 // switched-off message; the logged-out sign-up message uses the same layout, 2026-11-02).
 function _rccShowOnlyMessage(panelId, title, text, actions) {
   _rccClearLoadError();
   _rccHidePageLoader();
   _rccUnlockScroll();
-  ['.rcl-ticker-wrap', '.rcl-hero', '#rcc-actionbar'].forEach(function (sel) {
+  ['.rcl-ticker-wrap', '.rcl-hero'].forEach(function (sel) {
     var node = document.querySelector(sel);
     if (node) node.style.display = 'none';
   });
+  // The black link bar stays under the site header (Matt, 2026-11-02): Log In or Dashboard, League Hub, Championship.
+  var bar = document.getElementById('rcc-actionbar');
+  if (bar) { rccRenderActionBar(null); bar.style.display = ''; }
   var main = document.querySelector('.rcl-main');
   if (!main) { _rccReveal(); return; }
   if (document.getElementById(panelId)) { _rccReveal(); return; }
