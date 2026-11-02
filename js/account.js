@@ -431,6 +431,13 @@
     // rcReloadAfterSave() reads this to return a popup save to the same page it was opened from
     // instead of always Dashboard.
     if (target) rcActiveSectionId = id;
+    // The title bar under the header names the open section.
+    var barTitle = document.getElementById('rc-account-navbar-title');
+    if (barTitle) {
+      var navBtn = document.querySelector('.rc-nav-item[data-section="' + id + '"]');
+      var label = navBtn ? navBtn.textContent.replace(/\s+/g, ' ').trim() : '';
+      barTitle.textContent = label || (id.charAt(0).toUpperCase() + id.slice(1));
+    }
   }
 
   // ---------------------------------------------------------------------
@@ -606,7 +613,7 @@
 
     Promise.all([_rcDashboardAllSettled_(dashboardData), champReady.catch(function () {})]).then(function () {
       spinner.remove();
-      section.appendChild(el('h2', null, 'Online League Dashboard'));
+      section.appendChild(el('h2', null, 'Online League'));
       section.appendChild(champHost);
       rows = paintRows(dashboardData, onRegisteredRebuild);
     });

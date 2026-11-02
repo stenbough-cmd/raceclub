@@ -8,18 +8,18 @@
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="assets/images/favicon-32.png">
 <link rel="apple-touch-icon" href="assets/images/apple-touch-icon.png">
-<link rel="stylesheet" href="css/style.css?v=0.9.55">
-<link rel="stylesheet" href="css/helmet.css?v=0.9.55">
-<script src="js/version.js?v=0.9.55"></script>
-<script src="js/img-loader.js?v=0.9.55"></script>
-<script src="js/api.js?v=0.9.55"></script>
-<script src="js/auth.js?v=0.9.55"></script>
-<script src="js/reference-data.js?v=0.9.55"></script>
-<script src="js/rulebook-content.js?v=0.9.55"></script>
-<script src="js/header.js?v=0.9.55"></script>
-<script src="js/helmet.js?v=0.9.55"></script>
-<script src="js/helmet-editor.js?v=0.9.55"></script>
-<script src="js/championship-dashboard.js?v=0.9.55"></script>
+<link rel="stylesheet" href="css/style.css?v=0.9.56">
+<link rel="stylesheet" href="css/helmet.css?v=0.9.56">
+<script src="js/version.js?v=0.9.56"></script>
+<script src="js/img-loader.js?v=0.9.56"></script>
+<script src="js/api.js?v=0.9.56"></script>
+<script src="js/auth.js?v=0.9.56"></script>
+<script src="js/reference-data.js?v=0.9.56"></script>
+<script src="js/rulebook-content.js?v=0.9.56"></script>
+<script src="js/header.js?v=0.9.56"></script>
+<script src="js/helmet.js?v=0.9.56"></script>
+<script src="js/helmet-editor.js?v=0.9.56"></script>
+<script src="js/championship-dashboard.js?v=0.9.56"></script>
 </head>
 <body>
 
@@ -29,6 +29,12 @@
      renderHeader() index.html already calls on load, so navigating here from anywhere else shows
      the same avatar without a blank flash while the real check happens in the background. -->
 <script>renderHeader();</script>
+
+<!-- Title bar parked under the header, same look as the League Hub / Championship / Driver Profile bars. The title follows the
+     section that is open (Dashboard, League Tools, Stewarding...), set by showSection() in js/account.js. -->
+<nav class="rc-account-navbar" id="rc-account-navbar" aria-label="Account">
+  <div class="rc-account-navbar-inner"><div class="rc-account-navbar-title" id="rc-account-navbar-title">Dashboard</div></div>
+</nav>
 
 <!-- Mobile-only topbar. -->
 <div class="rc-topbar" id="rc-topbar">
@@ -88,8 +94,8 @@
 </footer>
 <script>rcWireFooterLegalLink();</script>
 
-<script src="js/edit-profile.js?v=0.9.55"></script>
-<script src="js/car-picker.js?v=0.9.55"></script>
-<script src="js/account.js?v=0.9.55"></script>
+<script src="js/edit-profile.js?v=0.9.56"></script>
+<script src="js/car-picker.js?v=0.9.56"></script>
+<script src="js/account.js?v=0.9.56"></script>
 </body>
 </html>

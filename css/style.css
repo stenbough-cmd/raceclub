@@ -3357,3 +3357,10 @@ button.rc-switch { display: inline-flex; align-items: center; gap: 12px; width: 
 
 /* Help popup on the Account page: as large as the Helmet Designer's (Matt, 2026-11-02). */
 .rc-modal.rc-help-modal { max-width: 1120px; width: calc(100% - 32px); }
+
+/* ===== ACCOUNT TITLE BAR (Matt, 2026-11-02) ===== */
+/* Same dark bar as the League Hub / Driver Profile bars: pinned 1px under the 70px header, same dark line, same title type. */
+.rc-account-navbar { position: sticky; top: 69px; z-index: 50; margin-top: 70px; background: #1b1c1f; border-bottom: 1px solid #2c2d31; }
+.rc-account-navbar-inner { max-width: 1280px; margin: 0 auto; padding: 0 16px; box-sizing: border-box; display: flex; align-items: center; min-height: 48px; }
+.rc-account-navbar-title { font-family: var(--rc-font-heading); font-size: 13px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: #ffffff; white-space: nowrap; }
+.rc-account-navbar + .rc-shell { padding-top: 0; }
