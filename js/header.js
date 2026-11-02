@@ -430,7 +430,9 @@ function rcWireBarTitle_(bar, titleEl, aboveEl) {
     var r = a.getBoundingClientRect();
     // Not on screen yet (hidden or not laid out, e.g. while the page is still loading): stay transparent.
     if (!r.width && !r.height) { t.style.opacity = '0'; return; }
-    var p = (130 - r.bottom) / 60;
+    // The banner above no longer scrolls (it stays pinned), so the fade follows the bar itself: it is 60px below its parked spot (69px) at 0
+    // and parked at 1.
+    var p = (130 - bar.getBoundingClientRect().top) / 60;
     t.style.opacity = String(Math.max(0, Math.min(1, p)));
   }
   bar._rcTitleUpdate = update;

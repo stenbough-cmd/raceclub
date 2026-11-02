@@ -2650,3 +2650,10 @@ a.rcl-navbar-link.rcl-navbar-active, a.rcl-navbar-link.rcl-navbar-active:hover {
 .rcl-main { padding-left: 16px; padding-right: 16px; }
 .rcl-hero { padding-left: 16px; padding-right: 16px; }
 .rcl-navbar-inner, .rcc-actionbar-inner { padding-left: 16px; padding-right: 16px; }
+
+/* ===== HEADER SECTION STAYS PUT (Matt, 2026-11-02) ===== */
+/* The highlights ticker and the title banner are pinned under the site header (like the home page banner). The link bar, the page
+   content and the footer sit in .rcl-cover, which has the page background, so they slide up OVER the pinned banner while the link bar
+   parks under the header (it is sticky inside .rcl-cover). */
+.rcl-head-pin { position: sticky; top: 70px; z-index: 1; }
+.rcl-cover { position: relative; z-index: 2; background-color: inherit; }
