@@ -227,6 +227,8 @@ function _rcBuildAccountMenuSectionLinks(role) {
   if (champId) {   // every signed-in member sees the link (Matt, 2026-10-25)
     html += '<a class="rc-header-menu-item" href="championship.html?id=' + encodeURIComponent(champId) + '">' + _rcMenuIcon_('champ') + '<span>Championship</span>' + EXT + '</a>';
   }
+  // Driver Profiles: the member picker page (profile.html with no driver chosen opens the choose-a-member dropdown).
+  html += '<a class="rc-header-menu-item" href="profile.html">' + _rcMenuIcon_('profile') + '<span>Driver Profiles</span>' + EXT + '</a>';
   // no Championship access (no +): the link is simply not there (Matt, 2026-10-24)
   var staff = '';
   if (role === 'Admin' || role === 'Organizer') staff += link('league', 'League Tools', 'league');
