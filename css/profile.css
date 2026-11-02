@@ -352,11 +352,11 @@ body.rc-league-page .rc-profile-navbar .rcl-navbar-season { background: #1b1c1f;
 .rcc-page .rcl-panel-head { margin: 0 24px; padding: 20px 0 12px; background: none; border-bottom: 2px solid var(--rc-red); }
 .rcc-page .rcl-panel-body { padding: 20px 24px 24px; }
 .rcc-page .rdp-form-body { padding: 20px 24px 24px; }
-.rcc-page .rcl-panel-title, .rcc-page .rdp-head-avatar .rcl-panel-title, .rcc-page .rdp-head-season .rcl-panel-title, .rcc-page .rdp-head-team .rcl-panel-title { font-size: 18px; letter-spacing: 0.04em; color: var(--rc-carbon); text-shadow: none; }
+.rcc-page .rcl-panel-title, .rcc-page .rdp-head-avatar .rcl-panel-title, .rcc-page .rdp-head-season .rcl-panel-title, .rcc-page .rdp-head-team .rcl-panel-title { font-size: 18px; letter-spacing: 0.04em; color: #66849D; text-shadow: none; }
 .rcc-page .rcl-panel-title::before { content: none; }
 .rcc-page .rdp-head-pic::before { display: none; }
 .rcc-page .rdp-panel-note { font-size: 12px; font-weight: 700; letter-spacing: 0.06em; color: var(--rc-steel); }
-.rcc-page .rdp-helmets-title { font-size: 18px; letter-spacing: 0.04em; }
+.rcc-page .rdp-helmets-title { font-size: 18px; letter-spacing: 0.04em; color: #66849D; }
 .rcc-page .rdp-helmets-title::before { content: none; }
 /* tiles: warm grey, no border, no gradient */
 .rcc-page .rdp-ach, .rcc-page .rdp-tile, .rcc-page .rdp-team, .rcc-page .rdp-rival-season { background: var(--rc-offwhite); border: 0; border-radius: 10px; box-shadow: none; }
