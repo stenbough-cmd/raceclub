@@ -3518,6 +3518,9 @@ function _rclShowLoggedOut_() {
     box.className = 'rcl-panel rcl-row-full';
     box.id = 'rcl-signup-panel';
     var st = document.createElement('div'); st.className = 'rcl-empty-state';
+    var ic = document.createElement('div'); ic.className = 'rcl-empty-state-icon';
+    ic.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><line x1="5.6" y1="5.6" x2="18.4" y2="18.4"></line></svg>';
+    st.appendChild(ic);
     var t = document.createElement('div'); t.className = 'rcl-empty-state-title'; t.textContent = 'Sign Up To View League Hub';
     var d = document.createElement('p'); d.className = 'rcl-empty-state-subtitle';
     d.textContent = 'The League Hub is for Race Club members. Create a free account or log in to see standings, race results, news and the full season calendar.';

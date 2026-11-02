@@ -2347,18 +2347,12 @@
   function openEditProfileModal(profile, token) {
     // The form itself lives in js/edit-profile.js (one copy for every page). Account.html gives it its own popup shell, element
     // helper and Change Password section, and reloads the section the member is on after a save.
-    // The Dashboard comes from a public data file, which never holds an email address. This popup is one of the two places that
-    // does show it, so it asks Apps Script for the member's own profile first (falling back to the file's copy if that fails).
-    var host = {
+    _rcEPOpenEditProfileModal(profile, token, {
       el: el,
       showModal: showModal,
       passwordSection: passwordChangeSection,
       afterSave: rcReloadAfterSave
-    };
-    fetchApi('getProfile', { token: token }).then(function (res) {
-      var full = (res && res.success && res.profile) ? res.profile : profile;
-      _rcEPOpenEditProfileModal(full, token, host);
-    }).catch(function () { _rcEPOpenEditProfileModal(profile, token, host); });
+    });
   }
 
   // ---------------------------------------------------------------------

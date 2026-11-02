@@ -16,16 +16,16 @@
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="assets/images/favicon-32.png">
 <link rel="apple-touch-icon" href="assets/images/apple-touch-icon.png">
-<link rel="stylesheet" href="css/style.css?v=0.9.54">
-<script src="js/version.js?v=0.9.54"></script>
-<script src="js/img-loader.js?v=0.9.54"></script>
-<script src="js/api.js?v=0.9.54"></script>
-<script src="js/auth.js?v=0.9.54"></script>
-<script src="js/header.js?v=0.9.54"></script>
+<link rel="stylesheet" href="css/style.css?v=0.9.55">
+<script src="js/version.js?v=0.9.55"></script>
+<script src="js/img-loader.js?v=0.9.55"></script>
+<script src="js/api.js?v=0.9.55"></script>
+<script src="js/auth.js?v=0.9.55"></script>
+<script src="js/header.js?v=0.9.55"></script>
 <!-- reference-data.js + edit-profile.js -- let the header's Edit Profile menu item open its
      popup in place on this page instead of navigating to Account.html first. -->
-<script src="js/reference-data.js?v=0.9.54"></script>
-<script src="js/edit-profile.js?v=0.9.54"></script>
+<script src="js/reference-data.js?v=0.9.55"></script>
+<script src="js/edit-profile.js?v=0.9.55"></script>
 </head>
 <body>
 
@@ -606,6 +606,13 @@ var RC_DATA_BASE = 'https://stenbough-cmd.github.io/race-club-data/website/data/
       return !!(window.matchMedia && window.matchMedia('(orientation: portrait) and (max-aspect-ratio: 3/5)').matches);
     }
 
+    // Cars per class by window shape: 1 in tall portrait (phones), 2 in portrait (tablets), 3 in landscape.
+    function perClassNow_() { return isTallPortrait_() ? 1 : (isPortrait_() ? 2 : 3); }
+    var gridData_ = null, gridPer_ = 0;
+    window.addEventListener('resize', function () {
+      if (gridData_ && perClassNow_() !== gridPer_) renderGrid_(gridData_);
+    });
+
     function shuffle_(arr) {
       for (var i = arr.length - 1; i > 0; i--) {
         var j = Math.floor(Math.random() * (i + 1));
@@ -618,7 +625,9 @@ var RC_DATA_BASE = 'https://stenbough-cmd.github.io/race-club-data/website/data/
 
     // One row per class (the file lists them top to bottom), 3 random cars each (2 in portrait), cycling through the whole class.
     function renderGrid_(data) {
-      var perClass = isTallPortrait_() ? 1 : (isPortrait_() ? 2 : 3);   // one row per class: 3 cards in landscape, 2 in portrait (tablets), 1 in tall portrait (phones)
+      gridData_ = data;
+      var perClass = perClassNow_();
+      gridPer_ = perClass;   // one row per class: 3 cards in landscape, 2 in portrait (tablets), 1 in tall portrait (phones)
       gridState_ = [];
 
       rowEl.innerHTML = '';
@@ -758,6 +767,6 @@ var RC_DATA_BASE = 'https://stenbough-cmd.github.io/race-club-data/website/data/
 
 </div>
 
-<script src="js/index-showcase.js?v=0.9.54"></script>
+<script src="js/index-showcase.js?v=0.9.55"></script>
 </body>
 </html>
