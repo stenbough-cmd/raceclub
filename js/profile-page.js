@@ -468,7 +468,9 @@
     rbody.appendChild(detailsLine);
     var detailsHost = el('div');
     rbody.appendChild(detailsHost);
-    rbody.appendChild(catLine('Race Report'));
+    var reportLine = catLine('Race Report');
+    reportLine.style.display = 'none';
+    rbody.appendChild(reportLine);
     var raceHost = el('div');
     rbody.appendChild(raceHost);
     var token = 0;
@@ -500,6 +502,7 @@
         raceHost.innerHTML = '';
         detailsHost.innerHTML = '';
         detailsLine.style.display = 'none';
+        reportLine.style.display = 'none';
         raceHost.appendChild(emptyBlock('No Races Yet', 'No finalized races for this driver in this season.'));
         return;
       }
@@ -518,9 +521,11 @@
       if (!raceSel.value) {
         detailsHost.innerHTML = '';
         detailsLine.style.display = 'none';
+        reportLine.style.display = 'none';
         raceHost.appendChild(emptyBlock('No Data To Display', 'Choose a round for specific race details.'));
         return;
       }
+      reportLine.style.display = '';
       var curSeason = seasons[Number(seasonSel.value)];
       var curRound = (curSeason.rounds || []).filter(function (r) { return r.roundId === raceSel.value; })[0];
       detailsLine.style.display = '';

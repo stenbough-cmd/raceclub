@@ -452,6 +452,7 @@ function _rcrDraw(body, dr, mode, prof) {
 
   // 1. Race at a glance.
   var g = dr.glance || {};
+  if (prof) body.appendChild(_rccText('div', 'rcr-block-title rcr-hl-title', 'Round Highlights'));
   var tiles = _rccEl('div', 'rcr-tiles');
   var gained = g.grid && g.finish ? g.grid - g.finish : null;
   tiles.appendChild(_rcrTile('Start to Finish', (g.grid ? 'P' + g.grid : '—') + ' → ' + (g.finish ? 'P' + g.finish : '—'),

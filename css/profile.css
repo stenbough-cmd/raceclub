@@ -266,7 +266,7 @@ a.rdp-rival-name:hover { text-decoration: underline; }
 .rcc-page .rdp-tip b { color: #fff; }
 .rcc-page .rdp-tip-line { color: #cbd2db; }
 .rcc-page .rdp-grid-line { stroke: #e7eaee; }
-.rcc-page .rdp-light { background: #fff; padding: 18px 20px; border-radius: 10px; border: 1px solid var(--rc-silver); }
+.rcc-page .rdp-light { background: transparent; padding: 0; border-radius: 0; border: 0; }
 .rcc-page .rdp-laps .rcc-laps-row { border-bottom-color: var(--rcl-line); }
 .rcc-page .rdp-laps .rcc-laps-best { color: #8150c0; }
 .rcc-page .rdp-story-more,
@@ -387,4 +387,16 @@ body.rc-league-page .rc-profile-navbar .rcl-navbar-season { background: #1b1c1f;
 .rcc-page .rdp-team .rdp-team-name { text-align: center; }
 .rcc-page .rdp-team .rdp-team-model { justify-content: center; }
 .rcc-page .rdp-team .rdp-team-car { margin-left: auto; margin-right: auto; }
-@media (max-width: 600px) { .rcc-page .rdp-light { padding: 14px 12px; } }
+
+/* One header style on this page: the former divider lines and sub-headers (Season Stats, Race Details, Race Report, Driver Report, and the
+   Driver Report's own Round Highlights / Race Position / Tyre / Fuel / Pit / Pace / Contacts / Qualifying titles) are flat Steel Blue bars. */
+.rcc-page .rdp-catline, .rcc-page .rdp-race-split .rdp-catline, .rcc-page .rdp-race-split .rcc-laps-events .rdp-catline { display: block; margin: 26px 0 16px; }
+.rcc-page .rdp-catline::before, .rcc-page .rdp-catline::after { content: none; }
+.rcc-page .rdp-catline-text, .rcc-page .rdp-light .rcr-block-title {
+  display: block; background: #66849D; color: #fff; font-family: var(--rc-font-heading); font-size: 13px; font-weight: 800; letter-spacing: 0.08em;
+  text-transform: uppercase; text-align: left; padding: 9px 14px 8px; border-radius: 6px; border-bottom: 2px solid var(--rc-red);
+}
+.rcc-page .rdp-light .rcr-block { border-top: 0; padding-top: 0; margin-bottom: 26px; }
+.rcc-page .rdp-light .rcr-block-head { margin-bottom: 12px; }
+.rcc-page .rdp-light .rcr-block-title { margin-bottom: 6px; }
+.rcc-page .rdp-light .rcr-hl-title { margin-bottom: 14px; }
