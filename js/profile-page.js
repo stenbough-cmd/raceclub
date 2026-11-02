@@ -476,7 +476,7 @@
       summary.innerHTML = '';
       var tiles = el('div', 'rdp-tiles');
       tiles.appendChild(tile('Races', num(s.races), ''));
-      tiles.appendChild(tile('Rank', s.position ? ord(s.position) : '—', s.classSize ? 'of ' + s.classSize + ' in class' : ''));
+      tiles.appendChild(tile('Rank', (s.position && Number(s.races) > 0) ? ord(s.position) : '—', s.classSize ? 'of ' + s.classSize + ' in class' : ''));
       tiles.appendChild(tile('Points', num(s.points), ''));
       tiles.appendChild(tile('Wins', num(s.wins), ''));
       tiles.appendChild(tile('Podiums', num(s.podiums), ''));
@@ -755,7 +755,7 @@
       card.appendChild(seatNameEl(seat));
       card.appendChild(seatModelEl(seat));
       var stats = el('div', 'rdp-team-stats');
-      [[t.position ? ord(t.position) : '—', 'Champ.'], [num(t.wins), 'Wins'], [num(t.podiums), 'Podiums']].forEach(function (p) {
+      [[(t.position && Number(t.races) > 0) ? ord(t.position) : '—', 'Champ.'], [num(t.wins), 'Wins'], [num(t.podiums), 'Podiums']].forEach(function (p) {
         var st = el('div', 'rdp-team-stat');
         st.appendChild(tx('b', '', p[0]));
         st.appendChild(tx('span', '', p[1]));

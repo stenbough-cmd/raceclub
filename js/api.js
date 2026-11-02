@@ -117,7 +117,8 @@ function _rcStagedFile_(name) {
   if (!_rcStagedFiles_[name]) {
     _rcStagedFiles_[name] = fetch(RC_STAGED_BASE + name + '.json', { cache: 'no-cache' }).then(function (r) {
       if (!r.ok) throw new Error('RC_STAGED_' + r.status);
-      return r.json();
+      // The signed-in member takes the place of one made-up driver (see _rcStagedSwap_), so they appear in the staged results.
+      return r.text().then(function (t) { return JSON.parse(_rcStagedSwap_(t)); });
     });
     _rcStagedFiles_[name].catch(function () { delete _rcStagedFiles_[name]; });
   }
@@ -127,6 +128,129 @@ function _rcStagedRoundFile_(roundId) {
   if (!/^CRND-\d{4}$/.test(String(roundId || ''))) return Promise.resolve(null);
   return _rcStagedFile_('round-' + roundId).catch(function () { return null; });
 }
+
+// ---- The signed-in member inside the staged league -------------------------------------------------
+// While the Staged League Hub is ON, one made-up driver (RC-90012, mid-pack) is swapped for the signed-in member: the id and
+// the name are replaced in every staged file as it is read, so the member shows in the hub, the results, the recaps and their own
+// profile page. Nothing is written anywhere; it only changes what this browser draws.
+var RC_STAGED_ME_ID = 'RC-90012';
+var RC_STAGED_ME_NAME = 'Kasper Nieminen';
+function _rcStagedMe_() {
+  try {
+    var pc = (typeof getProfileCache === 'function') ? getProfileCache() : null;
+    if (pc && pc.profileId && pc.displayName) return { id: String(pc.profileId), name: String(pc.displayName).trim() };
+  } catch (err) { /* no cache: no swap */ }
+  return null;
+}
+function _rcStagedSwap_(text) {
+  var me = _rcStagedMe_();
+  if (!me) return text;
+  var esc = function (x) { return JSON.stringify(x).slice(1, -1); };
+  var parts = me.name.split(/\s+/);
+  var first = parts[0], last = parts.length > 1 ? parts.slice(1).join(' ') : parts[0];
+  return text.split(RC_STAGED_ME_ID).join(me.id).split(RC_STAGED_ME_NAME).join(esc(me.name))
+    .replace(/\bNieminen\b/g, function () { return esc(last); }).replace(/\bKasper\b/g, function () { return esc(first); });
+}
+
+// Made-up protests for the staged league: some filed by the member, some against them, and some between other drivers.
+// Same shapes the real protest calls answer with, so the dashboard tile, the Protests popup and the Stewarding docket draw as they will live.
+var _rcStagedCtx_P = null;
+function _rcStagedCtx_() {
+  if (_rcStagedCtx_P) return _rcStagedCtx_P;
+  _rcStagedCtx_P = Promise.all([_rcStagedFile_('hub'), _rcStagedFile_('profiles')]).then(function (a) {
+    var hub = a[0] || {}, prof = a[1] || {};
+    var me = _rcStagedMe_();
+    if (!me) return null;
+    var people = [], myCls = '';
+    (hub.standings || []).forEach(function (blk) {
+      (blk.standings || []).forEach(function (row) {
+        var id = row.profileId || row.id || '';
+        if (!row.name) return;
+        people.push({ id: id, name: row.name, cls: blk.className });
+        if (id === me.id || row.name === me.name) myCls = blk.className;
+      });
+    });
+    var rivals = people.filter(function (x) { return x.id !== me.id && x.name !== me.name && x.cls === myCls; });
+    var others = people.filter(function (x) { return x.id !== me.id && x.name !== me.name; });
+    if (rivals.length < 2) rivals = others;
+    if (others.length < 4) return null;
+    var rounds = (hub.calendar || []).filter(function (e) { return e.kind === 'round' && e.hasResults !== false; })
+      .sort(function (x, y) { return (Number(x.roundNumber) || 0) - (Number(y.roundNumber) || 0); });
+    if (!rounds.length) return null;
+    var seed = 20261104;
+    function rnd() { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; }
+    function pick(list, not) { var x, n = 0; do { x = list[Math.floor(rnd() * list.length)]; n++; } while (not && not.indexOf(x.id) !== -1 && n < 30); return x; }
+    var TYPES = ['Avoidable Collision', 'Unsafe Rejoin', 'Blocking / Weaving', 'Blue Flag Violation', 'Deliberate Retaliation', 'Unsportsmanlike Conduct'];
+    var DESC = {
+      'Avoidable Collision': 'Was hit from behind on the brake zone into the chicane and lost two positions.',
+      'Unsafe Rejoin': 'Rejoined across the racing line after going off and forced me wide.',
+      'Blocking / Weaving': 'Moved more than once on the straight while I was already alongside.',
+      'Blue Flag Violation': 'Did not give way for several corners while being lapped.',
+      'Deliberate Retaliation': 'Drove into the side of my car after the earlier contact.',
+      'Unsportsmanlike Conduct': 'Repeated abusive comments in the lobby after the race.'
+    };
+    var self = { id: me.id, name: me.name };
+    // Per round plan: [filer, against, status, tier]. 'me', 'rv' (rival), 'x'/'y' (two other drivers).
+    var PLAN = [
+      [['x', 'y', 'Upheld', 2], ['me', 'rv', 'Denied', null]],
+      [['rv', 'me', 'Upheld', 3], ['x', 'y', 'Denied', null]],
+      [['x', 'y', 'Upheld', 4], ['y', 'x', 'Upheld', 1], ['rv', 'me', 'Denied', null]],
+      [['me', 'rv', 'Upheld', 2], ['x', 'y', 'Denied', null]],
+      [['x', 'y', 'Upheld', 3], ['rv', 'me', 'Upheld', 1], ['me', 'rv', 'Denied', null]],
+      [['x', 'y', 'Upheld', 5], ['me', 'rv', 'Denied', null]]
+    ];
+    var LAST = [['me', 'rv', 'Pending', null], ['rv', 'me', 'Pending', null], ['x', 'y', 'Pending', null]];
+    var all = [], n = 0;
+    rounds.forEach(function (r, i) {
+      var isLast = i === rounds.length - 1;
+      var plan = isLast ? LAST : PLAN[i % PLAN.length];
+      var rv = pick(rivals), x = pick(others, [rv.id]), y = pick(others, [rv.id, x.id]);
+      var who = { me: self, rv: rv, x: x, y: y };
+      plan.forEach(function (pl, k) {
+        var f = who[pl[0]], a = who[pl[1]], type = TYPES[(n * 5 + i + k) % TYPES.length];
+        var sub = new Date(new Date(r.startUtc || '2026-08-23T19:00:00.000Z').getTime() + (3 + k * 2) * 3600000).toISOString();
+        all.push({
+          protestId: 'PRT-' + String(9000 + n), status: pl[2], infractionType: type, roundLabel: r.eventName || ('Round ' + r.roundNumber),
+          roundNumber: Number(r.roundNumber) || (i + 1), trackName: r.track || '', eventName: r.eventName || '', shortName: r.shortName || (r.track || '').slice(0, 3).toUpperCase(),
+          filerName: f.name, involvedNames: [f.name, a.name], isMine: f.id === me.id, source: 'Driver-Filed', isAutoFlagged: false,
+          penaltyTier: pl[3], submittedAt: sub, seasonId: hub.seasonId || '', resultsFinalized: !isLast, roundId: r.roundId,
+          lapNumber: 3 + ((n * 7 + i * 3) % 28), againstProfileId: a.id, against2ProfileId: '', description: DESC[type], suggestedTier: null,
+          reviewedAt: pl[2] === 'Pending' ? null : new Date(new Date(sub).getTime() + 20 * 3600000).toISOString(), reviewedByName: pl[2] === 'Pending' ? null : 'Chief Steward',
+          _mine: f.id === me.id || a.id === me.id
+        });
+        n++;
+      });
+    });
+    function strip(p) { var o = {}; Object.keys(p).forEach(function (k) { if (k !== '_mine') o[k] = p[k]; }); return o; }
+    var mine = all.filter(function (p) { return p._mine; }).sort(function (a, b) { return new Date(b.submittedAt) - new Date(a.submittedAt); }).map(strip);
+    var lastRoundId = rounds[rounds.length - 1].roundId;
+    var currentMine = mine.filter(function (p) { return p.roundId === lastRoundId; });
+    var seat = null;
+    try {
+      var pg = (prof.pages || {})[me.id], th = pg && pg.teamHistory && pg.teamHistory[0];
+      if (th && th.seat) {
+        seat = { success: true, hasSeat: true, team: th.seat.team || '', manufacturer: th.seat.manufacturer || '', carNumber: th.seat.carNumber || '', carModel: th.seat.carModel || '',
+          carClass: th.seat.carClass || myCls, position: th.position || null, positionOutOf: th.classSize || null, points: th.points || 0, podiums: th.podiums || 0,
+          statsKnown: true, carYear: String(th.seat.carYear || ''), carSeries: th.seat.carSeries || '' };
+      }
+    } catch (err) { /* keep the real seat */ }
+    var feedRounds = rounds.slice().reverse().map(function (r) {
+      var ps = all.filter(function (p) { return p.roundId === r.roundId; }).map(strip).sort(function (a, b) { return new Date(b.submittedAt) - new Date(a.submittedAt); });
+      return { roundId: r.roundId, seasonId: hub.seasonId || '', seasonName: hub.seasonName || '', roundNumber: Number(r.roundNumber) || 0, eventName: r.eventName || '', track: r.track || '',
+        shortName: r.shortName || (r.track || '').slice(0, 3).toUpperCase(), startUtc: r.startUtc || '', resultsFinalized: r.roundId !== lastRoundId,
+        pendingCount: ps.filter(function (p) { return p.status === 'Pending'; }).length, protests: ps };
+    });
+    return {
+      seat: seat,
+      dash: { success: true, protests: currentMine.slice(0, 3), totalCount: currentMine.length, pendingCount: currentMine.filter(function (p) { return p.status === 'Pending'; }).length },
+      mineFull: { success: true, protests: mine, totalCount: mine.length, pendingCount: mine.filter(function (p) { return p.status === 'Pending'; }).length },
+      feed: { success: true, rounds: feedRounds }
+    };
+  });
+  _rcStagedCtx_P.catch(function () { _rcStagedCtx_P = null; });
+  return _rcStagedCtx_P;
+}
+
 // Returns a Promise with the staged answer, or null when this request is not one the staged data covers.
 function _rcStagedAnswer_(action, options) {
   var params = (options && options.params) || {};
@@ -137,6 +261,24 @@ function _rcStagedAnswer_(action, options) {
   }
   if (isPost) return null;
   var NF = { success: false, error: 'NOT_FOUND', message: 'No posted results for that round.' };
+  if (action === 'getDashboardData') {
+    return _rcFetchApiLive_(action, options).then(function (d) {
+      return _rcStagedCtx_().then(function (c) {
+        if (!c || !d || !d.success) return d;
+        if (c.seat) d.currentSeat = c.seat;
+        d.myProtests = c.dash;
+        return d;
+      }).catch(function () { return d; });
+    });
+  }
+  if (action === 'getProtestsPageData') {
+    return _rcFetchApiLive_(action, options).then(function (d) {
+      return _rcStagedCtx_().then(function (c) { if (c && d && d.success) d.mine = c.mineFull; return d; }).catch(function () { return d; });
+    });
+  }
+  if (action === 'getStewardingFeed') {
+    return _rcStagedCtx_().then(function (c) { return c ? c.feed : _rcFetchApiLive_(action, options); }).catch(function () { return _rcFetchApiLive_(action, options); });
+  }
   if (action === 'getLeagueHub') {
     return _rcStagedFile_('hub').then(function (hub) { return (params.seasonId && params.seasonId !== hub.seasonId) ? { success: false, error: 'NOT_FOUND' } : hub; });
   }
