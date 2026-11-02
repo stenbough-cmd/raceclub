@@ -1582,10 +1582,11 @@ canvas.rc-helmet { display: block; max-width: 100%; height: auto; filter: drop-s
 @media (max-width: 640px), (orientation: portrait) {
   /* Logged in: collapse the avatar/name/role/chevron stack down to just
      the hamburger icon, inside the same toggle button. */
-  /* The helmet avatar is the menu button on phones now (the logged-in hamburger icon is gone). */
-  .rc-header-account-text,
-  .rc-header-account-chevron { display: none; }
-  .rc-header-account-toggle { padding: 8px; }
+  /* The full account button on phones and upright screens too (Matt, 2026-11-02): helmet, name, role pill and chevron.
+     Long names are cut with ... so the logo and the button always fit on one line. */
+  .rc-header-account-text { display: flex; min-width: 0; margin-left: 4px; }
+  .rc-header-account-name { max-width: 34vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
+  .rc-header-account-toggle { padding: 6px 8px; gap: 6px; min-width: 0; max-width: 100%; }
 
   /* Logged out: swap the plain REGISTER/LOGIN link for the hamburger
      toggle + its League Hub/Register-Login panel. */
