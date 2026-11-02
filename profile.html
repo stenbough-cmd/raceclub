@@ -16,18 +16,18 @@
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="assets/images/favicon-32.png">
 <link rel="apple-touch-icon" href="assets/images/apple-touch-icon.png">
-<link rel="stylesheet" href="css/style.css?v=0.9.40">
-<link rel="stylesheet" href="css/league.css?v=0.9.40">
-<link rel="stylesheet" href="css/profile.css?v=0.9.40">
-<link rel="stylesheet" href="css/driver-report.css?v=0.9.40">
-<script src="js/version.js?v=0.9.40"></script>
-<script src="js/img-loader.js?v=0.9.40"></script>
-<script src="js/api.js?v=0.9.40"></script>
-<script src="js/auth.js?v=0.9.40"></script>
-<script src="js/header.js?v=0.9.40"></script>
-<script src="js/reference-data.js?v=0.9.40"></script>
-<script src="js/edit-profile.js?v=0.9.40"></script>
-<script src="js/rulebook-content.js?v=0.9.40"></script>
+<link rel="stylesheet" href="css/style.css?v=0.9.41">
+<link rel="stylesheet" href="css/league.css?v=0.9.41">
+<link rel="stylesheet" href="css/profile.css?v=0.9.41">
+<link rel="stylesheet" href="css/driver-report.css?v=0.9.41">
+<script src="js/version.js?v=0.9.41"></script>
+<script src="js/img-loader.js?v=0.9.41"></script>
+<script src="js/api.js?v=0.9.41"></script>
+<script src="js/auth.js?v=0.9.41"></script>
+<script src="js/header.js?v=0.9.41"></script>
+<script src="js/reference-data.js?v=0.9.41"></script>
+<script src="js/edit-profile.js?v=0.9.41"></script>
+<script src="js/rulebook-content.js?v=0.9.41"></script>
 </head>
 <body class="rc-league-page rcc-page">
 <div id="rc-header"></div>
@@ -45,15 +45,13 @@
   var inner = document.querySelector('#rc-profile-navbar .rcl-navbar-inner');
   var currentId = (new URLSearchParams(window.location.search).get('id') || '').trim();
   var pick = null;
-  // Page title that fades into the bar as the "Driver Profile" card heading scrolls up under it (same as League Hub / Championship).
+  // Page title shown in the bar.
   var barTitle = document.createElement('div');
   barTitle.className = 'rcl-navbar-title';
   barTitle.textContent = 'Driver Profile';
   if (inner) inner.appendChild(barTitle);
-  // The card heading is further down the page than this script, so wire the fade once the page has been parsed.
-  function wireTitle() { try { if (typeof rcWireBarTitle_ === 'function') rcWireBarTitle_(document.getElementById('rc-profile-navbar'), barTitle, document.querySelector('#rc-profile-card .rcl-panel-head')); } catch (e) {} }
-  // Wait for the full load (styles and layout settled) so the first reading is correct; until then the CSS keeps the title at opacity 0.
-  if (document.readyState === 'complete') wireTitle(); else window.addEventListener('load', wireTitle);
+  // The bar already sits under the header on this page, so the title is simply always shown (no scroll fade).
+  barTitle.style.opacity = '1';
   function build(dir) {
     var list = (dir && Array.isArray(dir.drivers)) ? dir.drivers.slice() : [];
     if (!list.length || !inner) return;
@@ -162,8 +160,8 @@
 </footer>
 <script>rcWireFooterLegalLink();</script>
 
-<script src="js/driver-report.js?v=0.9.40"></script>
-<script src="js/profile.js?v=0.9.40"></script>
-<script src="js/profile-page.js?v=0.9.40"></script>
+<script src="js/driver-report.js?v=0.9.41"></script>
+<script src="js/profile.js?v=0.9.41"></script>
+<script src="js/profile-page.js?v=0.9.41"></script>
 </body>
 </html>
