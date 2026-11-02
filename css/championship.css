@@ -951,3 +951,21 @@ body.rcc-page { --rcc-true-red: #F21B0C; }
   background-image: url('../assets/images/championship_header.jpg');
   background-image: image-set(url('../assets/images/championship_header.webp') type('image/webp'), url('../assets/images/championship_header.jpg') type('image/jpeg'));
 }
+
+/* ===== CHAMPIONSHIP TICKER BAR = HUB LOOK (Matt, 2026-11-02) -- delete this whole block to revert ===== */
+/* Only the scrolling bar: dark background and the League Hub's ticker text colors. The "Highlights" label
+   and the outer container keep their Championship look. */
+.rcc-page .rcl-ticker-viewport {
+  background: #141416;
+  --rcl-ink: #f2f2f0;
+  --rcl-ink-dim: #b4b7bd;
+  --rcl-ink-faint: #7d8088;
+  color: #f2f2f0;
+}
+.rcc-page .rcl-ticker-viewport .rcl-ticker-item { color: #f2f2f0; }
+.rcc-page .rcl-ticker-viewport .rcl-ticker-item-tag,
+.rcc-page .rcl-ticker-viewport .rcc-ticker-lead { color: #e0b64c; }
+.rcc-page .rcl-ticker-viewport .rcc-ticker-plain { color: #f2f2f0; }
+.rcc-page .rcl-ticker-viewport .rcl-ticker-driver-rank { color: #ffffff; }
+.rcc-page .rcl-ticker-viewport .rcl-ticker-driver-num { color: #f2f2f0; }
+/* ===== END CHAMPIONSHIP TICKER BAR ===== */
