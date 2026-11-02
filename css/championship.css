@@ -985,3 +985,6 @@ html.rc-pending .rcc-actionbar { display: none !important; }
 .rcc-page .rcc-actionbar { background: #1b1c1f; }
 
 /* Page title in the season bar: it fades in as the bar slides up under the header (js/header.js rcWireBarTitle_). */
+
+/* The line between the hero and the black link bar: same dark line as the League Hub's hero (#2c2d31), not the light silver (Matt, 2026-11-02). */
+.rcc-page .rcl-hero { border-bottom-color: #2c2d31; }
