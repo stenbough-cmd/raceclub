@@ -13,7 +13,7 @@
 (function () {
   var STYLE_ID = 'rcd-style';
   var CSS_FILES = ['css/league.css', 'css/driver-report.css', 'css/championship.css'].map(rcAsset);
-  var JS_FILES = ['js/championship-help.js', 'js/championship.js'].map(rcAsset);
+  var JS_FILES = ['js/championship-help.js', 'js/car-picker.js', 'js/championship.js'].map(rcAsset);
   var loading = null;
 
   function mk(tag, cls, text) {

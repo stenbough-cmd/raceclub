@@ -1787,231 +1787,35 @@ function rccOpenTeamInfo() {
 }
 
 // ---------------------------------------------------------------------
-// REGISTRATION -- class, team, signing sequence (same flow and classes as Account.html)
+// REGISTRATION -- the car picker, signing sequence and season notice are js/car-picker.js, the same code the League's
+// "Register for Season" uses. This only supplies the Championship's data and its save.
 // ---------------------------------------------------------------------
 function rccOpenRegistration() {
   var page = RCC.page;
-  var grid = page.grid || [];
-  var m = rccOpenModal('Choose Your Class', { wide: true });
-  m.dialog.classList.add('rcc-light-dialog');
-
-  function classScreen() {
-    m.setTitle('Choose Your Class');
-    m.body.innerHTML = '';
-    var present = [];
-    grid.forEach(function (g) { if (present.indexOf(g.carClass) === -1) present.push(g.carClass); });
-    m.body.appendChild(_rccText('p', 'rcc-reg-intro', 'Pick the class you will race in this season. Your AI rivals fill every other seat.'));
-    var pick = _rccEl('div', 'rc-class-pick-grid');
-    (typeof CAR_CLASS_LIST !== 'undefined' ? CAR_CLASS_LIST : present).forEach(function (cls) {
-      var cars = grid.filter(function (g) { return g.carClass === cls; });
-      var can = cars.length > 0;
-      var color = (typeof CAR_CLASS_BADGE_COLOR_VAR !== 'undefined' && CAR_CLASS_BADGE_COLOR_VAR[cls]) || '--rc-steel';
-      var btn = _rccEl('button', 'rc-class-pick-btn' + (can ? '' : ' rc-class-pick-btn-locked rc-class-pick-btn-inactive'));
-      btn.type = 'button';
-      btn.disabled = !can;
-      btn.style.setProperty('--rc-class-pick-color', 'var(' + color + ')');
-      var content = _rccEl('div', 'rc-class-pick-btn-content');
-      content.appendChild(_rccText('div', 'rc-class-pick-btn-name', cls === 'Hypercar' ? 'HY' : cls));
-      content.appendChild(_rccText('div', 'rc-class-pick-btn-seats', can ? cars.length + ' car' + (cars.length === 1 ? '' : 's') : 'Inactive'));
-      btn.appendChild(content);
-      btn.appendChild(_rccEl('div', 'rc-class-pick-btn-lock', '<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><line x1="5.5" y1="18.5" x2="18.5" y2="5.5"></line></svg>'));
-      if (can) btn.addEventListener('click', function () { teamScreen(cls); });
-      pick.appendChild(btn);
-    });
-    m.body.appendChild(pick);
-  }
-
-  function teamScreen(cls) {
-    m.setTitle('Choose Your Team', _rccClassPill(cls));
-    m.body.innerHTML = '';
-    var back = _rccText('button', 'rc-link-btn', '← Choose a different class');
-    back.type = 'button';
-    back.style.cssText = 'display:block;margin-bottom:10px;';
-    back.addEventListener('click', classScreen);
-    m.body.appendChild(back);
-    var teams = grid.filter(function (g) { return g.carClass === cls; });
-    var mfrs = [];
-    teams.forEach(function (t) { if (t.manufacturer && mfrs.indexOf(t.manufacturer) === -1) mfrs.push(t.manufacturer); });
-    mfrs.sort();
-    var listSlot = _rccEl('div');
-    function renderList(filter) {
-      listSlot.innerHTML = '';
-      teams.filter(function (t) { return !filter || t.manufacturer === filter; }).forEach(function (t) { listSlot.appendChild(teamCard(t, cls)); });
-    }
-    if (mfrs.length > 1) {
-      var row = _rccEl('div', 'rc-team-manu-filter-row');
-      var entries = [];
-      var all = _rccText('button', 'rc-team-manu-filter-all', 'ALL');
-      all.type = 'button';
-      row.appendChild(all);
-      entries.push({ m: null, b: all });
-      mfrs.forEach(function (mf) {
-        var b = _rccEl('button', 'rc-team-manu-filter-logo');
-        b.type = 'button';
-        b.title = mf;
-        b.appendChild(_rccLogo('', mf, function () { b.style.display = 'none'; }));
-        row.appendChild(b);
-        entries.push({ m: mf, b: b });
-      });
-      entries.forEach(function (en) {
-        en.b.addEventListener('click', function () {
-          entries.forEach(function (x) { x.b.classList.toggle('rc-team-manu-filter-dim', en.m !== null && x.m !== en.m); });
-          renderList(en.m);
-        });
-      });
-      m.body.appendChild(row);
-    }
-    m.body.appendChild(listSlot);
-    renderList(null);
-  }
-
-  function teamCard(team, cls) {
-    var card = _rccEl('div', 'rc-team-card');
-    var head = _rccEl('div', 'rc-team-card-head');
-    var identity = _rccEl('div', 'rc-team-card-identity');
-    var logoBox = _rccEl('div', 'rc-team-logo-box');
-    logoBox.appendChild(_rccLogo('', team.manufacturer, function () { logoBox.style.display = 'none'; }));
-    identity.appendChild(logoBox);
-    var nameCol = _rccEl('div');
-    nameCol.appendChild(_rccText('div', 'rc-team-name', (team.teamName || 'Unnamed Team') + (team.carNumber ? ' #' + team.carNumber : '')));
-    if (team.carModel) nameCol.appendChild(_rccText('div', 'rc-team-subtitle', team.carModel + (cls === 'Hypercar' ? (team.factory ? ' · Factory' : ' · Privateer') : '')));
-    identity.appendChild(nameCol);
-    head.appendChild(identity);
-    card.appendChild(head);
-    if (team.teamDesc) card.appendChild(_rccText('p', 'rcc-team-desc', team.teamDesc));
-    if (team.realCrew && team.realCrew.length) card.appendChild(_rccText('p', 'rcc-team-desc', 'You replace: ' + team.realCrew.join(', ')));
-    var footer = _rccEl('div', 'rc-team-card-footer');
-    var join = _rccText('button', 'rc-btn-primary', 'Join This Team');
-    join.type = 'button';
-    var err = _rccEl('div', 'rcc-error-line');
-    join.addEventListener('click', function () { doJoin(team, cls, join, err); });
-    footer.appendChild(join);
-    footer.appendChild(err);
-    card.appendChild(footer);
-    return card;
-  }
-
-  // Same as Account.html: the join request goes out immediately while the signing sequence plays;
-  // its real answer is only read once the driver presses Continue.
-  function doJoin(team, cls, btn, err) {
-    btn.disabled = true;
-    err.textContent = '';
-    var joinPromise = _rccApi('champJoinTeam', { seasonId: page.seasonId, teamId: team.teamId }, { post: true });
-    rccSigningSequence(team, cls, function () {
-      m.close(true);
-      joinPromise.then(function (res) {
-        if (_rccHandleAuthError(res)) return;
-        if (res && res.success) { _rccToast('You\'re registered!', 'success'); rccReloadAfterSave(); return; }
-        _rccToast((res && res.message) || 'We could not confirm this registration, so the page will reload to check.', 'error');
-        rccReloadAfterSave();
-      }).catch(function () {
-        _rccToast('Reloading to confirm your registration...', 'success');
-        rccReloadAfterSave();
-      });
-    });
-  }
-
-  classScreen();
-}
-
-var RCC_SIGNING_MESSAGES = ['Drafting team documents...', 'Notifying the team principal...', 'Fitting your race suit...', 'Calibrating the seat...', 'Finalizing your contract...', 'Bringing the car to pit lane...'];
-var RCC_WELCOME_LINES = [
-  'Welcome to {team}! We have been waiting for a driver like you, and we finally found one. This seat is yours. Now let\'s go show everyone what we can do!',
-  'You earned this, plain and simple! {team} doesn\'t hand out seats. We award them. Buckle up, because this is going to be a season to remember!',
-  'Congratulations from everyone at {team}! You\'re not just joining a team. You\'re joining a family that believes in you. Let\'s get out there and win!',
-  'This is the moment every driver dreams about, and it\'s yours! {team} is fully behind you, every lap, every race. Now go make us proud!',
-  'The whole {team} garage is buzzing about you! You\'ve got the talent and we\'ve got the car. Together, we\'re unstoppable. Let\'s go racing!',
-  'Welcome to {team}, driver! Today you take the first step toward something incredible. Strap in, because the season starts now!'
-];
-
-// Port of Account.html's openSigningSequence (same markup and css/style.css classes).
-function rccSigningSequence(team, cls, onFinish) {
-  var overlay = _rccEl('div', 'rc-signing-overlay');
-  var stage = _rccEl('div', 'rc-signing-stage rc-signing-stage-suspense');
-  overlay.appendChild(stage);
-  document.body.appendChild(overlay);
-  var wm = document.createElement('img');
-  wm.className = 'rc-signing-wordmark-img';
-  wm.alt = 'Race Club';
-  wm.src = 'assets/images/Race Club Full White.webp';
-  stage.appendChild(wm);
-  var lights = _rccEl('div', 'rc-startlights');
-  for (var i = 0; i < 5; i++) lights.appendChild(_rccEl('div', 'rc-startlight'));
-  stage.appendChild(lights);
-  var msg = _rccText('div', 'rc-signing-message', RCC_SIGNING_MESSAGES[0]);
-  stage.appendChild(msg);
-  var mi = 0;
-  var msgTimer = setInterval(function () { mi = (mi + 1) % RCC_SIGNING_MESSAGES.length; msg.textContent = RCC_SIGNING_MESSAGES[mi]; }, 1400);
-
-  var img = document.createElement('img');
-  img.className = 'rc-signing-welcome-img';
-  img.alt = '';
-  var started = Date.now(), ready = false, advanced = false;
-  var failsafe = setTimeout(function () { ready = true; tryAdvance(); }, 8000);
-  img.addEventListener('load', function () { ready = true; tryAdvance(); });
-  img.addEventListener('error', function () { ready = true; tryAdvance(); });
-  img.src = (cls === 'LMGTE' || cls === 'LMGT3') ? 'assets/images/gt_welcome.jpg' : (cls === 'Hypercar' ? 'assets/images/hypercar_welcome.jpg' : 'assets/images/prototype_welcome.jpg');
-
-  function tryAdvance() {
-    if (advanced) return;
-    setTimeout(function () {
-      if (advanced || !ready) return;
-      advanced = true;
-      clearInterval(msgTimer);
-      clearTimeout(failsafe);
-      welcome();
-    }, Math.max(0, 3800 - (Date.now() - started)));
-  }
-  var revealed = false, finished = false;
-  function welcome() {
-    stage.className = 'rc-signing-stage rc-signing-stage-welcome';
-    stage.innerHTML = '';
-    stage.appendChild(img);
-    void img.offsetHeight;
-    img.classList.add('rc-signing-welcome-img-visible');
-    setTimeout(reveal, 900 + 3000);
-  }
-  function reveal() {
-    if (revealed) return;
-    revealed = true;
-    img.classList.add('rc-signing-welcome-img-dim');
-    var content = _rccEl('div', 'rc-signing-welcome-overlay');
-    var wm2 = document.createElement('img');
-    wm2.className = 'rc-signing-wordmark-img rc-signing-wordmark-img-lg';
-    wm2.alt = 'Race Club';
-    wm2.src = 'assets/images/Race Club Full White.webp';
-    content.appendChild(wm2);
-    content.appendChild(_rccText('div', 'rc-signing-congrats', 'CONGRATULATIONS'));
-    var hypeWrap = _rccEl('div', 'rc-signing-hype-wrap');
-    var hype = _rccEl('div', 'rc-signing-hype');
-    hype.appendChild(_rccText('span', 'rc-signing-hype-mark rc-signing-hype-mark-open', '“'));
-    var line = RCC_WELCOME_LINES[Math.floor(Math.random() * RCC_WELCOME_LINES.length)].split('{team}').join(team.teamName || 'the team');
-    hype.appendChild(_rccText('span', 'rc-signing-hype-text', line));
-    hype.appendChild(_rccText('span', 'rc-signing-hype-mark rc-signing-hype-mark-close', '”'));
-    hypeWrap.appendChild(hype);
-    hypeWrap.appendChild(_rccText('div', 'rc-signing-hype-attribution', '· Team Principal'));
-    content.appendChild(hypeWrap);
-    var ident = _rccEl('div', 'rc-signing-reveal-identity');
-    if (team.manufacturer) ident.appendChild(_rccLogo('rc-signing-reveal-logo', team.manufacturer));
-    ident.appendChild(_rccText('div', 'rc-signing-reveal-team', (team.teamName || 'Unnamed Team') + (team.carNumber ? ' #' + team.carNumber : '')));
-    content.appendChild(ident);
-    var row = _rccEl('div', 'rc-signing-reveal-btn-row');
-    row.style.opacity = '0';
-    var cont = _rccText('button', 'rc-btn-primary rc-signing-continue', 'Continue');
-    cont.type = 'button';
-    cont.addEventListener('click', function () {
-      if (finished) return;
-      finished = true;
-      overlay.remove();
-      onFinish();
-    });
-    row.appendChild(cont);
-    content.appendChild(row);
-    stage.appendChild(content);
-    void content.offsetHeight;
-    content.classList.add('rc-signing-welcome-overlay-visible');
-    setTimeout(function () { row.style.opacity = '1'; }, 1400);
-  }
+  rcOpenCarPicker({
+    mode: 'championship',
+    openModal: function (title, opts) {
+      opts = opts || {};
+      var m = rccOpenModal(title, { wide: !!opts.wide, onClose: opts.onClose });
+      m.dialog.classList.add('rcc-light-dialog');
+      return {
+        body: m.body,
+        close: m.close,
+        setTitle: m.setTitle,
+        hideClose: function () { var x = m.dialog.querySelector('.rcl-modal-close'); if (x) x.style.display = 'none'; }
+      };
+    },
+    // The season's grid is already on the page, so there is nothing to fetch.
+    loadTeams: function (carClass) {
+      var teams = (page.grid || []).filter(function (g) { return !carClass || g.carClass === carClass; });
+      return Promise.resolve({ success: true, teams: teams });
+    },
+    carImage: function (team) { return { year: _rccClassYear(page, team.carClass), series: (page.seasonDetails || {}).series }; },
+    join: function (team) { return _rccApi('champJoinTeam', { seasonId: page.seasonId, teamId: team.teamId }, { post: true }); },
+    onAuthError: _rccHandleAuthError,
+    reload: rccReloadAfterSave,
+    toast: _rccToast
+  });
 }
 
 // ---------------------------------------------------------------------

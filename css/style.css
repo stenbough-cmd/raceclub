@@ -779,19 +779,6 @@ canvas.rc-helmet { display: block; max-width: 100%; height: auto; filter: drop-s
 /* -------------------------------------------------------------------- */
 /* Team-select popup (Season Registration Step 2) -- v0.20.5 redesign    */
 /* -------------------------------------------------------------------- */
-/* Fixed-size box every manufacturer logo sits inside. object-fit:contain here is only the fallback
-   for the instant before an image's real dimensions are known -- the actual sizing (so a long/wide
-   logo like McLaren/Mercedes-AMG and a tall/narrow one like Ferrari read at the same visual weight,
-   not the wide one going tiny) is done in JS by area, once each logo loads. */
-.rc-team-logo-box {
-  width: 90px;
-  height: 55px;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.rc-team-logo-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
 /* Manufacturer filter row -- sits above the team card list, one bold "ALL" label at the left plus a
    manufacturer logo for every distinct manufacturer fielding a car in this class, spread evenly
    edge-to-edge (flex:1 on each logo button, so the row always stretches the full popup width
@@ -839,22 +826,49 @@ canvas.rc-helmet { display: block; max-width: 100%; height: auto; filter: drop-s
 .rc-team-manu-filter-logo img { max-width: 100%; max-width: min(100%, 100px); max-height: 100%; object-fit: contain; }
 .rc-team-manu-filter-dim { opacity: 0.28; }
 /* Car model line below it: 14px, up from 12.5px. */
-.rc-team-name { font-family: var(--rc-font-heading); font-size: 20px; font-weight: 700; color: var(--rc-carbon); letter-spacing: 0.01em; line-height: 1.15; }
-.rc-team-subtitle { font-size: 14px; color: var(--rc-steel); margin-top: 2px; }
+.rc-team-name { font-family: var(--rc-font-heading); font-size: 20px; font-weight: 700; color: var(--rc-carbon); letter-spacing: 0.01em; line-height: 1.15; text-transform: uppercase; }
+.rc-team-subtitle { font-size: 14px; color: var(--rc-steel); margin-top: 4px; }
+/* One team card for the League and the Single Player Championship (js/car-picker.js): everything centered, car picture on top,
+   manufacturer logo in front of the team name, car model under it, one dark button at the bottom. */
 .rc-team-card {
   padding: 18px 20px;
   border: 1px solid var(--rc-silver);
   border-radius: 8px;
   background: var(--rc-white);
   margin-top: 14px;
+  text-align: center;
 }
 .rc-team-card-taken { opacity: 0.5; }
-.rc-team-card-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
-.rc-team-card-identity { display: flex; align-items: center; gap: 14px; }
-.rc-team-card-footer { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-top: 16px; flex-wrap: wrap; }
-/* Join button anchored bottom-right of the card, not just left-aligned wherever it happened to fall
-   in document flow. */
-.rc-team-card-footer .rc-btn-primary { margin-left: auto; margin-top: 0; }
+.rc-team-car-pic { display: flex; align-items: flex-end; justify-content: center; height: 96px; margin-bottom: 10px; }
+.rc-team-car-pic img { display: block; max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; }
+.rc-team-card-identity { display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; }
+.rc-team-logo { max-width: 56px; max-height: 32px; width: auto; height: auto; object-fit: contain; flex: 0 0 auto; }
+.rc-team-desc { color: var(--rc-steel); font-size: 13px; margin: 10px 0 0; }
+.rc-team-card-footer { display: flex; flex-direction: column; align-items: center; margin-top: 16px; }
+.rc-team-card-error { color: var(--rc-red); font-size: 12px; margin-top: 6px; }
+/* Dark action button (Join This Team, I Understand): same size as the other buttons, not full width. */
+.rc-btn-dark {
+  display: inline-block;
+  min-width: 92px;
+  padding: 10px 20px;
+  font-family: var(--rc-font-heading);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  text-align: center;
+  background: var(--rc-carbon);
+  color: var(--rc-white);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  text-decoration: none;
+}
+.rc-btn-dark:not(:disabled):hover { background: color-mix(in srgb, var(--rc-carbon) 80%, var(--rc-white)); }
+.rc-btn-dark:disabled { background: var(--rc-silver); color: var(--rc-steel); cursor: default; }
+/* Season notice: the registered car in a small gray strip. */
+.rc-notice-car { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 10px; background: var(--rc-offwhite); border: 1px solid var(--rc-silver); border-radius: 8px; padding: 10px 12px; margin: 12px 0; font-size: 14px; font-weight: 700; color: var(--rc-carbon); }
+.rc-notice-logo { max-height: 25px; max-width: 60px; width: auto; height: auto; display: block; }
 
 /* -------------------------------------------------------------------- */
 /* welcome image) -- the cinematic overlay played after locking in a     */

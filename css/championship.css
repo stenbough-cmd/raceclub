@@ -247,7 +247,7 @@ a.rcc-actionbar-link { display: inline-block; text-decoration: none; }
    mention cards, results popups and race report (.rcl-standings-name, .rcl-lr-podium-name, ...);
    these are the championship-only spots: Team Information, Choose Your Team and the signing
    reveal. The ticker and the hero subtitle are left as they are. */
-.rcc-grid-crew, .rcc-page .rc-team-name, .rcc-page .rc-signing-reveal-team { text-transform: uppercase; }
+.rcc-grid-crew, .rcc-page .rc-signing-reveal-team { text-transform: uppercase; }
 /* Names, car numbers and team names in normal weight; the PTS total and rank badges stay bold. */
 .rcc-board .rcl-standings-name,
 .rcc-board .rcl-standings-carnum,
@@ -326,7 +326,6 @@ a.rcc-actionbar-link { display: inline-block; text-decoration: none; }
 /* Pending write button: gray, disabled, "...ing" label until the server answers. */
 .rc-btn-primary.rcc-btn-pending,
 .rc-btn-primary.rcc-btn-pending:hover { background: var(--rc-silver); color: var(--rc-steel); cursor: default; }
-.rcc-team-desc { color: var(--rc-steel); font-size: 13px; margin: 8px 0; }
 
 /* Season wizard */
 .rcc-wizard label { margin-top: 0; }
