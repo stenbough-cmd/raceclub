@@ -420,7 +420,7 @@ html.rc-pending .rcc-actionbar, html.rc-pending .rcl-main, html.rc-pending .rc-s
   gap: 28px;
   align-items: stretch;
 }
-@media (max-width: 640px) {
+@media (max-width: 640px), (orientation: portrait) {
   .rcl-news-lastrace-row { grid-template-columns: 1fr; }
 }
 /* No season / no Last Race data -- supersedes the old behavior (an in-body "No Data To Display"
@@ -489,7 +489,7 @@ html.rc-pending .rcc-actionbar, html.rc-pending .rcl-main, html.rc-pending .rc-s
 .rcl-mfr-rest-logo { max-width: 46px; max-height: 28px; width: auto; height: auto; object-fit: contain; display: block; }
 .rcl-mfr-rest-name { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rcl-mfr-rest-pts { flex: 0 0 auto; }
-@media (max-width: 640px) {
+@media (max-width: 640px), (orientation: portrait) {
   .rcl-mfr-rest { grid-template-columns: minmax(0, 1fr); column-gap: 0; row-gap: 10px; }
   .rcl-mfr-rest-item { font-size: 12px; }
 }
@@ -582,7 +582,7 @@ html.rc-pending .rcc-actionbar, html.rc-pending .rcl-main, html.rc-pending .rc-s
 .rcl-mfr-tile-p3 .rcl-mfr-tile-rankline { border-bottom-color: #a3653a; }
 .rcl-mfr-tile-p3 .rcl-mfr-tile-rank { color: #dba876; }
 
-@media (max-width: 640px) {
+@media (max-width: 640px), (orientation: portrait) {
   .rcl-mfr-tile-p1 { margin-bottom: 28px; }
   .rcl-mfr-podium { gap: 10px; }
   .rcl-mfr-tile { width: 31%; }
@@ -721,7 +721,7 @@ html.rc-pending .rcc-actionbar, html.rc-pending .rcl-main, html.rc-pending .rc-s
   color: rgba(20, 16, 8, 0.75);
 }
 
-@media (max-width: 640px) {
+@media (max-width: 640px), (orientation: portrait) {
   .rcl-lr-podium { gap: 10px; }
   .rcl-lr-podium-tile { width: 33%; }
   
@@ -795,7 +795,7 @@ html.rc-pending .rcc-actionbar, html.rc-pending .rcl-main, html.rc-pending .rc-s
   line-height: 1.4;
   color: var(--rcl-ink-dim);
 }
-@media (max-width: 640px) {
+@media (max-width: 640px), (orientation: portrait) {
   .rcl-lr-mentions,
   .rcl-lr-mentions-season { grid-template-columns: 1fr; gap: 10px; }
   .rcl-lr-mention-tile { padding: 12px; }
@@ -1633,11 +1633,11 @@ body.rc-league-page:not(.rcc-page) .rcl-allresults-session-select { min-width: 1
   color: var(--rcl-ink-faint);
   margin-top: -14px;
 }
-@media (max-width: 640px) {
+@media (max-width: 640px), (orientation: portrait) {
   .rcl-carousel-countdown-num { font-size: 22px; }
   .rcl-carousel-countdown-unit { min-width: 28px; }
 }
-@media (max-width: 640px) {
+@media (max-width: 640px), (orientation: portrait) {
   .rcl-carousel-track { padding: 4px 16px 20px; gap: 10px; }
   /* Active item keeps its own smaller 270px cap here, though (unchanged) -- a fixed 400px active
      item would overflow a narrow phone screen. */
@@ -2019,7 +2019,7 @@ body.rc-league-page:not(.rcc-page) .rcl-allresults-session-select { min-width: 1
 /* Calendar below). Recent Results, League News, the Points Table/      */
 /* Drivers/Season Details popups are all explicitly UNCHANGED per       */
 /* -------------------------------------------------------------------- */
-@media (max-width: 640px) {
+@media (max-width: 640px), (orientation: portrait) {
   .rcl-main { padding: 26px 16px 60px; }
   .rcl-panel-body { padding: 14px; }
 
@@ -2140,7 +2140,7 @@ a.rcl-navbar-link.rcl-navbar-gold[href="login.html"] { color: var(--rc-white); }
 a.rcl-navbar-link.rcl-navbar-gold[href="login.html"]:hover { color: var(--rc-red); }
 .rcl-navbar-link:hover { color: var(--rc-red); }
 .rcl-navbar-link:focus-visible { outline: 2px solid var(--rc-white); outline-offset: -2px; }
-@media (max-width: 640px) {
+@media (max-width: 640px), (orientation: portrait) {
   .rcl-navbar-inner { padding: 0 16px; }
   .rcl-navbar-link { padding: 10px 8px; }
 }
@@ -2259,7 +2259,7 @@ body.rc-league-page { --rcl-bonus: #7fa8d4; }
 /* Car number column: "N" with a raised degree circle in the header, plain numbers below. */
 /* "MANU" over the manufacturer logo column. */
 .rcl-board-manu-head { text-align: center; white-space: nowrap; }
-@media (max-width: 640px) { .rcl-board-head { font-size: 13px; } .rcl-board-manu-head { font-size: 13px; letter-spacing: 0.02em; } }
+@media (max-width: 640px), (orientation: portrait) { .rcl-board-head { font-size: 13px; } .rcl-board-manu-head { font-size: 13px; letter-spacing: 0.02em; } }
 .rcl-board-num-head { text-align: center; }
 .rcl-board-num-deg { font-size: 12px; line-height: 0; margin-left: 0; position: relative; top: 1px; }
 .rcl-board-num { text-align: center; font-size: 15px; font-weight: 400; color: var(--rcl-ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
@@ -2306,7 +2306,7 @@ body.rc-league-page { --rcl-bonus: #7fa8d4; }
 
 .rcl-metal-button:focus-visible { outline: 2px solid var(--rcl-ink); outline-offset: 2px; }
 
-@media (max-width: 640px) {
+@media (max-width: 640px), (orientation: portrait) {
   /* Phones: Pos, Drivers/Teams and Pts only, no sideways scroll. The column list is set inline per
      board, so !important is needed to replace it. */
   .rcl-board-table { --rcl-board-cols: 40px 42px 34px minmax(0, 1fr) 50px !important; min-width: 0 !important; }
@@ -2398,12 +2398,12 @@ body.rc-league-page { --rcl-bonus: #7fa8d4; }
 .rcl-tt-podium { align-items: flex-start; }
 .rcl-tt-podium .rcl-tt-tile.rcl-mfr-tile-p1 { margin-bottom: 0; }
 .rcl-tt-podium .rcl-tt-tile.rcl-mfr-tile-p2, .rcl-tt-podium .rcl-tt-tile.rcl-mfr-tile-p3 { margin-top: 50px; }
-@media (max-width: 640px) { .rcl-tt-podium .rcl-tt-tile.rcl-mfr-tile-p2, .rcl-tt-podium .rcl-tt-tile.rcl-mfr-tile-p3 { margin-top: 28px; } }
+@media (max-width: 640px), (orientation: portrait) { .rcl-tt-podium .rcl-tt-tile.rcl-mfr-tile-p2, .rcl-tt-podium .rcl-tt-tile.rcl-mfr-tile-p3 { margin-top: 28px; } }
 
-@media (max-width: 640px) {
+@media (max-width: 640px), (orientation: portrait) {
   .rcl-tt-list { grid-template-columns: minmax(0, 1fr); grid-auto-flow: row; grid-template-rows: none; }
 }
-@media (max-width: 640px) {
+@media (max-width: 640px), (orientation: portrait) {
   .rcl-tt-item { font-size: 12px; gap: 8px; }
   .rcl-tt-car-slot { flex-basis: 120px; width: 120px; height: 40px; }
   .rcl-tt-car { max-height: 40px; }
@@ -2451,7 +2451,7 @@ body.rc-league-page:not(.rcc-page) .rcl-report-clause-retirement { color: var(--
 /* Last Race podium: car number in normal weight on PC, hidden on phones. */
 .rcl-lr-podium-num { font-weight: 400; }
 
-@media (max-width: 640px) {
+@media (max-width: 640px), (orientation: portrait) {
   .rcl-lr-podium-num { display: none; }
   /* Manufacturers' Standings, P4 onward: one column. */
   body.rc-league-page:not(.rcc-page) .rcl-mfr-rest {
@@ -2526,7 +2526,7 @@ body.rc-league-page .rcl-navbar-season {
   text-overflow: ellipsis;
   cursor: pointer;
 }
-@media (max-width: 640px) {
+@media (max-width: 640px), (orientation: portrait) {
   body.rc-league-page .rcl-navbar-inner:has(.rcl-navbar-season) { padding-bottom: 8px; }
   body.rc-league-page .rcl-navbar-season { margin: 0; width: 100%; max-width: 100%; }
 }

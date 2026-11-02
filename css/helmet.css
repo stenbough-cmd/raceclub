@@ -23,6 +23,11 @@
   border: 1px solid var(--rc-silver); border-radius: 6px; box-sizing: border-box;
 }
 .rch-input { width: 100%; padding: 7px 9px; }
+/* A box that is filled in for you and cannot be changed (Helmet name on a Manufacturer helmet, for example) looks gray and locked. */
+.rch-input:disabled, .rch-select-wide:disabled, .rch-desc:disabled, .rch-input[readonly] {
+  background: var(--rc-offwhite); color: var(--rc-steel); border-color: var(--rc-silver); cursor: not-allowed; opacity: 1; -webkit-text-fill-color: var(--rc-steel);
+}
+.rch-input:disabled::placeholder { color: var(--rc-steel); }
 .rch-select-wide { width: 100%; padding: 6px 8px; min-width: 0; }
 .rch-addrow .rch-select-wide { width: auto; }
 /* finish drop-downs: about half the size they were */

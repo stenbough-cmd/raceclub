@@ -5352,7 +5352,7 @@
     addItem('Update Home Page Helmets', function () {
       var modal = showModal('Home Page Helmets', { wide: true });
       var body = modal.body;
-      body.appendChild(el('p', 'margin:0 0 12px;font-size:14px;line-height:1.55;color:var(--rc-steel);', 'Loading the helmet catalog...'));
+      body.appendChild(buildSpinner('Loading helmets...'));
       fetchApi('adminListHelmetPresets', { token: token }).then(function (res) {
         body.innerHTML = '';
         if (!res || !res.success) { body.appendChild(el('p', 'margin:0;color:var(--rc-red);', escapeHtml((res && (res.message || res.error)) || 'Could not load the helmet catalog.'))); return; }

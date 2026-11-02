@@ -211,6 +211,34 @@
   var EYE_OFF_ICON = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/><line x1="3" y1="21" x2="21" y2="3" stroke-width="2.6"/></svg>';   // layer hidden: the eye with a line through it
   var COPY_ICON = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></svg>';
 
+  // The PREVIEW fields (name 50%, country 30%, number 20%) used by the designer and by Edit Helmet Details. pl = { n, c, u }; onChange runs after
+  // every edit. get() returns the current { n, c, u }; set(pl) fills the boxes.
+  function buildPreviewFields(pl, onChange) {
+    var v = { n: (pl && pl.n) || '', c: (pl && pl.c) || '', u: (pl && pl.u) || '' };
+    var row = mk('div', 'rch-pvrow');
+    function field(label, bold, input) {
+      var w = mk('label', 'rch-pvfield'); w.appendChild(mk('span', 'rch-label' + (bold ? ' rch-boldlabel' : ''), label)); w.appendChild(input); row.appendChild(w); return w;
+    }
+    var nameIn = mk('input', 'rch-input'); nameIn.type = 'text'; nameIn.maxLength = 40; nameIn.placeholder = 'Type any name';
+    var cty = mk('select', 'rch-select-wide');
+    var numIn = mk('input', 'rch-input'); numIn.type = 'text'; numIn.maxLength = 4; numIn.placeholder = '123';
+    function fillCountries() {
+      cty.innerHTML = '';
+      var list = (typeof COUNTRIES !== 'undefined' ? COUNTRIES : []).slice();
+      if (v.c && list.indexOf(v.c) === -1) list.unshift(v.c);
+      var blank = mk('option'); blank.value = ''; blank.textContent = 'No flag'; cty.appendChild(blank);
+      list.forEach(function (c) { var o = mk('option'); o.value = c; o.textContent = c; cty.appendChild(o); });
+      cty.value = v.c || '';
+    }
+    function show() { nameIn.value = v.n; numIn.value = v.u; fillCountries(); }
+    nameIn.oninput = function () { v.n = nameIn.value; onChange(); };
+    cty.onchange = function () { v.c = cty.value; onChange(); };
+    numIn.oninput = function () { v.u = numIn.value; onChange(); };
+    field('Preview name', true, nameIn); field('Country', false, cty); field('Number', false, numIn);
+    show();
+    return { row: row, get: function () { return { n: v.n, c: v.c, u: v.u }; }, set: function (x) { v = { n: (x && x.n) || '', c: (x && x.c) || '', u: (x && x.u) || '' }; show(); } };
+  }
+
   function openDesigner(ctx, opts) {
     opts = opts || {};
     var only = opts.only || '';   // 'manage' or 'logos': open just that manager (from the admin page), no designer window
@@ -358,35 +386,13 @@
       var pvTouched = false;
       function syncPv() { R.pl = { n: String(previewPlayer.n || '').slice(0, 40), c: String(previewPlayer.c || '').slice(0, 60), u: String(previewPlayer.u || '').slice(0, 4) }; }
       bar.appendChild(mk('div', 'rch-label rch-subhead rch-mt rch-boldlabel', 'Preview'));
-      var pvRow = mk('div', 'rch-pvrow');
-      var pvNameWrap = mk('label', 'rch-pvfield'); pvNameWrap.appendChild(mk('span', 'rch-label', 'Name'));
-      var pvName = mk('input', 'rch-input'); pvName.type = 'text'; pvName.maxLength = 40; pvName.placeholder = 'Type any name'; pvName.value = previewPlayer.n || '';
-      pvName.oninput = function () { previewPlayer.n = pvName.value; pvTouched = true; syncPv(); draw(true); };
-      pvNameWrap.appendChild(pvName);
-      var pvCtyWrap = mk('label', 'rch-pvfield'); pvCtyWrap.appendChild(mk('span', 'rch-label', 'Country'));
-      var pvCty = mk('select', 'rch-select-wide');
-      function fillCountries() {
-        pvCty.innerHTML = '';
-        var list = (typeof COUNTRIES !== 'undefined' ? COUNTRIES : []).slice();
-        if (previewPlayer.c && list.indexOf(previewPlayer.c) === -1) list.unshift(previewPlayer.c);
-        var blank = mk('option'); blank.value = ''; blank.textContent = 'No flag'; pvCty.appendChild(blank);
-        list.forEach(function (c) { var o = mk('option'); o.value = c; o.textContent = c; pvCty.appendChild(o); });
-        pvCty.value = previewPlayer.c || '';
-      }
-      fillCountries();
-      pvCty.onchange = function () { previewPlayer.c = pvCty.value; pvTouched = true; syncPv(); draw(true); };
-      pvCtyWrap.appendChild(pvCty);
-      var pvNumWrap = mk('label', 'rch-pvfield'); pvNumWrap.appendChild(mk('span', 'rch-label', 'Number'));
-      var pvNum = mk('input', 'rch-input'); pvNum.type = 'text'; pvNum.maxLength = 4; pvNum.placeholder = '123'; pvNum.value = previewPlayer.u || '';
-      pvNum.oninput = function () { previewPlayer.u = pvNum.value; pvTouched = true; syncPv(); draw(true); };
-      pvNumWrap.appendChild(pvNum);
-      pvRow.appendChild(pvNameWrap); pvRow.appendChild(pvCtyWrap); pvRow.appendChild(pvNumWrap);
-      bar.appendChild(pvRow);
+      var pvf = buildPreviewFields(previewPlayer, function () { var g = pvf.get(); previewPlayer.n = g.n; previewPlayer.c = g.c; previewPlayer.u = g.u; pvTouched = true; syncPv(); draw(true); });
+      bar.appendChild(pvf.row);
       // A helmet that is opened (or pasted in) brings its own saved preview along; a new one keeps what is typed.
       function loadPvFrom(rec) {
         if (rec && rec.pl) {
           previewPlayer.n = rec.pl.n || ''; previewPlayer.c = rec.pl.c || ''; previewPlayer.u = rec.pl.u || '';
-          pvName.value = previewPlayer.n; pvNum.value = previewPlayer.u; fillCountries(); pvTouched = true;
+          pvf.set(previewPlayer); pvTouched = true;
         } else pvTouched = false;
       }
       kindSel.onchange = function () { cur.kind = kindSel.value; syncMeta(); };
@@ -1076,6 +1082,9 @@
         var tsel = makeTierSel(); tsel.value = p.tier || 'Common'; cw.appendChild(tsel); db.appendChild(cw);
         db.appendChild(mk('div', 'rch-label rch-mt', 'Helmet description'));
         var ds = mk('textarea', 'rch-desc'); ds.maxLength = 200; ds.rows = 3; ds.value = p.description || ''; ds.placeholder = 'Optional. A short note about this helmet (200 characters at most).'; db.appendChild(ds);
+        // Preview name, country and number: saved inside the helmet, shown wherever it is displayed outside a member's own profile.
+        db.appendChild(mk('div', 'rch-label rch-subhead rch-mt rch-boldlabel', 'Preview'));
+        var pvd = buildPreviewFields(H.normalizeRecipe(p.recipe).pl, function () {}); db.appendChild(pvd.row);
         var kh = mk('p', 'rch-hint'); db.appendChild(kh);
         // Give to: every member with a checkbox (special event, premium and award helmets only). Group access that is already set is kept as it is.
         var gw = mk('div'); gw.appendChild(mk('div', 'rch-label rch-mt', 'Give to'));
@@ -1109,11 +1118,13 @@
           if (!name) { toast('Give the helmet a name first.', 'error'); n.focus(); return; }
           var slotChanged = (kind === 'Website Default' || kind === 'Manufacturer') && (kind !== p.kind || mfr !== (p.manufacturer || ''));
           var old = slotChanged ? (list || []).filter(function (x) { return x.active && x.presetId !== p.presetId && x.kind === kind && (kind === 'Website Default' || x.manufacturer === mfr); })[0] : null;
+          var recOut = H.normalizeRecipe(p.recipe), pvv = pvd.get();
+          if (pvv.n || pvv.c || pvv.u || recOut.pl) recOut.pl = { n: pvv.n.slice(0, 40), c: pvv.c.slice(0, 60), u: pvv.u.slice(0, 4) };
           function run() {
             busy(true);
-            fetchApi('adminSaveHelmetPreset', { method: 'POST', token: token, body: { presetId: p.presetId, collection: coll, tier: tier, description: desc, name: name, kind: kind, manufacturer: mfr, recipe: JSON.stringify(H.normalizeRecipe(p.recipe)) } }).then(function (r) {
+            fetchApi('adminSaveHelmetPreset', { method: 'POST', token: token, body: { presetId: p.presetId, collection: coll, tier: tier, description: desc, name: name, kind: kind, manufacturer: mfr, recipe: JSON.stringify(recOut) } }).then(function (r) {
               if (!r || !r.success) { busy(false); toast((r && r.message) || 'Could not save.', 'error'); return; }
-              if (cur.id === p.presetId) { cur.name = name; cur.kind = kind; cur.mfr = mfr; cur.desc = desc; cur.coll = coll; cur.tier = tier; cur.saved = { name: name, kind: kind, mfr: mfr, desc: desc, coll: coll, tier: tier }; syncMeta(); }
+              if (cur.id === p.presetId) { if (recOut.pl) { R.pl = recOut.pl; if (baseline) baseline.pl = recOut.pl; loadPvFrom(R); } cur.name = name; cur.kind = kind; cur.mfr = mfr; cur.desc = desc; cur.coll = coll; cur.tier = tier; cur.saved = { name: name, kind: kind, mfr: mfr, desc: desc, coll: coll, tier: tier }; syncMeta(); }
               refreshPresets();
               function finish() { toast('Saved.', 'success'); dm.close(); if (after) after(); }
               if (!(grantsLoaded && COLL_KINDS.indexOf(kind) >= 0)) { finish(); return; }

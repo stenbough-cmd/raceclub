@@ -63,7 +63,7 @@
       '.rcc-modal-overlay.rcc-page .rcl-modal-dialog-narrow { max-width: 460px; }' +
       '.rcc-modal-overlay.rcc-page .rcl-modal-head { margin: 0; padding: 18px 20px; background: var(--rc-white); border-bottom: 1px solid var(--rc-silver); border-radius: 10px 10px 0 0; }' +
       '.rcc-modal-overlay.rcc-page .rcl-modal-body { padding: 20px; }' +
-      '@media (max-width: 640px) { .rcc-modal-overlay.rcc-page { padding-left: 24px; } }';
+      '@media (max-width: 640px), (orientation: portrait) { .rcc-modal-overlay.rcc-page { padding-left: 24px; } }';
     document.head.appendChild(s);
   }
 

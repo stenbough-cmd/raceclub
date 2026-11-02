@@ -189,7 +189,7 @@ a.rcc-actionbar-link { display: inline-block; text-decoration: none; }
 }
 .rcc-page .rcc-load-error-btn:hover { color: var(--rc-carbon); border-color: var(--rc-steel); }
 .rcc-page .rcc-load-error-btn:disabled { opacity: 0.6; cursor: default; }
-@media (max-width: 640px) {
+@media (max-width: 640px), (orientation: portrait) {
   .rcc-page .rcc-actionbar-inner:has(.rcc-actionbar-season) { padding-bottom: 8px; }
   .rcc-page .rcc-actionbar-season { margin: 0; width: 100%; max-width: 100%; }
 }
@@ -289,7 +289,7 @@ a.rcc-actionbar-link { display: inline-block; text-decoration: none; }
 .rcl-race-grid-recap.rcc-row-me .rcc-board-num,
 .rcl-race-grid-recap.rcc-row-me .rcl-standings-name { font-weight: 700; }
 .rcc-recap-dnf { color: var(--rc-steel); }
-@media (max-width: 640px) { .rcl-race-grid-recap .rcc-board-num { font-size: 13px; } }
+@media (max-width: 640px), (orientation: portrait) { .rcl-race-grid-recap .rcc-board-num { font-size: 13px; } }
 
 /* Last Race extras                                                      */
 /* -------------------------------------------------------------------- */
@@ -392,7 +392,7 @@ a.rcc-actionbar-link { display: inline-block; text-decoration: none; }
 .rcc-grid-row .rc-cs-logo-wrap { width: 150px; }
 .rcc-grid-row .rcc-seat-line { margin: 0; flex: 1 1 auto; min-width: 0; }
 .rcc-grid-row .rcc-grid-crew { margin-top: 3px; }
-@media (max-width: 640px) {
+@media (max-width: 640px), (orientation: portrait) {
   .rcc-myteam .rc-cs-logo-wrap,
   .rcc-grid-row .rc-cs-logo-wrap { width: 100px; }
   .rcc-myteam .rc-cs-row, .rcc-grid-row .rc-cs-row { gap: 12px; }
@@ -408,7 +408,7 @@ a.rcc-actionbar-link { display: inline-block; text-decoration: none; }
 
 /* My Laps table */
 
-@media (max-width: 640px) {
+@media (max-width: 640px), (orientation: portrait) {
   .rcc-actionbar-inner { padding: 0 16px; }
   .rcc-actionbar-link { padding: 10px 8px; }
   .rcc-class-row { grid-template-columns: 22px 1fr 1fr; }
@@ -499,7 +499,7 @@ a.rcc-actionbar-link { display: inline-block; text-decoration: none; }
 .rcc-season-row { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 14px; align-items: end; }
 .rcc-season-row .rcc-field { margin: 0; }
 .rcc-round-row2 { margin-top: 0; }
-@media (max-width: 640px) {
+@media (max-width: 640px), (orientation: portrait) {
   .rcc-season-row { grid-template-columns: 1fr 1fr; }
   .rcc-season-row .rcc-field:first-child { grid-column: 1 / -1; }
 }
@@ -542,11 +542,11 @@ body.rcc-demo { position: relative; }
      line's -3px pull-up);
    - with the seat line (about 55px taller): 24.3px + 24.3px.
    Phones: League is a 150px centred band; the seat line's car box shrinks to 36px tall so it fits. */
-@media (min-width: 641px) {
+@media (min-width: 641px) and (orientation: landscape) {
   .rcc-page .rcl-hero { padding-top: 53.4px; padding-bottom: 53.4px; }
   .rcc-page .rcl-hero:has(.rcc-seat-line) { padding-top: 24.3px; padding-bottom: 24.3px; }
 }
-@media (max-width: 640px) {
+@media (max-width: 640px), (orientation: portrait) {
   .rcc-page .rcl-hero:has(.rcc-seat-line) { padding-top: 7.5px; padding-bottom: 7.5px; }
   .rcc-hero-meta .rcc-seat-line { margin-top: 4px; }
   .rcc-hero-meta .rc-cs-logo-wrap { height: 36px; min-width: 0; }
@@ -558,14 +558,14 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
 
 /* Car profile pictures (assets/cars/<year>-<number>.png): podium tiles and the standings CAR column. */
 .rcc-podium-car { display: block; max-width: 132px; max-height: 52px; width: auto; height: auto; object-fit: contain; margin: 0 auto; }
-@media (max-width: 640px) { .rcc-podium-car { max-width: 92px; max-height: 38px; } }
+@media (max-width: 640px), (orientation: portrait) { .rcc-podium-car { max-width: 92px; max-height: 38px; } }
 
 /* Standings CAR column: pictures up to 110px wide or 35px tall (Matt). */
 .rcc-board .rcc-board-car-slot { width: 110px; height: 40px; }
 .rcc-board .rcc-board-car { max-width: 110px; max-height: 35px; }
 /* Podium: car number after the driver's name. */
 .rcc-podium-num { white-space: nowrap; }
-@media (max-width: 640px) {
+@media (max-width: 640px), (orientation: portrait) {
   .rcc-board .rcc-board-car-slot { width: 64px; height: 24px; }
   .rcc-board .rcc-board-car { max-width: 64px; max-height: 24px; }
 }
@@ -575,7 +575,7 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
 /* PC: logos up to 70px wide (Matt, 2026-10-22; was 50px), slot 78px = 4px each side. Phones keep 34 x 24. */
 .rcc-board .rcl-standings-mfr-logo-slot:not(.rcc-board-car-slot) { height: 40px; width: 78px; padding: 0 4px; box-sizing: border-box; }
 .rcc-board .rcl-standings-mfr-logo:not(.rcc-board-car) { max-height: 34px; max-width: 70px; }
-@media (max-width: 640px) {
+@media (max-width: 640px), (orientation: portrait) {
   .rcc-board .rcl-standings-mfr-logo-slot:not(.rcc-board-car-slot) { height: 24px; width: 42px; }
   .rcc-board .rcl-standings-mfr-logo:not(.rcc-board-car) { max-height: 24px; max-width: 34px; }
 }
@@ -598,7 +598,7 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
 .rcc-page .rcl-mfr-rest-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rcc-page .rcl-mfr-rest-logo-slot { height: 28px; }
 .rcc-page .rcl-mfr-rest-logo { max-height: 28px; }
-@media (max-width: 640px) { .rcc-page .rcl-mfr-rest { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 640px), (orientation: portrait) { .rcc-page .rcl-mfr-rest { grid-template-columns: minmax(0, 1fr); } }
 
 /* Tips (Matt, 2026-10-11): important, quick-to-read notes get a lightbulb, a blue-gray accent bar on
    the left and a thinner blue-gray border all the way round. Used for .rcc-tip (Driver Report) and
@@ -681,7 +681,7 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
 .rcc-quick-steps > li span:last-child { font-size: 14px; line-height: 1.45; color: rgba(255,255,255,0.86); }
 .rcc-quick-num { width: 44px; height: 44px; border-radius: 50%; background: var(--rc-red); color: var(--rc-white); display: flex; align-items: center; justify-content: center; font-family: var(--rc-font-heading); font-size: 22px; font-weight: 800; box-shadow: 0 0 0 4px rgba(255,255,255,0.12); margin-bottom: 4px; }
 .rcc-quick-done { margin-top: 16px; text-align: center; font-family: var(--rc-font-heading); font-size: 16px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: var(--rc-white); }
-@media (max-width: 640px) {
+@media (max-width: 640px), (orientation: portrait) {
   .rcc-quick { padding: 16px 14px; }
   .rcc-quick-steps { grid-template-columns: 1fr; }
 }
@@ -705,10 +705,10 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
 .rcc-tt-name { flex: 1 1 auto; min-width: 0; line-height: 1.3; overflow-wrap: anywhere; }
 .rcc-tt-num { font-weight: 700; opacity: 0.8; }
 .rcc-tt-pts { flex: 0 0 auto; }
-@media (max-width: 640px) {
+@media (max-width: 640px), (orientation: portrait) {
   .rcc-tt-list { grid-template-columns: minmax(0, 1fr); grid-auto-flow: row; grid-template-rows: none; }
 }
-@media (max-width: 640px) {
+@media (max-width: 640px), (orientation: portrait) {
   .rcc-tt-item { font-size: 12px; gap: 8px; }
   .rcc-tt-car-slot { flex-basis: 120px; width: 120px; height: 40px; }
   .rcc-tt-car { max-height: 40px; }
@@ -721,7 +721,7 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
 .rcc-tt-podium { align-items: flex-start; }
 .rcc-tt-podium .rcc-tt-tile.rcl-mfr-tile-p1 { margin-bottom: 0; }
 .rcc-tt-podium .rcc-tt-tile.rcl-mfr-tile-p2, .rcc-tt-podium .rcc-tt-tile.rcl-mfr-tile-p3 { margin-top: 50px; }
-@media (max-width: 640px) { .rcc-tt-podium .rcc-tt-tile.rcl-mfr-tile-p2, .rcc-tt-podium .rcc-tt-tile.rcl-mfr-tile-p3 { margin-top: 28px; } }
+@media (max-width: 640px), (orientation: portrait) { .rcc-tt-podium .rcc-tt-tile.rcl-mfr-tile-p2, .rcc-tt-podium .rcc-tt-tile.rcl-mfr-tile-p3 { margin-top: 28px; } }
 
 /* Calendar carousel: more room above and below (Matt, 2026-10-13), even on both sides: about 83px
    from the panels above to the card's text, and from the card's buttons to the board below. The
@@ -734,7 +734,7 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
 
 /* GT and prototype drivers boards: the team in gray after the driver names (Matt, 2026-10-13).
    Hidden on phones, where it only had room for a letter or two. */
-@media (max-width: 640px) { .rcc-board .rcc-board-name-cell .rcl-standings-team { display: none; } }
+@media (max-width: 640px), (orientation: portrait) { .rcc-board .rcc-board-name-cell .rcl-standings-team { display: none; } }
 
 /* Race Recap results: award icons after the driver name and a key under each class board
    (Matt, 2026-10-13). */
@@ -745,7 +745,7 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
 .rcc-recap-key-item { display: inline-flex; align-items: center; gap: 6px; }
 
 /* PHONES (Matt, 2026-10-13). */
-@media (max-width: 640px) {
+@media (max-width: 640px), (orientation: portrait) {
   /* Header and Driver Report seat line: no car picture, and the driver / team / car rows sit tighter. */
   .rcc-hero-meta .rcc-seat-line .rc-cs-logo-wrap,
   .rcr-report-who .rc-cs-logo-wrap { display: none; }
@@ -770,7 +770,7 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
 .rcc-current-seat .rcc-seat-line { margin: 0; }
 .rcc-current-seat-desc { margin: 16px 0 0; font-size: 15px; line-height: 1.6; color: var(--rc-carbon); }
 /* Phones: Season Preview, Current Seat, Season Tools and Help fit on one line (Matt, 2026-10-14). */
-@media (max-width: 640px) {
+@media (max-width: 640px), (orientation: portrait) {
   .rcc-actionbar-inner { padding: 0 12px; }
   .rcc-actionbar-link { padding-left: 6px; padding-right: 6px; font-size: 11px; letter-spacing: 0.03em; }
   
@@ -783,7 +783,7 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
 
 /* Race Recap on phones (Matt, 2026-10-14): every column stays and each class table pans sideways
    (league.css gives the rows their desktop width). The award key under the table stays screen-wide. */
-@media (max-width: 640px) {
+@media (max-width: 640px), (orientation: portrait) {
   .rcc-page .rcl-modal-dialog-allresults .rcl-race-class > .rcc-recap-key { min-width: 0; position: sticky; left: 0; justify-content: flex-start; }
   /* Wide enough that the driver column keeps about 160px after the fixed columns (800px left it ~0). */
   .rcc-page .rcl-modal-dialog-allresults .rcl-race-class > :not(.rcc-recap-key):not(.rcl-empty-state-subtitle):not(.rcl-standings-class-header) { min-width: 960px; }
@@ -794,7 +794,7 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
 /* Manufacturers' podium logos (Matt, 2026-10-14): 10px shorter on PC (150 -> 140). On phones the logo keeps
    the same width-to-height shape as PC (200:140, so height is 70% of the tile's width) and the tiles get more padding. */
 .rcc-page .rcl-mfr-tile-logo { max-height: 140px; }
-@media (max-width: 640px) {
+@media (max-width: 640px), (orientation: portrait) {
   .rcc-page .rcl-mfr-tile-box-inner { padding: 16px; }
   .rcc-page .rcl-mfr-tile-logo { max-height: 70%; }
 }
@@ -865,18 +865,18 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
 /* Race Recap on phones: each class table pans sideways with a finger. This used to come from league.css
    (.rcl-modal-dialog-allresults .rcl-race-class { overflow-x: auto }), which the League page dropped for its own
    scroll wrappers on 2026-10-19, so the Championship recap keeps its own copy (Matt, 2026-10-20). */
-@media (max-width: 640px) {
+@media (max-width: 640px), (orientation: portrait) {
   .rcc-page .rcl-modal-dialog-allresults .rcl-race-class { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 }
 /* My Laps: MY EVENTS bar under each laps table; on phones the event lines stay the popup's width. */
 .rcc-page .rcc-laps-events-head { margin-top: 22px; }
-@media (max-width: 640px) {
+@media (max-width: 640px), (orientation: portrait) {
   .rcc-page .rcl-modal-dialog-allresults .rcl-race-class > .rcc-laps-events-head { min-width: 0; width: 100%; position: sticky; left: 0; box-sizing: border-box; }
   .rcc-page .rcl-modal-dialog-allresults .rcl-race-class > .rcc-laps-events { min-width: 0; position: sticky; left: 0; }
 }
 /* Race Recap on phones: the round and page dropdowns stack, each full width, now the page names are
    longer (Matt, 2026-10-20). */
-@media (max-width: 640px) {
+@media (max-width: 640px), (orientation: portrait) {
   .rcc-page .rcl-allresults-select-row { flex-direction: column; gap: 8px; }
   .rcc-page .rcl-allresults-select-row .rcl-allresults-select,
   .rcc-page .rcl-allresults-select-row .rcl-allresults-session-select { flex: 0 0 auto; width: 100%; min-width: 0; }

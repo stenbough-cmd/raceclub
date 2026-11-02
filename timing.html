@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex"><title>Race Club timing test</title>
+<style>
+body{font:14px/1.5 system-ui,sans-serif;max-width:760px;margin:24px auto;padding:0 16px;color:#171717}
+button{font:inherit;padding:8px 16px;border:1px solid #536575;background:#fff;border-radius:6px;cursor:pointer}
+table{border-collapse:collapse;width:100%;margin-top:16px}th,td{text-align:left;padding:6px 8px;border-bottom:1px solid #D8DDE1}
+th{font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:#536575}
+td.n{text-align:right;font-variant-numeric:tabular-nums}pre{background:#F5F5F3;padding:12px;white-space:pre-wrap}
+</style></head><body>
+<h2>Race Club timing test</h2>
+<p>Measures how long real data takes to arrive. Click Run once, wait about 30 seconds, then copy the result box back into the chat. Times are in milliseconds (ms); lower is better.</p>
+<button id="go">Run test</button> <span id="st"></span>
+<table id="tb"><thead><tr><th>Test</th><th>First</th><th>Typical</th><th>Slowest</th><th>Size</th></tr></thead><tbody></tbody></table>
+<p>Result to copy:</p><pre id="out">(not run yet)</pre>
+<script>
+var GH='https://stenbough-cmd.github.io/race-club-data/website/data/';
+var HUB='https://docs.google.com/spreadsheets/d/e/2PACX-1vRnHINZoKMD2_tz8zjp3sf8qnpgi4MeZu0SaC_Gfz3YLsu2xtEdBZjcrCDYZlh9Yd7MW0p4smgybDob/pub?gid=37344457&single=true&output=csv';
+var API='https://script.google.com/macros/s/AKfycbz3jhxWDanYIywi8vn2YYQVwq2MO68tZA4RJpj5fXmUa5ckLo0QpT_lrAwqpsHPnQUV/exec';
+var N=12, rows=[];
+function now(){return performance.now();}
+function one(url,opt){var t=now();return fetch(url,opt).then(function(r){return r.text().then(function(x){return {ms:now()-t,len:x.length,ok:r.ok};});}).catch(function(){return {ms:now()-t,len:0,ok:false};});}
+function seq(label,mk,n){
+  var res=[];var p=Promise.resolve();
+  for(var i=0;i<n;i++){p=p.then(function(){return mk().then(function(r){res.push(r);});});}
+  return p.then(function(){add(label,res);});
+}
+function add(label,res){
+  var ms=res.map(function(r){return r.ms;}),s=ms.slice(1).sort(function(a,b){return a-b;});
+  var med=s.length?s[Math.floor(s.length/2)]:ms[0],mx=Math.max.apply(null,ms);
+  rows.push({label:label,first:ms[0],med:med,max:mx,len:res[0].len,ok:res[0].ok});
+  var tr=document.createElement('tr');
+  tr.innerHTML='<td>'+label+(res[0].ok?'':' (FAILED)')+'</td><td class=n>'+Math.round(ms[0])+'</td><td class=n>'+Math.round(med)+'</td><td class=n>'+Math.round(mx)+'</td><td class=n>'+(res[0].len/1024).toFixed(1)+' KB</td>';
+  document.querySelector('#tb tbody').appendChild(tr);
+}
+document.getElementById('go').onclick=function(){
+  rows=[];document.querySelector('#tb tbody').innerHTML='';
+  var st=document.getElementById('st');st.textContent='running...';
+  var nc={cache:'no-cache'};
+  seq('GitHub file: car-list.json (revalidate)',function(){return one(GH+'car-list.json',nc);},N)
+  .then(function(){return seq('GitHub file: home-helmets.json (revalidate)',function(){return one(GH+'home-helmets.json',nc);},N);})
+  .then(function(){return seq('GitHub, 3 files at once',function(){var t=now();return Promise.all([one(GH+'car-list.json',nc),one(GH+'home-helmets.json',nc),one(GH+'car-list.json?x='+Math.random(),nc)]).then(function(a){return {ms:now()-t,len:a[0].len,ok:a.every(function(x){return x.ok;})};});},N);})
+  .then(function(){return seq('Sheets published CSV (League Hub today)',function(){return one(HUB,{cache:'no-store'});},N);})
+  .then(function(){return seq('Apps Script round trip (empty request)',function(){return one(API+'?action=ping&t='+Date.now(),{});},6);})
+  .then(function(){
+    st.textContent='done';
+    var o='Race Club timing  '+new Date().toISOString()+'\n'+navigator.userAgent+'\nconnection: '+(navigator.connection?navigator.connection.effectiveType+' rtt '+navigator.connection.rtt:'n/a')+'\n';
+    rows.forEach(function(r){o+=r.label+': first '+Math.round(r.first)+' | typical '+Math.round(r.med)+' | slowest '+Math.round(r.max)+' | '+(r.len/1024).toFixed(1)+'KB'+(r.ok?'':' FAILED')+'\n';});
+    document.getElementById('out').textContent=o;
+  });
+};
+</script></body></html>
