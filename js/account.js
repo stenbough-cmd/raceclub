@@ -274,8 +274,7 @@
   var RC_LAZY_SECTION_RENDERERS = {
     admin: function (token) { renderAdminSection(token); },
     league: function (token) { renderLeagueManagementSection(token); },
-    stewarding: function (token) { renderStewardingSection(token); },
-    editprofile: function (token) { renderEditProfileSection(token); }
+    stewarding: function (token) { renderStewardingSection(token); }
   };
 
   // "reload". rcReloadAfterSave() below is the one place that clears it -- a save happened, so
@@ -362,7 +361,7 @@
       if (currentProfile && currentProfile.profileId) window.location.href = 'profile.html?id=' + encodeURIComponent(currentProfile.profileId);
     }));
     var settingsItem = NAV_ITEMS[NAV_ITEMS.length - 1];
-    nav.appendChild(makeNavButton(settingsItem.id, settingsItem.label, settingsItem.icon, null, false, function () { showLazySection('editprofile', currentToken); }));
+    nav.appendChild(makeNavButton(settingsItem.id, settingsItem.label, settingsItem.icon, null, false, function () { openEditProfileModal(currentProfile, currentToken); }));
     nav.appendChild(navDivider());
     // Links off-page to the public league.html, not another in-page section, so it navigates
     // directly instead of going through showSection/ showLazySection.
@@ -406,7 +405,7 @@
     // Help is an ordinary in-page section again (see renderHelpSection()) -- it briefly lived on
     // its own page (help.html) so the Rulebook would have room to grow, but that meant losing the
     // sidebar/nav chrome, which read as leaving the site rather than part of the account.
-    nav.appendChild(makeNavButton('help', 'Help', ICON_HELP, 'rc-nav-help', false, function () { showSection('help'); }));
+    nav.appendChild(makeNavButton('help', 'Help', ICON_HELP, 'rc-nav-help', false, function () { openHelpModal(); }));
     // Feedback -- opens the same page-agnostic popup the header dropdown's Feedback item opens
     // (_rcOpenFeedbackModal, js/header.js, loaded on this page before this script -- see the
     // <script src="js/header.js?v=0.9.0"> tag in <head>), not an in-page section.
@@ -2345,30 +2344,6 @@
   // to the `updateOwnProfile` action, plus the existing passwordChangeSection() embedded underneath
   // so Change Password lives in the same popup.
   // ---------------------------------------------------------------------
-  // Edit Profile as its own page (Matt, 2026-11-02): the same form, drawn into the Edit Profile section instead of a popup. The
-  // avatar menu's Edit Profile link goes here from every page (Account.html#editprofile). After a save the page stays put and
-  // shows the new values.
-  function renderEditProfileSection(token) {
-    var section = document.getElementById('rc-section-editprofile');
-    if (!section || !currentProfile) return;
-    section.innerHTML = '';
-    section.appendChild(el('h2', 'margin-top:0;', 'Edit Profile'));
-    var host = el('div');
-    section.appendChild(host);
-    _rcEPOpenEditProfileModal(currentProfile, token, {
-      el: el,
-      showModal: showModal,          // used by the Customize Helmet popups
-      passwordSection: passwordChangeSection,
-      inline: host,
-      afterSave: function (newProfile) {
-        if (newProfile) currentProfile = newProfile;
-        if (typeof renderHeader === 'function') renderHeader();
-        showToast('Profile updated.', 'success');
-        renderEditProfileSection(currentToken);
-      }
-    });
-  }
-
   function openEditProfileModal(profile, token) {
     // The form itself lives in js/edit-profile.js (one copy for every page). Account.html gives it its own popup shell, element
     // helper and Change Password section, and reloads the section the member is on after a save.
@@ -2411,11 +2386,19 @@
   // same reason as before: updating the rulebook as it grows should be a small edit there, not a
   // hunt through this already- large file).
   // ---------------------------------------------------------------------
-  function renderHelpSection() {
-    var section = document.getElementById('rc-section-help');
+  // Help is a large popup on the Account page (Matt, 2026-11-02), the same size as the Helmet Designer's: the header's Help link
+  // from any page goes to Account.html#help, which loads the dashboard and opens this on top of it.
+  function openHelpModal() {
+    var body = el('div');
+    renderHelpSection(body);
+    var handle = showModal('Help', { bodyEl: body, wide: true });
+    if (handle && handle.el) handle.el.classList.add('rc-help-modal');
+    return handle;
+  }
+
+  function renderHelpSection(section) {
     if (!section) return;
     section.innerHTML = '';
-    section.appendChild(el('h2', 'margin-top:0;', 'Help'));
 
     // Two parts in one Help page: the League (red) and the Single Player Championship (blue-gray, like the dashboard container).
     var helpTabs = el('div', 'display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 18px;');
@@ -8351,6 +8334,9 @@
     // RC_LAZY_SECTION_RENDERERS/makeNavButton above) so the section shows current data rather than
     // whatever it last held (or nothing, if it was never opened this page load).
     window.rcNavigateToSection = function (id) {
+      // Help and Edit Profile are popups on this page, not sections (Matt, 2026-11-02).
+      if (id === 'help') { openHelpModal(); return; }
+      if (id === 'editprofile') { openEditProfileModal(currentProfile, currentToken); return; }
       showLazySection(id, currentToken);
     };
 
@@ -8366,7 +8352,6 @@
     buildSidebarNav();
     document.getElementById('rc-sidebar-nav').classList.remove('rc-nav-loading');
     renderPlaceholderSections();
-    renderHelpSection();
 
     // Cumulative access hierarchy (race-club-v03-system-map.html, Section 0): Driver < Steward <
     // Organizer < Admin. Protests is no longer gated here -- filing one is an ordinary Driver
@@ -8402,6 +8387,9 @@
       RC_LAZY_SECTION_RENDERERS[restoreSectionId](token);
     }
     showSection(restoreSectionId);
+    // Account.html#help / #editprofile (the avatar menu's Help and Edit Profile from any page): dashboard behind, popup on top.
+    if (hashSectionId === 'help') openHelpModal();
+    else if (hashSectionId === 'editprofile') openEditProfileModal(currentProfile, currentToken);
     // Clean the hash off the URL bar once it's been consumed -- leaves the reload's destination
     // unmarked in history rather than piling up a '#sponsors' etc. that a plain refresh or
     // back-button visit would otherwise keep re-landing on.

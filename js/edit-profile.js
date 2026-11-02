@@ -264,18 +264,7 @@ function _rcEPOpenEditProfileModal(profile, token, host) {
   saveBtn.style.marginTop = '20px';
   body.appendChild(saveBtn);
 
-  // host.inline: the form is a page (Account.html's Edit Profile section) instead of a popup. The popup helper
-  // (_showModal) is still what the Customize Helmet popups use, so it is left alone.
-  var modalHandle;
-  if (host.inline) {
-    var card = _el('div', 'rc-dash-card');
-    card.appendChild(body);
-    host.inline.innerHTML = '';
-    host.inline.appendChild(card);
-    modalHandle = { el: card, body: body, close: function () {} };
-  } else {
-    modalHandle = _showModal('Edit Profile', { bodyEl: body });
-  }
+  var modalHandle = _showModal('Edit Profile', { bodyEl: body });
 
   function shakeAndFlagPassword(msg) {
     pwCurrent.classList.add('rc-field-invalid');

@@ -271,17 +271,13 @@ function _rcOpenEditProfileFromHeader() {
   }
 }
 
-// League Help from the account dropdown. On Account.html it shows the in-page Help section; everywhere else it
-// opens the Help popup (the same one league.html opens), so the driver never leaves the page.
+// League Help from the account dropdown. On Account.html it opens the Help popup; from any other page it goes to Account.html#help,
+// which loads the dashboard and opens the same popup on top (Matt, 2026-11-02).
 function _rcOpenLeagueHelpFromHeader() {
   if (typeof window.rcNavigateToSection === 'function') {
     window.rcNavigateToSection('help');
-  } else if (typeof window._rclOpenLeagueRulesModal === 'function') {
-    window._rclOpenLeagueRulesModal();
-  } else if (typeof RULEBOOK_SECTIONS !== 'undefined') {
-    rcOpenLeagueHelpModal_();
   } else {
-    window.location.href = 'Account.html#help';
+    window.location.href = 'Account.html#help';   // the Help popup only lives on the Account page
   }
 }
 
