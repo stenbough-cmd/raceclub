@@ -83,7 +83,7 @@ function _rcrAvg(arr) {
   return a.length ? a.reduce(function (x, y) { return x + y; }, 0) / a.length : null;
 }
 function _rcrShort(name) { var p = String(name || '').split(' '); return p.length > 1 ? p[p.length - 1] : name; }
-// Tyre compound circle: red S (soft), yellow M (medium), white H (hard), blue W (wet) (Matt).
+// Tyre compound circle: white S (soft), yellow M (medium), red H (hard), blue W (wet) (Matt).
 function _rcrCompKey(c) { var k = String(c || '').trim().charAt(0).toUpperCase(); return 'SMHW'.indexOf(k) !== -1 && k ? k : ''; }
 function _rcrCompDot(c) {
   var k = _rcrCompKey(c);
@@ -358,7 +358,7 @@ var RCR_CARS = {
     ],
     lines: ['M80 164 L80 268', 'M56 44 Q80 36 104 44', 'M60 52 L50 112', 'M100 52 L110 112', 'M46 144 L46 180', 'M114 144 L114 180', 'M50 200 L58 262', 'M110 200 L102 262'],
     extras: [
-      { tag: 'rect', a: { x: 12, y: 270, width: 136, height: 12, rx: 3 }, cls: 'rcr-car-wing' }
+      { tag: 'rect', a: { x: 4, y: 270, width: 152, height: 12, rx: 3 }, cls: 'rcr-car-wing' }
     ],
     under: [{ tag: 'rect', a: { x: 16, y: 21, width: 128, height: 40, rx: 2 }, cls: 'rcr-car-splitter' }],
     tyres: [[22, 66], [118, 66], [22, 210], [118, 210]], tw: 20, th: 48

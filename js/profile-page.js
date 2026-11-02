@@ -365,9 +365,6 @@
       w.appendChild(table);
       if ((s.events || []).length) {
         var evs = el('div', 'rcc-laps-events');
-        var evLine = el('div', 'rdp-catline');
-        evLine.appendChild(tx('span', 'rdp-catline-text', 'Events'));
-        evs.appendChild(evLine);
         s.events.forEach(function (ev) {
           var line = el('p', 'rcl-report-line');
           var et = Number(ev.elapsedTime);
@@ -440,6 +437,7 @@
     var seasons = data.seasons || [];
     body.innerHTML = '';
     panel.hidden = false;
+    $('rdp-round').hidden = true;
     var anyRaces = seasons.some(function (s) { return (s.rounds || []).length > 0; });
     if (!seasons.length || !anyRaces) {
       body.appendChild(emptyBlock('No Races Yet', 'This driver has not completed a league race. Season stats will appear after their first finalized round.'));
@@ -459,16 +457,20 @@
     body.appendChild(catLine('Season Stats'));
     var summary = el('div');
     body.appendChild(summary);
-    body.appendChild(raceSel);
+    // Round Stats container (between Season Stats and Story Mentions): the round dropdown through the whole driver report.
+    var roundPanel = $('rdp-round'), rbody = $('rdp-round-body');
+    roundPanel.hidden = false;
+    rbody.innerHTML = '';
+    rbody.appendChild(raceSel);
     // Race Details heading + boxes stay hidden (no placeholder) until a round is chosen.
     var detailsLine = catLine('Race Details');
     detailsLine.style.display = 'none';
-    body.appendChild(detailsLine);
+    rbody.appendChild(detailsLine);
     var detailsHost = el('div');
-    body.appendChild(detailsHost);
-    body.appendChild(catLine('Race Report'));
+    rbody.appendChild(detailsHost);
+    rbody.appendChild(catLine('Race Report'));
     var raceHost = el('div');
-    body.appendChild(raceHost);
+    rbody.appendChild(raceHost);
     var token = 0;
 
     function drawSeason() {

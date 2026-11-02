@@ -266,7 +266,7 @@ a.rdp-rival-name:hover { text-decoration: underline; }
 .rcc-page .rdp-tip b { color: #fff; }
 .rcc-page .rdp-tip-line { color: #cbd2db; }
 .rcc-page .rdp-grid-line { stroke: #e7eaee; }
-.rcc-page .rdp-light { background: transparent; padding: 0; border-radius: 0; }
+.rcc-page .rdp-light { background: #fff; padding: 18px 20px; border-radius: 10px; border: 1px solid var(--rc-silver); }
 .rcc-page .rdp-laps .rcc-laps-row { border-bottom-color: var(--rcl-line); }
 .rcc-page .rdp-laps .rcc-laps-best { color: #8150c0; }
 .rcc-page .rdp-story-more,
@@ -382,3 +382,9 @@ body.rc-league-page .rc-profile-navbar .rcl-navbar-season { background: #1b1c1f;
   border-radius: 6px; font-size: 13px; letter-spacing: 0.08em; text-align: left; padding: 9px 14px 8px;
 }
 .rcc-page .rdp-chart { background: var(--rc-offwhite); border: 0; border-radius: 10px; padding: 14px; }
+
+/* Team History entries: team name and car line centered. Driver report: bordered like the Race Recap report. */
+.rcc-page .rdp-team .rdp-team-name { text-align: center; }
+.rcc-page .rdp-team .rdp-team-model { justify-content: center; }
+.rcc-page .rdp-team .rdp-team-car { margin-left: auto; margin-right: auto; }
+@media (max-width: 600px) { .rcc-page .rdp-light { padding: 14px 12px; } }

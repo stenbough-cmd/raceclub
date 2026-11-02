@@ -125,11 +125,11 @@
 a.rcr-who-driver { color: var(--rc-carbon); text-decoration: none; }
 .rcr-block .rcc-tip { margin: 14px 0 4px; }
 
-/* Driver Report: tyre compound circles (Matt): S red, M yellow, H white, W blue. */
+/* Driver Report: tyre compound circles (Matt): S white, M yellow, H red, W blue. */
 .rcr-comp { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 50%; font-family: var(--rc-font-heading); font-size: 11px; font-weight: 800; line-height: 1; flex: 0 0 auto; box-sizing: border-box; }
-.rcr-comp-s { background: #d7261e; color: #fff; }
+.rcr-comp-s { background: #fff; color: #1f2937; border: 1.5px solid #8a94a3; }
 .rcr-comp-m { background: #f2c230; color: #1f2937; }
-.rcr-comp-h { background: #fff; color: #1f2937; border: 1.5px solid #8a94a3; }
+.rcr-comp-h { background: #d7261e; color: #fff; }
 .rcr-comp-w { background: #2f6fb5; color: #fff; }
 .rcr-corner-pct { display: flex; align-items: center; gap: 8px; }
 .rcr-corner-l .rcr-corner-pct { justify-content: flex-end; }
@@ -252,6 +252,6 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible { text-decoration: underl
 .rcl-dr-light .rcr-contact-wall { background: rgba(180, 183, 189, 0.75); }
 .rcl-dr-light .rcr-set { background: var(--rcl-bg); border-color: var(--rcl-line-bright); }
 .rcl-dr-light .rcr-dt-dot { stroke: var(--rcl-bg-raised); }
-.rcl-dr-light .rcr-comp-h { background: #f2f2f0; }
+.rcl-dr-light .rcr-comp-s { background: #f2f2f0; }
 .rcl-dr-light .rcc-laps-row { border-bottom-color: var(--rcl-line); }
 .rcl-dr-light .rcr-sets-row { border-bottom-color: var(--rcl-line); }
