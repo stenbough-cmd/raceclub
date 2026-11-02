@@ -420,6 +420,48 @@ function _rcChampBadgeHtml_() {
          '</span>';
 }
 
+
+// WHITE LINK BAR attached under the black header (Matt, 2026-11-02): Dashboard (Log In when signed out), League Hub, Championship,
+// on every page. The page you are on is marked. Built once, right when the header is, so it is there the instant the page opens.
+function rcRenderHeaderNav_(token) {
+  var nav = document.getElementById('rc-header-nav');
+  if (!nav) {
+    nav = document.createElement('nav');
+    nav.id = 'rc-header-nav';
+    nav.className = 'rc-hnav';
+    nav.setAttribute('aria-label', 'Main');
+    var mount = document.getElementById('rc-header');
+    mount.parentNode.insertBefore(nav, mount.nextSibling);
+  }
+  var page = (window.location.pathname.split('/').pop() || 'index.html').toLowerCase();
+  var prof = null;
+  try { prof = (token && typeof getProfileCache === 'function') ? getProfileCache() : null; } catch (e) { prof = null; }
+  var champHref = 'championship.html';
+  if (prof && /^RC-\d+$/.test(String(prof.profileId || ''))) champHref = 'championship.html?id=' + encodeURIComponent(prof.profileId);
+  var links = [
+    token ? { label: 'Dashboard', href: 'Account.html', page: 'account.html', id: 'dashboard' } : { label: 'Log In', href: 'login.html', page: 'login.html', login: true },
+    { label: 'League Hub', href: 'league.html', page: 'league.html' },
+    { label: 'Championship', href: champHref, page: 'championship.html' }
+  ];
+  nav.innerHTML = '';
+  var inner = document.createElement('div');
+  inner.className = 'rc-hnav-inner';
+  links.forEach(function (l) {
+    var a = document.createElement('a');
+    a.className = 'rc-hnav-link' + (l.page === page ? ' rc-hnav-current' : '');
+    a.href = l.href;
+    a.textContent = l.label;
+    if (l.page === page) a.setAttribute('aria-current', 'page');
+    if (l.login) a.addEventListener('click', function () { if (typeof rcRememberReturnPage === 'function') rcRememberReturnPage(); });
+    if (l.id === 'dashboard') a.addEventListener('click', function (e) {
+      // On the Account page, Dashboard switches sections in place.
+      if (typeof window.rcNavigateToSection === 'function') { e.preventDefault(); window.rcNavigateToSection('dashboard'); }
+    });
+    inner.appendChild(a);
+  });
+  nav.appendChild(inner);
+}
+
 // opts.forceLoggedOut: renders the logged-OUT nav (HOME · LOGIN/REGISTER) even if a token is
 // present in localStorage. This never clears the token itself (that would force a real re-login
 // over what might just be a momentary connection problem) -- it only affects what the header LOOKS
@@ -432,6 +474,7 @@ function renderHeader(opts) {
   var token = opts.forceLoggedOut ? null : ((typeof getToken === 'function') ? getToken() : null);
   var cached = (token && typeof getProfileCache === 'function') ? getProfileCache() : null;
   mount.className = 'rc-fixed-header';
+  rcRenderHeaderNav_(token);
   mount.setAttribute('data-nav-active', _rcNavActive_());
   _rcWireNavLogos_(mount);
 

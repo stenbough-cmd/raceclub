@@ -1620,8 +1620,8 @@ canvas.rc-helmet { display: block; max-width: 100%; height: auto; filter: drop-s
 }
 
 /* Pages other than index.html sit below the fixed header. */
-.rc-auth-page { padding-top: 70px; }
-.rc-shell { padding-top: 70px; }
+.rc-auth-page { padding-top: calc(70px + var(--rc-hnav-h)); }
+.rc-shell { padding-top: calc(70px + var(--rc-hnav-h)); }
 /* .rc-topbar and its own margin-top:70px clearing rule are gone. */
 
 /* -------------------------------------------------------------------- */
@@ -1710,8 +1710,8 @@ canvas.rc-helmet { display: block; max-width: 100%; height: auto; filter: drop-s
 /* once scrolled -- same 70px both times since that's the header's own    */
 .rc-hero {
   position: sticky;
-  top: 70px;
-  margin-top: 70px;
+  top: calc(70px + var(--rc-hnav-h));
+  margin-top: calc(70px + var(--rc-hnav-h));
   width: 100%;
   /* banner.jpg's own pixel ratio (2:1 landscape) -- sizing the box off   */
   /* the image's real proportions, rather than a fixed height, is what   */
@@ -1745,8 +1745,8 @@ canvas.rc-helmet { display: block; max-width: 100%; height: auto; filter: drop-s
      Its distance from the hero's bottom edge is at least 30px, and grows on a wide or short window (hero height = half the width)
      so that, at page load, the R is never closer than 30px to the navbar even when the navbar rests on the bottom of the screen
      instead of the bottom of the hero. 160px = 70px header + 50px navbar + 30px gap + a little slack for the scrollbar. */
-  bottom: max(30px, calc(50vw - 100vh + 160px));
-  bottom: max(30px, calc(50vw - 100svh + 160px));
+  bottom: max(30px, calc(50vw - 100vh + 160px + var(--rc-hnav-h)));
+  bottom: max(30px, calc(50vw - 100svh + 160px + var(--rc-hnav-h)));
   pointer-events: none;
   right: clamp(49px, 46.68px + 0.65vw, 57px);
   height: clamp(38px, 33.94px + 1.13vw, 52px);
@@ -3004,7 +3004,7 @@ body.rc-modal-scroll-locked {
 /* scroll-margin-top clears the modal's sticky header (see .rc-modal-head) -- without it, jumping
    here from the index puts the section heading directly UNDER the sticky bar instead of just below
    it. */
-.rc-rulebook-section { margin-top: 34px; padding-top: 24px; border-top: 1px solid var(--rc-silver); scroll-margin-top: 76px; }
+.rc-rulebook-section { margin-top: 34px; padding-top: 24px; border-top: 1px solid var(--rc-silver); scroll-margin-top: 120px; }
 .rc-rulebook-section:first-of-type { margin-top: 0; padding-top: 0; border-top: none; }
 .rc-rulebook-section h3 { font-family: var(--rc-font-heading); font-size: 16px; color: var(--rc-carbon); margin: 0 0 12px; }
 .rc-rulebook-section h4 { font-family: var(--rc-font-heading); font-size: 14px; color: var(--rc-carbon); margin: 18px 0 8px; }
@@ -3118,7 +3118,7 @@ body.rc-modal-scroll-locked {
 .rc-team-toggle.rc-team-on:hover { background: rgba(34,197,94,.22); border-color: #4ade80; }
 
 /* ---- Index revamp: intro, two ways to race, helmet showcase, championship sub-heading ---- */
-#league-experience, #championship { scroll-margin-top: 84px; }
+#league-experience, #championship { scroll-margin-top: 128px; }
 
 
 .rc-intro-inner h2 { font-size: 30px; }
@@ -3329,3 +3329,36 @@ button.rc-switch { display: inline-flex; align-items: center; gap: 12px; width: 
 /* Home/Account link bar: the first tab keeps its full side padding so its text never touches the line on its left. */
 .rc-home-navbar-link:first-child { padding-left: 18px; }
 @media (orientation: portrait) { .rc-home-navbar-link:first-child { padding-left: 12px; } }
+
+/* ===== WHITE LINK BAR ATTACHED TO THE HEADER (Matt, 2026-11-02) ===== */
+/* Dashboard (or Log In), League Hub and Championship live in a white bar fixed right under the black header, on every page.
+   --rc-hnav-h is its height; every page offset that used to clear only the 70px header now clears both. */
+:root { --rc-hnav-h: 44px; }
+.rc-hnav {
+  position: fixed; top: 70px; left: 0; right: 0; height: var(--rc-hnav-h); z-index: 999;
+  background: var(--rc-white); border-bottom: 1px solid var(--rc-silver); box-shadow: 0 1px 4px rgba(23, 23, 23, 0.07);
+}
+.rc-hnav-inner { max-width: 1180px; height: 100%; margin: 0 auto; padding: 0 32px; display: flex; align-items: stretch; }
+.rc-hnav-link {
+  display: flex; align-items: center; padding: 0 20px; font-family: var(--rc-font-heading); font-size: 12px; font-weight: 800;
+  letter-spacing: 0.08em; text-transform: uppercase; text-decoration: none; color: var(--rc-steel);
+  border-left: 1px solid var(--rc-silver); box-shadow: inset 0 -2px 0 transparent;
+  transition: background-color .15s ease, color .15s ease, box-shadow .15s ease;
+}
+.rc-hnav-link:last-child { border-right: 1px solid var(--rc-silver); }
+.rc-hnav-link:hover { background: var(--rc-offwhite); color: var(--rc-carbon); box-shadow: inset 0 -2px 0 var(--rc-silver); }
+.rc-hnav-link.rc-hnav-current, .rc-hnav-link.rc-hnav-current:hover { color: var(--rc-carbon); background: var(--rc-offwhite); box-shadow: inset 0 -2px 0 var(--rc-red); }
+.rc-hnav-link:focus-visible { outline: 2px solid var(--rc-steel); outline-offset: -2px; }
+@media (orientation: portrait) {
+  .rc-hnav-inner { padding: 0 12px; }
+  .rc-hnav-link { flex: 1 1 0; justify-content: center; padding: 0 6px; font-size: 11px; letter-spacing: 0.04em; }
+  .rc-hnav-link:first-child { border-left: 0; }
+  .rc-hnav-link:last-child { border-right: 0; }
+}
+
+/* Portrait: the header's account button is just the helmet and the menu arrow in its light gray box; the name and membership tier are
+   gone (Matt, 2026-11-02). */
+@media (orientation: portrait) {
+  .rc-header-account-text { display: none !important; }
+  .rc-header-account-toggle { gap: 4px; }
+}
