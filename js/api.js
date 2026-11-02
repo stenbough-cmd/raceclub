@@ -337,6 +337,15 @@ function rcPatchHubTimeFields(hub) {
   } : null;
   return hub;
 }
+// Account page files: the signed-in member's own file (needs the saved profile id), and the league-wide file.
+function _rcAcctOwnPath_() {
+  try {
+    var pc = (typeof getProfileCache === 'function') ? getProfileCache() : null;
+    var id = pc && pc.profileId;
+    return /^RC-\d{5,6}$/.test(String(id || '')) ? 'account/' + id + '.json' : null;
+  } catch (err) { return null; }
+}
+function _rcAcctLeaguePath_() { return 'account/league.json'; }
 // action -> which file answers it and which part of the file is the answer (the same object the action returns).
 var RC_DATA_ROUTES_ = {
   getPublicRoundResults: { file: _rcDataRoundPath_, pick: function (f) { return f.results; } },
@@ -372,6 +381,20 @@ var RC_DATA_ROUTES_ = {
     },
     pick: function (f, p) { var r = f[(p && p.kind) || 'race']; return r ? { success: true, result: r } : null; }
   },
+  // ---- ACCOUNT PAGE (AccountFiles.gs): the signed-in member's own file, and the league-wide lists. No email is ever in these files;
+  // the Admin member list (adminListDrivers) and the Edit Profile popup (getProfile) still ask Apps Script.
+  getDashboardData:    { file: _rcAcctOwnPath_,  pick: function (f) { return f.dashboard; } },
+  getActiveSeason:     { file: _rcAcctOwnPath_,  pick: function (f) { return f.dashboard && f.dashboard.activeSeason; } },
+  getProtestsPageData: { file: _rcAcctOwnPath_,  pick: function (f) { return f.protests; } },
+  getMyCurrentSeatInfo: { file: _rcAcctOwnPath_, pick: function (f) { return f.seat; } },
+  getTracks:           { file: _rcAcctLeaguePath_, pick: function (f) { return f.tracks; } },
+  getCars:             { file: _rcAcctLeaguePath_, pick: function (f) { return f.cars; } },
+  getDlcOptions:       { file: _rcAcctLeaguePath_, pick: function (f) { return f.dlc; } },
+  adminListSeasons:    { file: _rcAcctLeaguePath_, pick: function (f) { return f.seasons; } },
+  adminListSeasonsWithRaces: { file: _rcAcctLeaguePath_, pick: function (f) { return f.seasonsWithRaces; } },
+  getStewardingFeed:   { file: _rcAcctLeaguePath_, pick: function (f) { return f.stewarding; } },
+  // The helmet editor asks for archived presets too (includeArchived=1): that stays an Apps Script call.
+  adminListHelmetPresets: { file: function (p) { return p.includeArchived ? null : 'account/league.json'; }, pick: function (f) { return f.helmetPresets; } },
   getDriverDirectory: { file: function () { return 'league/directory.json'; }, pick: _rcDataStrip_ },
   getDriverProfileRound: {
     file: function (p) { return (/^RND-\d{3,8}$/.test(String(p.roundId || '')) && /^RC-\d{5,6}$/.test(String(p.profileId || ''))) ? 'rounds/' + p.roundId + '/' + p.profileId + '.json' : null; },
