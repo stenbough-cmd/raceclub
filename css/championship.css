@@ -31,33 +31,9 @@ body.rc-league-page.rcc-page {
    is a plain off-white page with Account's white card at the same height: Account's card sits
    70px header + 32px .rc-main padding + 180px .rc-inline-spinner-page margin from the top; this
    overlay already starts below the 70px header, so 32px of padding puts the card at the same spot. */
-.rcc-page .rcl-page-loader {
-  background: var(--rc-offwhite);
-  justify-content: flex-start;
-  padding-top: 32px;
-}
-.rcc-page .rcl-page-loader .rc-startlights,
-.rcc-page .rcl-modal-dialog .rc-startlights {
-  background: var(--rc-offwhite);
-  border-color: var(--rc-offwhite);
-}
+.rcc-page .rcl-page-loader { background: var(--rc-offwhite); }
 .rcc-page .rcl-page-loader .rc-loading-text,
 .rcc-page .rcl-modal-dialog .rc-loading-text { color: var(--rc-steel); }
-@media (prefers-reduced-motion: reduce) {
-  .rcc-page .rcl-page-loader .rc-startlight {
-    animation-duration: 3.2s;
-    animation-iteration-count: infinite;
-    animation-timing-function: linear;
-    background: var(--rc-carbon);
-    border-color: #9a9a9a;
-    box-shadow: inset 0 0 3px rgba(0, 0, 0, 0.6);
-  }
-  .rcc-page .rcl-page-loader .rc-startlight:nth-child(1) { animation-name: rc-startlight-1; }
-  .rcc-page .rcl-page-loader .rc-startlight:nth-child(2) { animation-name: rc-startlight-2; }
-  .rcc-page .rcl-page-loader .rc-startlight:nth-child(3) { animation-name: rc-startlight-3; }
-  .rcc-page .rcl-page-loader .rc-startlight:nth-child(4) { animation-name: rc-startlight-4; }
-  .rcc-page .rcl-page-loader .rc-startlight:nth-child(5) { animation-name: rc-startlight-5; }
-}
 .rcc-page .rcl-panel { box-shadow: var(--rc-shadow-sm); }
 .rcc-page .rcl-panel-title,
 .rcc-page .rcl-hero-title { text-shadow: none; }

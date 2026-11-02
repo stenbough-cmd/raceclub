@@ -2576,87 +2576,41 @@ body.rc-modal-scroll-locked {
 /* (e.g. "0%, 68.74%" then "68.75%, 100%") force an instant on/off cut   */
 /* instead of the smooth color fade CSS would otherwise interpolate.     */
 /* -------------------------------------------------------------------- */
+/* Loading indicator (Matt, 2026-11-04): a 75px rotating racing slick with a dark metal rim, drawn straight on the page, container or popup
+   (no card around it). Every loader on the site keeps the old .rc-startlights markup; the five light spans are hidden and the wrapper is the tire. */
 .rc-inline-spinner-wrap {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 16px;
-  padding: 36px 46px;
-  background: var(--rc-white);
-  border: 1px solid var(--rc-silver);
-  border-radius: 8px;
-  width: fit-content;
-  max-width: 360px;
+  gap: 14px;
+  padding: 24px 0;
+  background: none;
+  border: 0;
+  box-shadow: none;
+  width: auto;
+  max-width: none;
   margin-left: auto;
   margin-right: auto;
-  /* Same slight lift as .rc-dash-card -- since this one rule backs every loading state sitewide
-     (see the file comment above), this single line covers all of them at once rather than a
-     per-usage patch. */
-  box-shadow: var(--rc-shadow-md);
 }
-/* Inside a popup (the Season Wizard's loading states, the Data Management list popups) the modal
-   card itself already reads as the container, so the spinner's own border is redundant
-   double-framing -- drop it there. */
-.rc-modal-body .rc-inline-spinner-wrap {
-  border: none;
-  box-shadow: none;
-}
-/* No more min-height:55vh -- that was stretching the card itself to fill most of the page. */
 .rc-inline-spinner-page {
-  margin-top: 180px;
+  margin-top: 120px;
 }
 .rc-startlights {
-  display: flex;
-  gap: 7.5px;
-  padding: 7px 9px;
-  background: var(--rc-offwhite);
-  /* A shade lighter than --rc-silver but still visibly darker than the --rc-offwhite (#F5F5F3)
-     panel behind it, so the frame stays readable as a frame instead of blending into the pill. */
-  border: 1.5px solid var(--rc-offwhite);
-  border-radius: 999px;
-}
-.rc-startlight {
-  width: 15px;
-  height: 15px;
+  display: block;
+  flex: none;
+  width: 75px;
+  height: 75px;
+  padding: 0;
+  gap: 0;
+  border: 0;
   border-radius: 50%;
-  background: var(--rc-carbon);
-  border: 1.5px solid #9a9a9a;
-  box-shadow: inset 0 0 3px rgba(0, 0, 0, 0.6);
-  animation-duration: 3.2s;
-  animation-iteration-count: infinite;
-  animation-timing-function: linear;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='sp' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%234a525a'/%3E%3Cstop offset='1' stop-color='%2323272c'/%3E%3C/linearGradient%3E%3CradialGradient id='rm' cx='.4' cy='.35' r='.8'%3E%3Cstop offset='0' stop-color='%234b535b'/%3E%3Cstop offset='.6' stop-color='%232a2e33'/%3E%3Cstop offset='1' stop-color='%2315171a'/%3E%3C/radialGradient%3E%3C/defs%3E%3Ccircle cx='50' cy='50' r='49' fill='%230f0f10' stroke='%234a5058' stroke-width='1.2'/%3E%3Ccircle cx='50' cy='50' r='46.5' fill='none' stroke='%23252628' stroke-width='1'/%3E%3Ccircle cx='50' cy='50' r='38' fill='none' stroke='%231d1e20' stroke-width='12'/%3E%3Cpath d='M50 11.5 A38.5 38.5 0 0 1 82 31' fill='none' stroke='%23e8e8e6' stroke-width='2.4' stroke-dasharray='7 4' stroke-linecap='round'/%3E%3Ccircle cx='50' cy='50' r='31' fill='url%28%23rm%29' stroke='%236a747e' stroke-width='1.6'/%3E%3Ccircle cx='50' cy='50' r='26' fill='%230b0c0d'/%3E%3Cg transform='rotate%280 50 50%29'%3E%3Cpath d='M46 50 L45 26 Q50 22 55 26 L54 50 Z' fill='url%28%23sp%29' stroke='%236a747e' stroke-width='.8'/%3E%3C/g%3E%3Cg transform='rotate%2872 50 50%29'%3E%3Cpath d='M46 50 L45 26 Q50 22 55 26 L54 50 Z' fill='url%28%23sp%29' stroke='%236a747e' stroke-width='.8'/%3E%3C/g%3E%3Cg transform='rotate%28144 50 50%29'%3E%3Cpath d='M46 50 L45 26 Q50 22 55 26 L54 50 Z' fill='url%28%23sp%29' stroke='%236a747e' stroke-width='.8'/%3E%3C/g%3E%3Cg transform='rotate%28216 50 50%29'%3E%3Cpath d='M46 50 L45 26 Q50 22 55 26 L54 50 Z' fill='url%28%23sp%29' stroke='%236a747e' stroke-width='.8'/%3E%3C/g%3E%3Cg transform='rotate%28288 50 50%29'%3E%3Cpath d='M46 50 L45 26 Q50 22 55 26 L54 50 Z' fill='url%28%23sp%29' stroke='%236a747e' stroke-width='.8'/%3E%3C/g%3E%3Ccircle cx='50' cy='50' r='9' fill='url%28%23rm%29' stroke='%237b858f' stroke-width='1'/%3E%3Ccircle cx='50' cy='50' r='3.2' fill='%239aa4ad'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
+  animation: rc-tire-spin 0.8s linear infinite;
 }
-.rc-startlight:nth-child(1) { animation-name: rc-startlight-1; }
-.rc-startlight:nth-child(2) { animation-name: rc-startlight-2; }
-.rc-startlight:nth-child(3) { animation-name: rc-startlight-3; }
-.rc-startlight:nth-child(4) { animation-name: rc-startlight-4; }
-.rc-startlight:nth-child(5) { animation-name: rc-startlight-5; }
-/* Off-state stops shared by every light below. */
-@keyframes rc-startlight-1 {
-  0%, 68.74% { background: var(--rc-red); border-color: var(--rc-red); box-shadow: 0 0 7.5px 1.5px var(--rc-red); }
-  68.75%, 100% { background: var(--rc-carbon); border-color: #9a9a9a; box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.6); }
-}
-@keyframes rc-startlight-2 {
-  0%, 9.374% { background: var(--rc-carbon); border-color: #9a9a9a; box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.6); }
-  9.375%, 68.74% { background: var(--rc-red); border-color: var(--rc-red); box-shadow: 0 0 7.5px 1.5px var(--rc-red); }
-  68.75%, 100% { background: var(--rc-carbon); border-color: #9a9a9a; box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.6); }
-}
-@keyframes rc-startlight-3 {
-  0%, 18.749% { background: var(--rc-carbon); border-color: #9a9a9a; box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.6); }
-  18.75%, 68.74% { background: var(--rc-red); border-color: var(--rc-red); box-shadow: 0 0 7.5px 1.5px var(--rc-red); }
-  68.75%, 100% { background: var(--rc-carbon); border-color: #9a9a9a; box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.6); }
-}
-@keyframes rc-startlight-4 {
-  0%, 28.124% { background: var(--rc-carbon); border-color: #9a9a9a; box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.6); }
-  28.125%, 68.74% { background: var(--rc-red); border-color: var(--rc-red); box-shadow: 0 0 7.5px 1.5px var(--rc-red); }
-  68.75%, 100% { background: var(--rc-carbon); border-color: #9a9a9a; box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.6); }
-}
-@keyframes rc-startlight-5 {
-  0%, 37.499% { background: var(--rc-carbon); border-color: #9a9a9a; box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.6); }
-  37.5%, 68.74% { background: var(--rc-red); border-color: var(--rc-red); box-shadow: 0 0 7.5px 1.5px var(--rc-red); }
-  68.75%, 100% { background: var(--rc-carbon); border-color: #9a9a9a; box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.6); }
-}
+.rc-startlights > * { display: none !important; }
+@keyframes rc-tire-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .rc-startlights { animation-duration: 3s; } }
 .rc-loading-text {
   font-family: var(--rc-font-heading);
   font-size: 13px;

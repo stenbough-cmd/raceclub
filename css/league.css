@@ -44,7 +44,9 @@ body.rc-league-page {
   align-items: center;
   justify-content: center;
   gap: 18px;
-  background: rgba(10, 10, 11, 0.94);
+  background: var(--rc-offwhite, #F4F4F2);
+  justify-content: flex-start;
+  padding-top: 120px;
   transition: opacity 0.4s ease;
   /* Stays invisible for the first second, then fades in. Pages that load faster than that never show the
      loader at all (a split-second flash looks like a glitch); slow loads still get the start lights.
@@ -62,25 +64,7 @@ html.rc-pending .rcc-actionbar, html.rc-pending .rcl-main, html.rc-pending .rc-s
 /* .rc-loading-text (style.css) is tuned for the site's light theme (var(--rc-steel)) -- this
    overlay is dark, so it needs its own color here rather than inheriting an unreadable
    dark-gray-on-black. */
-.rcl-page-loader .rc-loading-text { color: var(--rcl-ink-dim); }
-/* .rc-startlights (style.css) is a light off-white pill by default, built for the site's white
-   pages -- mid-gray here instead, sitting between the near-black overlay behind it and the
-   white/red lights themselves, so the light bar still reads as a physical frame instead of a bright
-   cutout against the dark page. */
-.rcl-page-loader .rc-startlights {
-  background: var(--rcl-line-bright);
-  border-color: var(--rcl-line);
-}
-@media (prefers-reduced-motion: reduce) {
-  /* Freeze on a single lit state instead of animating through the full
-     "lights out" sequence -- still reads as "loading," no motion. */
-  .rcl-page-loader .rc-startlight {
-    animation: none;
-    background: var(--rc-red);
-    border-color: var(--rc-red);
-    box-shadow: 0 0 7.5px 1.5px var(--rc-red);
-  }
-}
+.rcl-page-loader .rc-loading-text { color: var(--rc-steel); }
 
 /* -------------------------------------------------------------------- */
 /* Ticker -- scrolling strip, right under the fixed header              */
@@ -1979,10 +1963,6 @@ body.rc-league-page:not(.rcc-page) .rcl-allresults-session-select { min-width: 1
   background: transparent;
   border: none;
   box-shadow: none;
-}
-.rcl-modal-dialog .rc-startlights {
-  background: var(--rcl-line-bright);
-  border-color: var(--rcl-line);
 }
 .rcl-modal-dialog .rc-loading-text {
   color: var(--rcl-ink-dim);

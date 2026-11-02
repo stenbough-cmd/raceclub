@@ -398,3 +398,5 @@ body.rc-league-page .rc-profile-navbar .rcl-navbar-season { background: #1b1c1f;
 .rcc-page .rdp-light .rcr-block-head { margin-bottom: 12px; }
 .rcc-page .rdp-light .rcr-block-title { margin-bottom: 6px; }
 .rcc-page .rdp-light .rcr-hl-title { margin-bottom: 14px; }
+/* Same gap under the Driver Report line as under the other lines (22px): the report's own 28px top margin is dropped on the profile page. */
+.rcc-page .rdp-light .rcr-report, .rcc-page .rdp-light .rcr-report-who + .rcr-report { margin-top: 0; }
