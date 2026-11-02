@@ -2644,3 +2644,9 @@ a.rcl-navbar-link.rcl-navbar-active, a.rcl-navbar-link.rcl-navbar-active:hover {
 
 /* Signed-out League Hub: the sign-up panel's Log In / Create An Account buttons */
 .rcl-empty-state .rcc-off-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 18px; }
+
+/* Same side spacing as the Driver Profile page (Matt, 2026-11-02): 1280px wide with 16px at each side, on the hero, link bars and page body. */
+.rcl-main, .rcl-hero-inner, .rcl-navbar-inner, .rcc-actionbar-inner { max-width: 1280px; box-sizing: border-box; }
+.rcl-main { padding-left: 16px; padding-right: 16px; }
+.rcl-hero { padding-left: 16px; padding-right: 16px; }
+.rcl-navbar-inner, .rcc-actionbar-inner { padding-left: 16px; padding-right: 16px; }

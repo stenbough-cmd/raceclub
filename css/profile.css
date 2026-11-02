@@ -161,7 +161,7 @@ a.rdp-rival-name:hover { text-decoration: underline; }
   .rdp-row-top, .rdp-row-half, .rdp-race-split, .rdp-charts { grid-template-columns: 1fr; }
 }
 @media (orientation: portrait) {
-  .rc-profile-page { padding: 18px 12px 48px; gap: 16px; }
+  .rc-profile-page { padding: 18px 16px 48px; gap: 16px; }
   .rdp-ach-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
   .rdp-ach-value { font-size: 30px; }
   .rdp-form-sq { width: 36px; height: 36px; font-size: 14px; }

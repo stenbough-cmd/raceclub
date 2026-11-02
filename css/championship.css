@@ -761,7 +761,7 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
 .rcc-current-seat-desc { margin: 16px 0 0; font-size: 15px; line-height: 1.6; color: var(--rc-carbon); }
 /* Portrait (phones and tablets alike): link bar fits on one line (Matt, 2026-10-14; 2026-11-02 portrait-only). */
 @media (orientation: portrait) {
-  .rcc-actionbar-inner { padding: 0 12px; }
+  .rcc-actionbar-inner { padding: 0 16px; }
   .rcc-actionbar-link { padding-left: 6px; padding-right: 6px; font-size: 11px; letter-spacing: 0.03em; }
   
   

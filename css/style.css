@@ -3364,3 +3364,6 @@ button.rc-switch { display: inline-flex; align-items: center; gap: 12px; width: 
 .rc-account-navbar-inner { max-width: 1280px; margin: 0 auto; padding: 0 16px; box-sizing: border-box; display: flex; align-items: center; min-height: 48px; }
 .rc-account-navbar-title { font-family: var(--rc-font-heading); font-size: 13px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: #ffffff; white-space: nowrap; }
 .rc-account-navbar + .rc-shell { padding-top: 0; }
+
+/* Dashboard side spacing = Driver Profile page: 1280px wide, 16px each side (Matt, 2026-11-02). */
+.rc-main { width: 100%; max-width: 1280px; margin-left: auto; margin-right: auto; padding-left: 16px; padding-right: 16px; box-sizing: border-box; }
