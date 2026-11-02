@@ -340,3 +340,6 @@ body.rc-league-page.rcc-page { overflow-x: clip; }
 /* Navbar: Home starts where the page's panels start, and the member dropdown ends where the last panel ends
    (the page is 1280px wide with 16px side padding). */
 .rc-profile-navbar .rcl-navbar-inner { max-width: 1280px; padding: 0 16px; box-sizing: border-box; }
+
+.rc-profile-navbar:not(:has(select)) { display: none; }
+.rc-profile-navbar .rcl-navbar-season { margin-left: auto; }

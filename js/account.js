@@ -426,8 +426,6 @@
     document.querySelectorAll('.rc-nav-item').forEach(function (btn) {
       btn.classList.toggle('rc-nav-active', btn.dataset.section === id);
     });
-    var topDash = document.getElementById('rc-acct-navbar-dashboard');
-    if (topDash) topDash.classList.toggle('rc-home-navbar-current', id === 'dashboard');
     closeMobileMenu();
     // Only track real sections (a matching .rc-content-section actually exists) --
     // rcReloadAfterSave() reads this to return a popup save to the same page it was opened from
@@ -8449,7 +8447,6 @@
     if (profile.mustChangePassword) {
       document.getElementById('rc-sidebar').style.display = 'none';
       document.getElementById('rc-topbar').style.display = 'none';
-      document.getElementById('rc-acct-navbar').style.display = 'none';
 
       var lockWrap = document.getElementById('rc-forced-password');
       lockWrap.style.display = 'block';
@@ -8467,7 +8464,6 @@
           lockWrap.style.display = 'none';
           document.getElementById('rc-sidebar').style.display = '';
           document.getElementById('rc-topbar').style.display = '';
-          document.getElementById('rc-acct-navbar').style.display = '';
           profile.mustChangePassword = false;
           buildFullProfileUI(profile, token, dashboardData);
         }
@@ -8487,7 +8483,6 @@
   function showSessionExpiredLock() {
     document.getElementById('rc-sidebar').style.display = 'none';
     document.getElementById('rc-topbar').style.display = 'none';
-    document.getElementById('rc-acct-navbar').style.display = 'none';
     document.getElementById('rc-profile-root').style.display = 'none';
 
     var lockWrap = document.getElementById('rc-session-locked');

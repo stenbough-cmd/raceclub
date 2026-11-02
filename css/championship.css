@@ -976,4 +976,7 @@ body.rcc-page { --rcc-true-red: #F21B0C; }
    header), the black link bar is the one thing drawn, just under the header and above the loading overlay. When the data
    arrives the ticker and hero appear above it and it moves down with the layout, or stays put on the sign-up and
    switched-off views. */
-html.rc-pending .rcc-actionbar { display: block !important; position: relative; z-index: 950; }
+html.rc-pending .rcc-actionbar { display: none !important; }
+
+.rcc-actionbar:empty { display: none !important; }
+.rcc-actionbar-inner > .rcc-actionbar-season { margin-left: auto; }

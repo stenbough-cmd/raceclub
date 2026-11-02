@@ -62,8 +62,8 @@ function redirectIfNoToken() {
 }
 
 // ---------------------------------------------------------------------
-// INACTIVITY AUTO-LOGOUT — 30 minutes of no mouse/keyboard/touch activity logs the user out and
-// sends them back to login.html with an explanation.
+// INACTIVITY AUTO-LOGOUT -- TURNED OFF (Matt, 2026-11-02): see startInactivityWatcher below. It used to log the user out after
+// 30 minutes of no mouse/keyboard/touch activity.
 // ---------------------------------------------------------------------
 var INACTIVITY_LIMIT_MS = 30 * 60 * 1000;
 var _inactivityTimer = null;
@@ -85,6 +85,9 @@ function resetInactivityTimer() {
 // Call once on any authenticated page (Account.html) to start the idle
 // timer and wire up the activity listeners that reset it.
 function startInactivityWatcher() {
+  // Matt, 2026-11-02: no inactivity timeout any more. Someone stays signed in for as long as this browser keeps its saved login
+  // (the token in localStorage) and the server still accepts it. Left defined so existing callers keep working.
+  return;
   ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll'].forEach(function (evt) {
     window.addEventListener(evt, resetInactivityTimer, { passive: true });
   });

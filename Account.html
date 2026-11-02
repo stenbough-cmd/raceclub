@@ -8,18 +8,18 @@
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="assets/images/favicon-32.png">
 <link rel="apple-touch-icon" href="assets/images/apple-touch-icon.png">
-<link rel="stylesheet" href="css/style.css?v=0.9.30">
-<link rel="stylesheet" href="css/helmet.css?v=0.9.30">
-<script src="js/version.js?v=0.9.30"></script>
-<script src="js/img-loader.js?v=0.9.30"></script>
-<script src="js/api.js?v=0.9.30"></script>
-<script src="js/auth.js?v=0.9.30"></script>
-<script src="js/reference-data.js?v=0.9.30"></script>
-<script src="js/rulebook-content.js?v=0.9.30"></script>
-<script src="js/header.js?v=0.9.30"></script>
-<script src="js/helmet.js?v=0.9.30"></script>
-<script src="js/helmet-editor.js?v=0.9.30"></script>
-<script src="js/championship-dashboard.js?v=0.9.30"></script>
+<link rel="stylesheet" href="css/style.css?v=0.9.32">
+<link rel="stylesheet" href="css/helmet.css?v=0.9.32">
+<script src="js/version.js?v=0.9.32"></script>
+<script src="js/img-loader.js?v=0.9.32"></script>
+<script src="js/api.js?v=0.9.32"></script>
+<script src="js/auth.js?v=0.9.32"></script>
+<script src="js/reference-data.js?v=0.9.32"></script>
+<script src="js/rulebook-content.js?v=0.9.32"></script>
+<script src="js/header.js?v=0.9.32"></script>
+<script src="js/helmet.js?v=0.9.32"></script>
+<script src="js/helmet-editor.js?v=0.9.32"></script>
+<script src="js/championship-dashboard.js?v=0.9.32"></script>
 </head>
 <body>
 
@@ -34,26 +34,6 @@
 <div class="rc-topbar" id="rc-topbar">
   <button class="rc-hamburger" id="rc-hamburger" aria-label="Menu">&#9776;</button>
 </div>
-
-<!-- Page links under the header (replaces the old black sidebar; every other section is in the avatar menu). -->
-<nav class="rc-home-navbar rc-acct-navbar" id="rc-acct-navbar" aria-label="Main">
-  <div class="rc-home-navbar-inner">
-    <a class="rc-home-navbar-link rc-home-navbar-current" id="rc-acct-navbar-dashboard" href="Account.html#dashboard">Dashboard</a>
-    <a class="rc-home-navbar-link" href="league.html">League Hub</a>
-    <a class="rc-home-navbar-link" id="rc-acct-navbar-champ" href="championship.html">Championship</a>
-  </div>
-</nav>
-<script>
-  (function () {
-    try {
-      var p = (typeof getProfileCache === 'function') ? getProfileCache() : null;
-      var c = document.getElementById('rc-acct-navbar-champ');
-      if (c && p && /^RC-\d+$/.test(String(p.profileId || ''))) c.setAttribute('href', 'championship.html?id=' + encodeURIComponent(p.profileId));
-      var d = document.getElementById('rc-acct-navbar-dashboard');
-      if (d) d.addEventListener('click', function (e) { if (typeof window.rcNavigateToSection === 'function') { e.preventDefault(); window.rcNavigateToSection('dashboard'); } });
-    } catch (e) {}
-  })();
-</script>
 
 <div class="rc-shell">
   <aside class="rc-sidebar" id="rc-sidebar">
@@ -109,8 +89,8 @@
 </footer>
 <script>rcWireFooterLegalLink();</script>
 
-<script src="js/edit-profile.js?v=0.9.30"></script>
-<script src="js/car-picker.js?v=0.9.30"></script>
-<script src="js/account.js?v=0.9.30"></script>
+<script src="js/edit-profile.js?v=0.9.32"></script>
+<script src="js/car-picker.js?v=0.9.32"></script>
+<script src="js/account.js?v=0.9.32"></script>
 </body>
 </html>

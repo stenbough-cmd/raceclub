@@ -3453,26 +3453,10 @@ function _rclRenderNavbar_(hub) {
   if (hub) _rclNavHub_ = hub;
   nav.innerHTML = '';
   var inner = _rclEl('div', 'rcl-navbar-inner');
-  var links = _rclEl('div', 'rcl-navbar-links');
-  inner.appendChild(links);
   var signedIn = false;
   try { signedIn = !!getToken(); } catch (err) { signedIn = false; }
 
-  // Same three links as the home page navbar (index.html): Login (signed in: Dashboard), League Hub, Championship: real page links, last one depends on sign-in.
-  function addLink(label, href, gold) {
-    var a = _rclEl('a', 'rcl-navbar-link' + (gold ? ' rcl-navbar-gold' : ''), _rclEscapeHtml(label));
-    a.setAttribute('href', href);
-    links.appendChild(a);
-  }
-  if (signedIn) addLink('Dashboard', 'Account.html');
-  else {
-    addLink('Log In', 'login.html', true);
-    links.lastChild.addEventListener('click', function () { if (typeof rcRememberReturnPage === 'function') rcRememberReturnPage(); });
-  }
-  addLink('League Hub', 'league.html');
-  links.lastChild.classList.add('rcl-navbar-active');
-  addLink('Championship', 'championship.html');
-
+  // The page links live in the avatar menu now; this bar holds only the season picker.
   // Season picker: every season ever created, newest first, right end of the bar, centered vertically.
   if (hub && Array.isArray(hub.seasons) && hub.seasons.length && !_rclViewSeasonId_) {
     _rclSeasonList_ = hub.seasons;
@@ -3492,7 +3476,7 @@ function _rclRenderNavbar_(hub) {
     pick.addEventListener('change', function () { if (_rclOnSeasonPick_) _rclOnSeasonPick_(pick.value); });
     inner.appendChild(pick);
   }
-  nav.appendChild(inner);
+  if (inner.childNodes.length) nav.appendChild(inner);
 }
 
 // Full-page loading overlay -- markup/CSS live in league.html and css/league.css; this just locks

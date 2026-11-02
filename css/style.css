@@ -3321,11 +3321,22 @@ button.rc-switch { display: inline-flex; align-items: center; gap: 12px; width: 
    other section is in the avatar menu. The sidebar element stays in the page (hidden) because the section code
    still builds its buttons. */
 .rc-sidebar { display: none !important; }
-.rc-acct-navbar { margin-top: 70px; }
-.rc-acct-navbar + .rc-shell { padding-top: 0; }
 .rc-home-navbar-link.rc-home-navbar-current { background: rgba(255, 255, 255, 0.08); box-shadow: inset 0 -2px 0 #e0b64c; }
 @media (min-width: 641px) and (orientation: landscape) { .rc-modal-backdrop { padding-left: 24px; } }
 
 /* Home/Account link bar: the first tab keeps its full side padding so its text never touches the line on its left. */
 .rc-home-navbar-link:first-child { padding-left: 18px; }
 @media (orientation: portrait) { .rc-home-navbar-link:first-child { padding-left: 12px; } }
+
+/* Portrait: the header's account button is just the helmet and the menu arrow in its light gray box; the name and membership tier are
+   gone (Matt, 2026-11-02). */
+@media (orientation: portrait) {
+  .rc-header-account-text { display: none !important; }
+  .rc-header-account-toggle { gap: 4px; }
+}
+
+/* Logged-out header: a small arrow beside LOG IN opens the guest menu (Log In, Create An Account, League Hub, Championship) in landscape;
+   in portrait the helmet button opens the same panel. */
+.rc-header-guest-menu-btn { display: inline-flex; align-items: center; justify-content: center; background: none; border: none; padding: 6px; border-radius: 8px; color: var(--rc-steel); cursor: pointer; }
+.rc-header-guest-menu-btn:hover, .rc-header-guest-menu-btn[aria-expanded="true"] { background: var(--rc-offwhite); color: var(--rc-red); }
+@media (orientation: portrait) { .rc-header-guest-menu-btn { display: none; } }
