@@ -958,13 +958,36 @@ body.rc-league-page.rcc-page .rcl-hero {
 .rcc-page .rcl-hero::before { opacity: 0.9; }
 /* Title and season line: the hub's colors and shadows. */
 .rcc-page .rcl-hero-title { text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45); }
-.rcc-page .rcl-hero-title-hub { color: var(--rcl-ink); -webkit-text-stroke-color: var(--rcl-ink); }
 .rcc-page .rcl-hero-season { text-shadow: 0 2px 4px rgba(0, 0, 0, 0.45); }
-.rcc-page .rcl-hero-season-num { color: var(--rcc-accent-light); }
 /* Seat line under the season line (team, car, maker logo): light text; the black maker logos are turned white. */
 .rcc-page .rcl-hero .rc-cs-team-name, .rcc-page .rcl-hero .rcr-who-team, .rcc-page .rcl-hero .rcr-who-driver { color: var(--rcl-ink); }
 .rcc-page .rcl-hero .rc-cs-car-line, .rcc-page .rcl-hero .rcc-hero-meta { color: var(--rcl-ink-dim); }
 .rcc-page .rcl-hero .rc-cs-maker-logo, .rcc-page .rcl-ticker-wrap .rcl-ticker-driver-logo { filter: brightness(0) invert(1); }
-/* Ticker: light entries on the dark strip; category tags and the welcome line in the light accent blue. */
-.rcc-page .rcl-ticker-item-tag, .rcc-page .rcc-ticker-lead { color: var(--rcc-accent-light); }
+/* Ticker: light entries on the dark strip. */
 .rcc-page .rcl-ticker-driver-rank, .rcc-page .rcc-ticker-plain { color: var(--rcl-ink); }
+
+/* Gold instead of blue in the ticker, hero and black link bar (Matt, 2026-11-02), and the hero's text in the hub's own colors:
+   red eyebrow and title, gold "Season N", red slash, white season name. */
+body.rc-league-page.rcc-page .rcl-ticker-wrap,
+body.rc-league-page.rcc-page .rcl-hero { --rc-red: #e0b64c; }
+.rcc-page .rcl-ticker-label { color: #141416; }
+.rcc-page .rcl-ticker-item-tag, .rcc-page .rcc-ticker-lead { color: #e0b64c; }
+.rcc-page .rcc-actionbar { border-bottom-color: #e0b64c; }
+.rcc-page .rcl-hero-title-hub { color: var(--rcc-true-red); -webkit-text-stroke-color: var(--rcc-true-red); }
+.rcc-page .rcl-hero-season-num { color: #e0b64c; }
+
+/* Navigation look for the page links: same tab style as the League Hub's bar, with a gold bar for the hovered and current page. */
+.rcc-actionbar-links { align-self: stretch; align-items: stretch; }
+.rcc-actionbar-link, a.rcc-actionbar-link {
+  display: flex; align-items: center; min-height: 48px; padding: 0 18px;
+  font-size: 13px; text-decoration: none; color: rgba(255, 255, 255, 0.82);
+  border-left: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: inset 0 -3px 0 transparent;
+  transition: background-color .15s ease, color .15s ease, box-shadow .15s ease;
+}
+.rcc-actionbar-link:last-child { border-right: 1px solid rgba(255, 255, 255, 0.12); }
+.rcc-actionbar-link:first-child { padding-left: 18px; }
+.rcc-actionbar-link:disabled { color: var(--rc-steel); box-shadow: none; background: none; }
+.rcc-actionbar-link:hover:not(:disabled), a.rcc-actionbar-link:hover { color: var(--rc-white); background: rgba(255, 255, 255, 0.08); box-shadow: inset 0 -3px 0 #e0b64c; }
+.rcc-page .rcc-actionbar-current, .rcc-page .rcc-actionbar-current:hover { color: var(--rc-white); background: rgba(255, 255, 255, 0.1); box-shadow: inset 0 -3px 0 #e0b64c; }
+@media (max-width: 640px), (orientation: portrait) { .rcc-actionbar-link, a.rcc-actionbar-link { min-height: 44px; padding: 0 12px; } .rcc-actionbar-link:first-child { padding-left: 12px; } }

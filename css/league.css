@@ -2562,7 +2562,7 @@ body.rc-league-page .rcl-navbar-season {
 .rcl-news-badge-icon { width: 26px; height: 26px; }
 .rcl-news-badge-sm .rcl-news-badge-icon { width: 19px; height: 19px; }
 
-a.rcl-navbar-link.rcl-navbar-active { color: var(--rc-red); }
+a.rcl-navbar-link.rcl-navbar-active { color: var(--rc-white); }
 
 /* League Hub navbar works like the home page one (Matt, 2026-10-27): it rides up with the page, then stays pinned
    right under the 70px fixed header while the page keeps scrolling beneath it. Also rests on the bottom edge on a very short window. */
@@ -2599,3 +2599,21 @@ body.rc-league-page:not(.rcc-page) .rcl-navbar { position: sticky; top: 70px; bo
 .rcl-news-title-link { cursor: pointer; }
 .rcl-news-title-link:hover { text-decoration: underline; }
 .rcl-news-title-link:focus-visible { outline: 2px solid var(--rcl-ink-dim); outline-offset: 2px; }
+
+/* Navigation look for the black bar's page links (Matt, 2026-11-02; the same rules are in css/style.css for the home page and
+   css/championship.css): each link is a full-height tab with a divider between tabs, a light fill on hover, and an accent
+   bar along the bottom for the hovered and the current page, so the row reads as the site's navigation. */
+.rcl-navbar-links { align-self: stretch; align-items: stretch; }
+.rcl-navbar-link, a.rcl-navbar-link {
+  display: flex; align-items: center; min-height: 48px; padding: 0 18px;
+  font-size: 13px; text-decoration: none; color: rgba(255, 255, 255, 0.82);
+  border-left: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: inset 0 -3px 0 transparent;
+  transition: background-color .15s ease, color .15s ease, box-shadow .15s ease;
+}
+.rcl-navbar-link:last-child { border-right: 1px solid rgba(255, 255, 255, 0.12); }
+.rcl-navbar-link + .rcl-navbar-link::before { content: none; }
+.rcl-navbar-link:first-child { padding-left: 18px; }
+.rcl-navbar-link:hover, a.rcl-navbar-link:hover, a.rcl-navbar-link.rcl-navbar-gold[href="login.html"]:hover { color: var(--rc-white); background: rgba(255, 255, 255, 0.08); box-shadow: inset 0 -3px 0 var(--rc-red); }
+a.rcl-navbar-link.rcl-navbar-active, a.rcl-navbar-link.rcl-navbar-active:hover { color: var(--rc-white); background: rgba(255, 255, 255, 0.1); box-shadow: inset 0 -3px 0 var(--rc-red); }
+@media (max-width: 640px), (orientation: portrait) { .rcl-navbar-link, a.rcl-navbar-link { min-height: 44px; padding: 0 12px; } .rcl-navbar-link:first-child { padding-left: 12px; } }
