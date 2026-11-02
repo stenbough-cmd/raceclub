@@ -622,7 +622,7 @@
         var reg2 = el('button', 'rc-btn-primary rc-ol-register', 'Register for the season →');
         reg2.type = 'button';
         reg2.addEventListener('click', function () {
-          buildRegistrationModal(profile, token, season, function () { if (onRegistered) onRegistered(); });
+          buildRegistrationModal(profile, token, season, function (info) { if (onRegistered) onRegistered(info); });
         });
         seasonBox.appendChild(reg2);
         addDetailsLink();
@@ -759,20 +759,41 @@
       return built;
     }
 
-    function onRegisteredRebuild() {
-      // Registration just completed -- re-fetch everything that's gated/built on registration state
-      // and swap both rows' contents in place, same "fresh promises, fade in again" path as the
-      // very first paint.
+    function swapRows(data) {
+      var fresh = buildDashboardDataRows(profile, token, data, onRegisteredRebuild);
+      rows.topRow.innerHTML = '';
+      while (fresh.topRow.firstChild) rows.topRow.appendChild(fresh.topRow.firstChild);
+      rows.resultsRow.innerHTML = '';
+      while (fresh.resultsRow.firstChild) rows.resultsRow.appendChild(fresh.resultsRow.firstChild);
+    }
+
+    function onRegisteredRebuild(info) {
+      // Registration just completed. The fresh server read is slow (several seconds), so when we know what was just joined
+      // (team + class + season, passed by the car picker) the Dashboard is redrawn IMMEDIATELY from that, with no spinner,
+      // and the real data is fetched quietly in the background and swapped in when it arrives. Without that info (any other
+      // caller) it falls back to the old spinner-and-wait path.
       var freshDashboardData = fetchDashboardData(token);
+      if (info && info.team && info.season) {
+        var t = info.team, s0 = info.season;
+        var optimisticSeason = {};
+        Object.keys(s0).forEach(function (k) { optimisticSeason[k] = s0[k]; });
+        optimisticSeason.registered = true;
+        optimisticSeason.seatsTaken = (s0.seatsTaken || 0) + 1;
+        optimisticSeason.registration = { carClass: info.carClass || t.carClass || '', manufacturer: t.manufacturer || '', joinedAt: new Date().toISOString(), status: 'Active', canDropOut: true };
+        swapRows({
+          activeSeasonPromise: Promise.resolve(optimisticSeason),
+          currentSeatPromise: Promise.resolve({ success: true, hasSeat: true, team: t.teamName || '', carNumber: t.carNumber || '', carModel: t.carModel || '', manufacturer: t.manufacturer || '', carClass: info.carClass || t.carClass || '', statsKnown: false }),
+          nextRacePromise: dashboardData.nextRacePromise,
+          myProtestsPromise: dashboardData.myProtestsPromise
+        });
+        _rcDashboardAllSettled_(freshDashboardData).then(function () { swapRows(freshDashboardData); });
+        return;
+      }
       var rebuildSpinner = buildPageSpinner('Loading your dashboard...');
       rows.topRow.parentNode.insertBefore(rebuildSpinner, rows.topRow);
       _rcDashboardAllSettled_(freshDashboardData).then(function () {
         rebuildSpinner.remove();
-        var fresh = buildDashboardDataRows(profile, token, freshDashboardData, onRegisteredRebuild);
-        rows.topRow.innerHTML = '';
-        while (fresh.topRow.firstChild) rows.topRow.appendChild(fresh.topRow.firstChild);
-        rows.resultsRow.innerHTML = '';
-        while (fresh.resultsRow.firstChild) rows.resultsRow.appendChild(fresh.resultsRow.firstChild);
+        swapRows(freshDashboardData);
       });
     }
 
@@ -1954,9 +1975,8 @@
       },
       reload: rcReloadAfterSave,
       // League: redraw the Dashboard in place as soon as the seat is confirmed (no reload, popups stay open).
-      refresh: function () { if (onDone) onDone(); },
-      toast: showToast,
-      onClose: onDone
+      refresh: function (team, cls) { if (onDone) onDone({ team: team, carClass: cls, season: activeSeasonData }); },
+      toast: showToast
     });
   }
 

@@ -284,7 +284,7 @@
           if (res && res.success) {
             outcome = 'ok';
             cfg.toast(W.registered, 'success');
-            cfg.refresh();
+            cfg.refresh(team, cls);
             return;
           }
           failed((res && res.message) || (res && res.error === 'TEAM_TAKEN'

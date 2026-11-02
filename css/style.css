@@ -3366,7 +3366,7 @@ button.rc-switch { display: inline-flex; align-items: center; gap: 12px; width: 
 .rc-account-navbar ~ .rc-shell { padding-top: 0; }
 
 /* Dashboard side spacing = Driver Profile page: 1280px wide, 16px each side (Matt, 2026-11-02). */
-.rc-main { width: 100%; max-width: 1280px; margin-left: auto; margin-right: auto; padding-left: 16px; padding-right: 16px; padding-top: 12px; box-sizing: border-box; }
+.rc-main { width: 100%; max-width: 1280px; margin-left: auto; margin-right: auto; padding-left: 16px; padding-right: 16px; padding-top: 20px; box-sizing: border-box; }
 
 /* ===== ONLINE LEAGUE SECTION on the Dashboard (Matt's redesign, 2026-11-02) ===== */
 /* One white container, the most subtle drop shadow, a headline + status pill, a grey season box and three tiles. */
@@ -3383,7 +3383,7 @@ button.rc-switch { display: inline-flex; align-items: center; gap: 12px; width: 
 .rc-ol-season { background: var(--rc-offwhite); border-radius: 10px; padding: 18px 20px; display: flex; flex-direction: column; gap: 12px; }
 .rc-ol-season-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
 .rc-ol-season-name { font-family: var(--rc-font-heading); font-size: 18px; font-weight: 800; letter-spacing: 0.02em; text-transform: uppercase; color: var(--rc-carbon); }
-.rc-ol-season-count { font-family: var(--rc-font-heading); font-size: 20px; font-weight: 800; color: var(--rc-steel); font-variant-numeric: tabular-nums; }
+.rc-ol-season-count { font-family: var(--rc-font-heading); font-size: 12px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; padding: 5px 12px; border-radius: 999px; background: var(--rc-white); color: var(--rc-carbon); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .rc-ol-note { margin: 0; font-size: 14px; color: var(--rc-steel); line-height: 1.45; }
 .rc-ol-progress { height: 8px; border-radius: 999px; background: var(--rc-silver); overflow: hidden; }
 .rc-ol-progress-fill { height: 100%; background: var(--rc-red); border-radius: 999px; }
@@ -3420,7 +3420,7 @@ button.rc-switch { display: inline-flex; align-items: center; gap: 12px; width: 
 .rcd-seasons-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-bottom: 12px; border-bottom: 2px solid var(--rc-red); }
 .rcd-seasons-title { font-family: var(--rc-font-heading); font-size: 18px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: var(--rc-carbon); }
 .rcd-count-pill { font-family: var(--rc-font-heading); font-size: 12px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; padding: 5px 12px; border-radius: 999px; background: var(--rc-offwhite); color: var(--rc-carbon); white-space: nowrap; }
-.rcd-panel .rcd-row { margin-bottom: 0; }
+.rcd-panel .rcd-row { margin: 18px 0 18px; }
 .rcd-list { display: flex; flex-direction: column; gap: 16px; }
 .rcd-season-box { background: var(--rc-offwhite); border-radius: 10px; padding: 18px 20px; display: flex; flex-direction: column; gap: 10px; }
 .rcd-season-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
@@ -3430,9 +3430,8 @@ button.rc-switch { display: inline-flex; align-items: center; gap: 12px; width: 
 .rcd-season-name { font-family: var(--rc-font-heading); font-size: 20px; font-weight: 800; color: var(--rc-carbon); }
 .rcd-season-meta { font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--rc-steel); }
 .rcd-season-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; padding-top: 14px; margin-top: 4px; border-top: 1px solid var(--rc-silver); }
-.rcd-season-actions .rcd-view-btn { text-decoration: none; margin-left: auto; width: auto; flex: 0 0 auto; padding: 8px 16px; font-size: 12px; }
-.rcd-past-toggle { margin-left: 0; }
-.rcd-season-actions .rcd-view-btn { margin-top: 0; margin-bottom: 0; align-self: center; }
+.rcd-season-actions .rc-btn-row, .rcd-season-actions .rcd-view-btn { box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; height: 34px; min-width: 0; width: auto; flex: 0 0 auto; padding: 0 14px; margin: 0; font-size: 12px; line-height: 1; text-decoration: none; }
+.rcd-past-toggle { margin-left: auto; }
 .rcd-cal { margin-top: 8px; padding-top: 14px; border-top: 1px solid var(--rc-silver); display: flex; flex-direction: column; gap: 10px; }
 .rcd-cal-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
 .rcd-cal-title { font-family: var(--rc-font-heading); font-size: 16px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: var(--rc-carbon); }
@@ -3452,4 +3451,4 @@ button.rc-switch { display: inline-flex; align-items: center; gap: 12px; width: 
 .rcd-past-rounds { margin-top: 4px; }
 @media (orientation: portrait) { .rcd-title { font-size: 26px; } .rcd-flag { width: 46px; height: 46px; } }
 @media (orientation: portrait) and (max-aspect-ratio: 3/5) { .rcd-panel { padding: 18px; } .rcd-title { font-size: 22px; } .rcd-season-box { padding: 16px; } .rcd-flag { display: none; } }
-.rc-ol-season-count-unit { font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; }
+.rc-ol-season-count-unit { font-size: inherit; letter-spacing: inherit; text-transform: uppercase; }
