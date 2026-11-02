@@ -208,27 +208,24 @@ function _rcBuildAccountMenuSectionLinks(role) {
   var EXT = '<svg class="rc-nav-ext" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7"></path><path d="M8 7h9v9"></path></svg>';
   var DIV = '<hr class="rc-header-menu-divider">';
   // Same grouping and order as Account.html's sidebar (reorganized 2026-10-17):
-  //   Me: Dashboard, My Profile Page, Settings | The league: League Hub, Championship |
+  //   Me: Dashboard, Edit Profile | The league: League Hub, Championship |
   //   Staff (only the ones this role unlocks): League Tools, Stewarding, Admin.
   // The caller adds a divider, then League Help / Feedback / Discord, a divider, and Logout.
   var html = link('dashboard', 'Dashboard', 'dash');
-  // My Profile Page: off-page link to the driver's own public career page (saved login profile).
-  var myProfile = (typeof getProfileCache === 'function') ? getProfileCache() : null;
-  if (myProfile && /^RC-\d+$/.test(String(myProfile.profileId || ''))) {
-    html += '<a class="rc-header-menu-item" href="profile.html?id=' + encodeURIComponent(myProfile.profileId) + '">' + _rcMenuIcon_('profile') + '<span>My Profile Page</span></a>';
-  }
   html += '<button type="button" class="rc-header-menu-item" id="rc-header-menu-editprofile">' + _rcMenuIcon_('edit') + '<span>Edit Profile</span></button>';
   html += DIV;
   html += '<a class="rc-header-menu-item" href="league.html">' + _rcMenuIcon_('hub') + '<span>League Hub</span>' + EXT + '</a>';
   // Championship (CHAMP chat, 2026-10-08): the driver's own offline championship page. Open to Admins and to anyone
   // with Championship Access (the + on their role); everyone else does not see it at all.
+  var myProfile = (typeof getProfileCache === 'function') ? getProfileCache() : null;   // the saved login profile
   var champProfile = myProfile;
   var champId = champProfile && /^RC-\d+$/.test(String(champProfile.profileId || '')) ? champProfile.profileId : '';
   if (champId) {   // every signed-in member sees the link (Matt, 2026-10-25)
     html += '<a class="rc-header-menu-item" href="championship.html?id=' + encodeURIComponent(champId) + '">' + _rcMenuIcon_('champ') + '<span>Championship</span>' + EXT + '</a>';
   }
-  // Driver Profiles: the member picker page (profile.html with no driver chosen opens the choose-a-member dropdown).
-  html += '<a class="rc-header-menu-item" href="profile.html">' + _rcMenuIcon_('profile') + '<span>Driver Profiles</span>' + EXT + '</a>';
+  // It opens with the signed-in member already chosen in the dropdown (their own page); the dropdown then picks anyone else.
+  var profHref = (myProfile && /^RC-\d+$/.test(String(myProfile.profileId || ''))) ? 'profile.html?id=' + encodeURIComponent(myProfile.profileId) : 'profile.html';
+  html += '<a class="rc-header-menu-item" href="' + profHref + '">' + _rcMenuIcon_('profile') + '<span>Driver Profiles</span>' + EXT + '</a>';
   // no Championship access (no +): the link is simply not there (Matt, 2026-10-24)
   var staff = '';
   if (role === 'Admin' || role === 'Organizer') staff += link('league', 'League Tools', 'league');

@@ -2367,7 +2367,7 @@
     { icon: ICON_CALENDAR, title: 'Calendar',
       body: 'The full season schedule -- date and time in your timezone, track, session details, and weather.' },
     { icon: ICON_PROFILE, title: 'Driver Profile Page',
-      body: 'Placeholder -- this will explain your public Driver Profile page (My Profile Page in the menu), where your seasons, results and stats live in one place.' },
+      body: 'Placeholder -- this will explain your public Driver Profile page (Driver Profiles in the menu), where your seasons, results and stats live in one place.' },
     { icon: ICON_PROTESTS, title: 'Protests',
       body: 'File, edit, or withdraw a protest, and see your protest history for the season.' },
     { icon: ICON_SETTINGS, title: 'Account Settings',
