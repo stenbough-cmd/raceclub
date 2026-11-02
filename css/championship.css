@@ -988,3 +988,24 @@ html.rc-pending .rcc-actionbar { display: none !important; }
 
 /* The line between the hero and the black link bar: same dark line as the League Hub's hero (#2c2d31), not the light silver (Matt, 2026-11-02). */
 .rcc-page .rcl-hero { border-bottom-color: #2c2d31; }
+
+/* Calendar band (Matt, 2026-11-02): no longer black. A couple of shades darker than the page background, with the
+   light palette's text colors so everything stays readable. Special events use a deeper gold that reads on light. */
+.rcc-page #rcl-race-carousel {
+  background: #e7e7e4;
+  --rcl-bg: var(--rc-offwhite);
+  --rcl-bg-raised: var(--rc-white);
+  --rcl-bg-raised-2: var(--rc-offwhite);
+  --rcl-line: var(--rc-silver);
+  --rcl-line-bright: color-mix(in srgb, var(--rc-steel) 45%, var(--rc-white));
+  --rcl-ink: var(--rc-carbon);
+  --rcl-ink-dim: var(--rc-steel);
+  --rcl-ink-faint: color-mix(in srgb, var(--rc-steel) 75%, #e7e7e4);
+  --rcl-gold: #a16207;
+}
+.rcc-page #rcl-race-carousel .rcl-carousel-hero-btn:not(:disabled):hover { color: var(--rc-white); }
+.rcc-page #rcl-race-carousel .rcl-carousel-item-special .rcl-carousel-eventname,
+.rcc-page #rcl-race-carousel .rcl-carousel-item-special .rcl-carousel-trackname,
+.rcc-page #rcl-race-carousel .rcl-carousel-item-special .rcl-carousel-compact-track,
+.rcc-page #rcl-race-carousel .rcl-carousel-item-special .rcl-carousel-countdown-label b { color: #a16207; }
+.rcc-page #rcl-race-carousel .rcl-carousel-datetime { color: var(--rcc-true-red, #F21B0C); }

@@ -61,3 +61,23 @@ body.rc-league-page.rcl-light {
 /* Footer + legal link read on the light page like Championship's. */
 .rcl-light .rc-footer-legal-link { color: #F21B0C; }
 .rcl-light .rcl-panel-head-news .rcl-panel-title { color: #ffffff; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55); }
+
+/* Calendar band (Matt, 2026-11-02): no longer black. A couple of shades darker than the page background, with the
+   light palette's text colors so everything stays readable. Special events use a deeper gold that reads on light. */
+body.rcl-light #rcl-race-carousel {
+  background: #e7e7e4;
+  --rcl-bg: var(--rc-offwhite);
+  --rcl-bg-raised: var(--rc-white);
+  --rcl-bg-raised-2: var(--rc-offwhite);
+  --rcl-line: var(--rc-silver);
+  --rcl-line-bright: color-mix(in srgb, var(--rc-steel) 45%, var(--rc-white));
+  --rcl-ink: var(--rc-carbon);
+  --rcl-ink-dim: var(--rc-steel);
+  --rcl-ink-faint: color-mix(in srgb, var(--rc-steel) 75%, #e7e7e4);
+  --rcl-gold: #a16207;
+}
+body.rcl-light #rcl-race-carousel .rcl-carousel-hero-btn:not(:disabled):hover { color: var(--rc-white); }
+body.rcl-light #rcl-race-carousel .rcl-carousel-item-special .rcl-carousel-eventname,
+body.rcl-light #rcl-race-carousel .rcl-carousel-item-special .rcl-carousel-trackname,
+body.rcl-light #rcl-race-carousel .rcl-carousel-item-special .rcl-carousel-compact-track,
+body.rcl-light #rcl-race-carousel .rcl-carousel-item-special .rcl-carousel-countdown-label b { color: #a16207; }
