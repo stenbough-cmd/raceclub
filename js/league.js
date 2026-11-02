@@ -3505,6 +3505,33 @@ function _rclShowPageLoader_(text) {
 }
 
 // Lifts the "plain empty page" state (html.rc-pending, league.html) so every container appears together.
+// Nobody is signed in: same container and wording style as the Championship page's sign-up message.
+function _rclShowLoggedOut_() {
+  try { _rclRenderNavbar_(null); } catch (err) { /* the message still shows */ }
+  ['.rcl-ticker-wrap', '.rcl-hero'].forEach(function (sel) {
+    var n = document.querySelector(sel); if (n) n.style.display = 'none';
+  });
+  var main = document.querySelector('.rcl-main');
+  if (main) {
+    Array.prototype.forEach.call(main.children, function (c) { c.style.display = 'none'; });
+    var box = document.createElement('div');
+    box.className = 'rcl-panel rcl-row-full';
+    box.id = 'rcl-signup-panel';
+    var st = document.createElement('div'); st.className = 'rcl-empty-state';
+    var t = document.createElement('div'); t.className = 'rcl-empty-state-title'; t.textContent = 'Sign Up To View League Hub';
+    var d = document.createElement('p'); d.className = 'rcl-empty-state-subtitle';
+    d.textContent = 'The League Hub is for Race Club members. Create a free account or log in to see standings, race results, news and the full season calendar.';
+    var row = document.createElement('div'); row.className = 'rcc-off-actions';
+    [['Log In','login.html'],['Create An Account','register.html']].forEach(function (x) {
+      var a = document.createElement('a'); a.className = 'rc-btn-secondary rc-btn-sm'; a.textContent = x[0]; a.href = x[1]; row.appendChild(a);
+    });
+    st.appendChild(t); st.appendChild(d); st.appendChild(row); box.appendChild(st); main.insertBefore(box, main.firstChild);
+  }
+  _rclHidePageLoader();
+  _rclUnlockBodyScroll();
+  _rclReveal_();
+}
+
 function _rclReveal_() { if (typeof window.rcRevealPage === 'function') window.rcRevealPage(); }
 
 function _rclHidePageLoader() {
@@ -3592,6 +3619,10 @@ function _rclFetchLeagueHubRaw_() {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
+  // Everyone must be signed in to use the site: a visitor without a login gets one sign-up panel, nothing else.
+  var rclTok_ = null;
+  try { rclTok_ = getToken(); } catch (err) { rclTok_ = null; }
+  if (!rclTok_) { _rclShowLoggedOut_(); return; }
   // The link bar is drawn first and on its own, so a problem in any renderer below can never keep it off the page.
   try { _rclRenderNavbar_(null); } catch (err) { /* the page still works without it */ }
   var RENDERERS = [_rclRenderStandings, _rclRenderLastRace_, _rclRenderManufacturerStandings, _rclRenderRaceCarousel, _rclRenderNews];

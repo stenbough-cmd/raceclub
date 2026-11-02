@@ -554,21 +554,10 @@ function renderHeader(opts) {
               '<span class="rc-header-avatar"><img class="rc-helmet" alt="" style="width:46px;height:auto" src="assets/images/helmet_unavailable.webp" draggable="false"></span>' +
               '<span class="rc-header-login-text">LOG IN</span>' +
             '</a>' +
-            // Menu arrow beside LOG IN (landscape only): opens the same panel as the phone's helmet button.
-            '<button type="button" class="rc-header-guest-menu-btn" id="rc-header-guest-menu-btn" aria-haspopup="true" aria-expanded="false" aria-label="Menu">' +
-              '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>' +
-            '</button>' +
-            '<button type="button" class="rc-header-hamburger-toggle" id="rc-header-hamburger-toggle" aria-haspopup="true" aria-expanded="false" aria-label="Menu">' +
-              // grayed-out plain white helmet in place of the hamburger icon (phones only, see style.css)
+            // Phones: the grayed-out helmet is simply a Log In link (no menu; everyone must sign in to use the site).
+            '<a class="rc-header-hamburger-toggle" id="rc-header-hamburger-toggle" href="login.html" aria-label="Log in">' +
               rcHelmetHtml_('helmet:{"d":1,"b":["white","gloss"],"a1":["white","gloss"],"a2":["white","gloss"],"v":"smoke"}', 46, 'rc-helmet-header rc-helmet-off') +
-            '</button>' +
-            '<div class="rc-header-account-menu" id="rc-header-mobile-menu" style="display:none;">' +
-              '<a class="rc-header-menu-item" href="login.html">' + _rcMenuIcon_('login') + '<span>Log In</span></a>' +
-              '<a class="rc-header-menu-item" href="register.html">' + _rcMenuIcon_('profile') + '<span>Create An Account</span></a>' +
-              '<hr class="rc-header-menu-divider">' +
-              '<a class="rc-header-menu-item" href="league.html">' + _rcMenuIcon_('hub') + '<span>League Hub</span></a>' +
-              '<a class="rc-header-menu-item" href="championship.html">' + _rcMenuIcon_('champ') + '<span>Championship</span></a>' +
-            '</div>';
+            '</a>';
   }
   html += '</nav>';
 
@@ -654,46 +643,6 @@ function renderHeader(opts) {
 
     // ---------------------------------------------------------------
     // ---------------------------------------------------------------
-  } else {
-    // Logged-out hamburger -- same open/ close/outside-click/Escape/hover-away pattern as the
-    // logged-in account toggle above, just against the smaller League Hub/Register- Login panel
-    // instead of the full account menu.
-    var hamburgerToggle = document.getElementById('rc-header-hamburger-toggle');
-    var mobileMenu = document.getElementById('rc-header-mobile-menu');
-
-    var guestBtn = document.getElementById('rc-header-guest-menu-btn');
-    function closeMobileMenu() {
-      mobileMenu.style.display = 'none';
-      hamburgerToggle.setAttribute('aria-expanded', 'false');
-      if (guestBtn) guestBtn.setAttribute('aria-expanded', 'false');
-    }
-    function openMobileMenu() {
-      mobileMenu.style.display = 'block';
-      hamburgerToggle.setAttribute('aria-expanded', 'true');
-      if (guestBtn) guestBtn.setAttribute('aria-expanded', 'true');
-    }
-
-    function toggleMobileMenu(evt) {
-      evt.stopPropagation();
-      if (mobileMenu.style.display === 'block') closeMobileMenu(); else openMobileMenu();
-    }
-    hamburgerToggle.addEventListener('click', toggleMobileMenu);
-    if (guestBtn) guestBtn.addEventListener('click', toggleMobileMenu);
-
-    if (_rcHeaderOutsideClickHandler) document.removeEventListener('click', _rcHeaderOutsideClickHandler);
-    if (_rcHeaderEscapeHandler) document.removeEventListener('keydown', _rcHeaderEscapeHandler);
-
-    _rcHeaderOutsideClickHandler = function (evt) {
-      if (mobileMenu.style.display === 'block' && !mobileMenu.contains(evt.target) && !hamburgerToggle.contains(evt.target) && !(guestBtn && guestBtn.contains(evt.target))) closeMobileMenu();
-    };
-    _rcHeaderEscapeHandler = function (evt) {
-      if (evt.key !== 'Escape') return;
-      if (mobileMenu.style.display === 'block') closeMobileMenu();
-    };
-    document.addEventListener('click', _rcHeaderOutsideClickHandler);
-    document.addEventListener('keydown', _rcHeaderEscapeHandler);
-
-    _rcWireHoverAwayClose(guestBtn ? [hamburgerToggle, guestBtn, mobileMenu] : [hamburgerToggle, mobileMenu], closeMobileMenu);
   }
 }
 

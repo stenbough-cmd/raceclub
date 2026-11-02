@@ -3333,11 +3333,6 @@ button.rc-switch { display: inline-flex; align-items: center; gap: 12px; width: 
   .rc-header-account-toggle { gap: 4px; }
 }
 
-/* Logged-out header: a small arrow beside LOG IN opens the guest menu (Log In, Create An Account, League Hub, Championship) in landscape;
-   in portrait the helmet button opens the same panel. */
-.rc-header-guest-menu-btn { display: inline-flex; align-items: center; justify-content: center; background: none; border: none; padding: 6px; border-radius: 8px; color: var(--rc-steel); cursor: pointer; }
-.rc-header-guest-menu-btn:hover, .rc-header-guest-menu-btn[aria-expanded="true"] { background: var(--rc-offwhite); color: var(--rc-red); }
-@media (orientation: portrait) { .rc-header-guest-menu-btn { display: none; } }
 
 /* ===== DARK HEADER AND FOOTER ON EVERY PAGE (Matt, 2026-11-02) ===== */
 /* The same near-black the League Hub uses for its containers (#141416), with the white Race Club logo. The dropdown menus stay white panels. */
@@ -3352,9 +3347,6 @@ button.rc-switch { display: inline-flex; align-items: center; gap: 12px; width: 
 .rc-fixed-header .rc-header-hamburger-toggle { color: #f2f2f0; }
 .rc-fixed-header .rc-header-hamburger-toggle:hover,
 .rc-fixed-header .rc-header-hamburger-toggle[aria-expanded="true"] { background: rgba(255, 255, 255, 0.1); color: #ffffff; }
-.rc-fixed-header .rc-header-guest-menu-btn { color: #b4b7bd; }
-.rc-fixed-header .rc-header-guest-menu-btn:hover,
-.rc-fixed-header .rc-header-guest-menu-btn[aria-expanded="true"] { background: rgba(255, 255, 255, 0.1); color: #ffffff; }
 .rc-fixed-header .rc-header-login-box:hover .rc-header-login-text { color: #ffffff; }
 /* Championship logo (dark lettering) is hidden for now; if it comes back it is lightened to read on black, red kept. */
 .rc-fixed-header .rc-header-leaguehub-logo[src*="championship"] { filter: invert(1) hue-rotate(180deg); }
