@@ -492,45 +492,213 @@
   // either.
   // Returns { topRow, resultsRow } -- callers own attaching them to the page and (for a refresh)
   // swapping their children out.
-  function buildDashboardDataRows(profile, token, dashboardData, onRegistered) {
-    var topRow = el('div', 'rc-quick-row');
-    var resultsRow = el('div', 'rc-quick-row');
 
-    var seatPlaceholder = el('div', 'rc-panel rc-currentseat-card rc-dash-card rc-dash-card-fade');
-    var regPlaceholder = el('div', 'rc-panel rc-regstatus-card rc-dash-card rc-dash-card-fade');
+  // ---------------------------------------------------------------------
+  // ONLINE LEAGUE section (Matt's redesign, 2026-11-02): ONE white container for everything about the online league. A headline and
+  // status pill that follow the member's situation, the season box (register / registered / full / none), then three tiles
+  // (Current Seat, Next Race, Protests). Each tile lifts on hover and opens its popup on click. It reuses the same data and the
+  // same popups the old separate cards used.
+  // ---------------------------------------------------------------------
+  function buildOnlineLeagueSection(profile, token, dashboardData, onRegistered) {
+    var box = el('div', 'rc-ol-section');
+    var head = el('div', 'rc-ol-head');
+    var headText = el('div', 'rc-ol-head-text');
+    headText.appendChild(el('div', 'rc-ol-eyebrow', 'Online League'));
+    var titleEl = el('div', 'rc-ol-title', '');
+    headText.appendChild(titleEl);
+    head.appendChild(headText);
+    var pillEl = el('div', 'rc-ol-pill', '');
+    head.appendChild(pillEl);
+    box.appendChild(head);
+    var seasonBox = el('div', 'rc-ol-season');
+    box.appendChild(seasonBox);
+    var tiles = el('div', 'rc-ol-tiles');
+    box.appendChild(tiles);
 
-    Promise.all([
-      dashboardData.activeSeasonPromise.catch(function () { return { success: false }; }),
-      dashboardData.currentSeatPromise.catch(function () { return { success: false }; })
-    ]).then(function (results) {
-      var activeSeason = results[0];
-      var currentSeat = results[1];
-      // Wrapped in try/catch -- these two cards are built by hand here rather than through
-      // asyncDashCard, but shared the same gap: nothing caught a render-function exception, so
-      // either card throwing left BOTH placeholders permanently blank (they're built together in
-      // this one block) with no error, no fade-in, no trace.
-      try {
-        var seatCard = currentSeatCard(profile, token, currentSeat, activeSeason);
-        // No standalone Current Seat re-fetch here anymore. onRegistered (ultimately
-        // onRegisteredRebuild, renderDashboardSection) already rebuilds this whole card fresh.
-        var regCard = registrationStatusCard(profile, token, activeSeason, onRegistered);
-        while (seatCard.firstChild) seatPlaceholder.appendChild(seatCard.firstChild);
-        while (regCard.firstChild) regPlaceholder.appendChild(regCard.firstChild);
-      } catch (err) {
-        if (window.console && console.error) console.error('Dashboard card failed to render:', err);
-        seatPlaceholder.appendChild(el('p', 'rc-cs-empty', 'Could not load this right now.'));
-        regPlaceholder.appendChild(el('p', 'rc-cs-empty', 'Could not load this right now.'));
+    function safe(promise) { return Promise.resolve(promise).catch(function () { return { success: false }; }); }
+
+    Promise.all([safe(dashboardData.activeSeasonPromise), safe(dashboardData.currentSeatPromise),
+                 safe(dashboardData.nextRacePromise), safe(dashboardData.myProtestsPromise)]).then(function (r) {
+      try { fill(r[0] || {}, r[1] || {}, r[2] || {}, r[3] || {}); }
+      catch (err) {
+        if (window.console && console.error) console.error('Online League section failed to draw:', err);
+        titleEl.textContent = 'Online League';
+        seasonBox.appendChild(el('p', 'rc-cs-empty', 'Could not load this right now.'));
       }
-      seatPlaceholder.classList.add('rc-dash-card-fade-in');
-      regPlaceholder.classList.add('rc-dash-card-fade-in');
     });
 
-    topRow.appendChild(regPlaceholder);
-    topRow.appendChild(seatPlaceholder);
+    function setHead(text, pillText, pillKind) {
+      titleEl.textContent = text;
+      pillEl.textContent = pillText;
+      pillEl.className = 'rc-ol-pill rc-ol-pill-' + pillKind;
+    }
 
-    resultsRow.appendChild(asyncDashCard('rc-panel rc-nextrace-card rc-dash-card', dashboardData.nextRacePromise, nextRaceCard, dashboardData.activeSeasonPromise));
-    resultsRow.appendChild(asyncDashCard('rc-panel rc-finrep-card rc-dash-card', dashboardData.myProtestsPromise, protestCard, dashboardData.activeSeasonPromise));
+    function seasonLabel(data) {
+      var num = seasonNumberLabel(data.seasonId);
+      var out = num ? ('Season ' + num) : 'Season';
+      if (data.seasonName) out += ' · ' + data.seasonName;
+      return out;
+    }
 
+    function addProgress(data) {
+      if (!(typeof data.seatsTotal === 'number' && data.seatsTotal > 0)) return;
+      var bar = el('div', 'rc-ol-progress');
+      var fill = el('div', 'rc-ol-progress-fill');
+      fill.style.width = Math.max(0, Math.min(100, Math.round(100 * (data.seatsTaken || 0) / data.seatsTotal))) + '%';
+      bar.appendChild(fill);
+      seasonBox.appendChild(bar);
+    }
+
+    function addDetailsLink(row) {
+      var link = el('button', 'rc-link-btn rc-ol-details-link', 'View championship details');
+      link.type = 'button';
+      link.addEventListener('click', function () { openSeasonFormatModal(); });
+      (row || seasonBox).appendChild(link);
+    }
+
+    function seasonHeader(data) {
+      var row = el('div', 'rc-ol-season-row');
+      row.appendChild(el('div', 'rc-ol-season-name', escapeHtml(seasonLabel(data))));
+      if (typeof data.seatsTotal === 'number') row.appendChild(el('div', 'rc-ol-season-count', (data.seatsTaken || 0) + '/' + data.seatsTotal));
+      seasonBox.appendChild(row);
+    }
+
+    function fill(season, seat, next, prot) {
+      var hasSeason = !!(season.success && season.hasActiveSeason);
+      var registered = !!(hasSeason && season.registered);
+
+      // ---- headline, pill and season box ----
+      if (profile.status !== 'Active') {
+        setHead('Verify your email.', 'Action needed', 'neutral');
+        seasonBox.appendChild(el('p', 'rc-ol-note', 'Verify your email to unlock registration.'));
+      } else if (!season.success) {
+        setHead('Checking your season.', 'Checking', 'neutral');
+        seasonBox.appendChild(el('p', 'rc-ol-note', 'Could not reach the server just now. Reload the page to try again.'));
+      } else if (!hasSeason) {
+        setHead('Next season coming soon.', 'Closed', 'neutral');
+        seasonBox.appendChild(el('p', 'rc-ol-note', 'No season is currently open for registration. Check back soon.'));
+      } else if (registered) {
+        setHead('You’re on the grid.', 'Registered', 'ok');
+        seasonHeader(season);
+        seasonBox.appendChild(el('p', 'rc-ol-note', 'Race only in your registered car for the entire season. Penalties will be levied for violations.'));
+        var reg = season.registration || {};
+        var facts = el('div', 'rc-ol-facts');
+        [['Registered on', reg.joinedAt ? formatDateLabel(String(reg.joinedAt).slice(0, 10)) : '—'],
+         ['Class', reg.carClass || '—'],
+         ['Manufacturer', reg.manufacturer ? String(reg.manufacturer).toUpperCase() : '—']].forEach(function (pair) {
+          var f = el('div', 'rc-ol-fact');
+          f.appendChild(el('div', 'rc-ol-fact-label', pair[0]));
+          f.appendChild(el('div', 'rc-ol-fact-value', escapeHtml(pair[1])));
+          facts.appendChild(f);
+        });
+        seasonBox.appendChild(facts);
+        if (reg.status === 'Probation' || reg.status === 'Suspended' || reg.status === 'Removed') {
+          var bad = reg.status === 'Probation' ? 'PROBATION' : (reg.status === 'Removed' ? 'REMOVED FROM LEAGUE' : 'SUSPENDED');
+          var flag = el('div', 'rc-ol-flag rc-ol-flag-' + (reg.status === 'Probation' ? 'warn' : 'bad'));
+          flag.appendChild(el('strong', null, bad));
+          if (reg.statusReason) flag.appendChild(el('span', null, ' ' + escapeHtml(reg.statusReason)));
+          seasonBox.appendChild(flag);
+        }
+        var links = el('div', 'rc-ol-links');
+        if (reg.canDropOut) {
+          var drop = el('button', 'rc-link-btn rc-ol-details-link', 'Drop out of the season');
+          drop.type = 'button';
+          drop.addEventListener('click', function () { openDropOutConfirm(profile, token, season); });
+          links.appendChild(drop);
+        }
+        addDetailsLink(links);
+        seasonBox.appendChild(links);
+      } else if (season.seasonFull) {
+        setHead('This grid is full.', 'Full', 'neutral');
+        seasonHeader(season);
+        seasonBox.appendChild(el('p', 'rc-ol-note', 'Every seat is taken. Check back if a spot opens up.'));
+        addProgress(season);
+        addDetailsLink();
+      } else {
+        setHead('Your next chapter.', 'Registration open', 'open');
+        seasonHeader(season);
+        seasonBox.appendChild(el('p', 'rc-ol-note', 'Choose your class and claim your seat on the grid.'));
+        addProgress(season);
+        var reg2 = el('button', 'rc-btn-primary rc-ol-register', 'Register for the season →');
+        reg2.type = 'button';
+        reg2.addEventListener('click', function () {
+          buildRegistrationModal(profile, token, season, function () { if (onRegistered) onRegistered(); });
+        });
+        seasonBox.appendChild(reg2);
+        addDetailsLink();
+      }
+
+      // ---- tiles ----
+      function tile(label, corner, clickFn) {
+        var t = el(clickFn ? 'button' : 'div', 'rc-ol-tile' + (clickFn ? ' rc-ol-tile-click' : ''));
+        if (clickFn) { t.type = 'button'; t.addEventListener('click', clickFn); }
+        var top = el('div', 'rc-ol-tile-top');
+        top.appendChild(el('div', 'rc-ol-tile-label', label));
+        if (corner) top.appendChild(el('div', 'rc-ol-tile-corner', escapeHtml(corner)));
+        t.appendChild(top);
+        tiles.appendChild(t);
+        return t;
+      }
+      function line(parent, cls, text) { parent.appendChild(el('div', cls, escapeHtml(text))); }
+
+      // Current Seat
+      var hasSeat = !!(registered && seat.success && seat.hasSeat);
+      var seatTile = tile('Current seat', hasSeat ? seat.carClass : '', hasSeat ? function () { openCurrentSeatInfoModal(token, profile.profileId); } : null);
+      if (hasSeat) {
+        line(seatTile, 'rc-ol-tile-value', (seat.team || 'Team') + (seat.carNumber ? ' #' + seat.carNumber : ''));
+        var carLine = [seat.manufacturer, seat.carModel].filter(Boolean).join(' ');
+        if (carLine) line(seatTile, 'rc-ol-tile-sub', carLine);
+        if (seat.statsKnown) {
+          var pos = seat.position ? ('P' + seat.position + (seat.positionOutOf ? '/' + seat.positionOutOf : '')) : '—';
+          line(seatTile, 'rc-ol-tile-sub', pos + ' · ' + (seat.points || 0) + ' pts · ' + (seat.podiums || 0) + ((seat.podiums || 0) === 1 ? ' podium' : ' podiums'));
+        }
+      } else {
+        line(seatTile, 'rc-ol-tile-value', '—');
+        line(seatTile, 'rc-ol-tile-sub', hasSeason ? 'Not registered' : 'No season open');
+      }
+
+      // Next Race
+      var hasNext = !!(registered && next.success && next.hasNextRace);
+      var isSpecial = hasNext && next.kind === 'special';
+      var roundCorner = (hasNext && !isSpecial && next.roundNum) ? ('Round ' + next.roundNum + (next.totalRounds ? ' of ' + next.totalRounds : '')) : (isSpecial ? 'Special event' : '');
+      var nextTile = tile('Next race', roundCorner, hasSeason ? function () { openSeasonFormatModal(); } : null);
+      if (hasNext) {
+        var tz = ''; try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (err) { tz = ''; }
+        line(nextTile, 'rc-ol-tile-value', next.eventName || (isSpecial ? 'Special event' : ('Round ' + next.roundNum)));
+        var trk = next.trackFullName || next.track || '';
+        line(nextTile, 'rc-ol-tile-sub', trk + (next.layout ? ': ' + next.layout : ''));
+        line(nextTile, 'rc-ol-tile-sub', formatRaceDateTime(next.startUtc, tz));
+        if (next.password) line(nextTile, 'rc-ol-tile-sub', 'Password: ' + next.password);
+      } else {
+        line(nextTile, 'rc-ol-tile-value', '—');
+        line(nextTile, 'rc-ol-tile-sub', hasSeason ? (registered ? 'No schedule' : 'Not registered') : 'No season open');
+      }
+
+      // Protests
+      var list = (prot.success && prot.protests) ? prot.protests : [];
+      var protTile = tile('Protests', list.length ? (list.length + ' filed') : '', registered ? function () { openProtestModal(currentToken); } : null);
+      if (list.length) {
+        list.slice(0, 3).forEach(function (p) {
+          var against = _rcProtestAccusedNames_(p).join(' and ');
+          var txt = (p.roundNumber ? 'R' + p.roundNumber + ' · ' : '') + (p.isMine ? 'vs ' + (against || 'driver') : 'against you') + ' · ' + (p.status || 'Pending');
+          line(protTile, 'rc-ol-tile-sub rc-ol-tile-protest', txt);
+        });
+        if (list.length > 3) line(protTile, 'rc-ol-tile-sub', '+ ' + (list.length - 3) + ' more');
+      } else {
+        line(protTile, 'rc-ol-tile-value', '—');
+        line(protTile, 'rc-ol-tile-sub', registered ? 'No activity' : (hasSeason ? 'Not registered' : 'No season open'));
+      }
+    }
+
+    return box;
+  }
+
+  // The Dashboard's league part is now ONE container (buildOnlineLeagueSection). The two-row shape is kept so the rebuild-in-place code
+  // below keeps working: topRow holds the container, resultsRow stays empty.
+  function buildDashboardDataRows(profile, token, dashboardData, onRegistered) {
+    var topRow = el('div', 'rc-ol-wrap');
+    topRow.appendChild(buildOnlineLeagueSection(profile, token, dashboardData, onRegistered));
+    var resultsRow = el('div', 'rc-ol-wrap-empty');
     return { topRow: topRow, resultsRow: resultsRow };
   }
 
@@ -613,7 +781,6 @@
 
     Promise.all([_rcDashboardAllSettled_(dashboardData), champReady.catch(function () {})]).then(function () {
       spinner.remove();
-      section.appendChild(el('h2', null, 'Online League'));
       section.appendChild(champHost);
       rows = paintRows(dashboardData, onRegisteredRebuild);
     });

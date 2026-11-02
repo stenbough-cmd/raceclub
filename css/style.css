@@ -3367,3 +3367,44 @@ button.rc-switch { display: inline-flex; align-items: center; gap: 12px; width: 
 
 /* Dashboard side spacing = Driver Profile page: 1280px wide, 16px each side (Matt, 2026-11-02). */
 .rc-main { width: 100%; max-width: 1280px; margin-left: auto; margin-right: auto; padding-left: 16px; padding-right: 16px; box-sizing: border-box; }
+
+/* ===== ONLINE LEAGUE SECTION on the Dashboard (Matt's redesign, 2026-11-02) ===== */
+/* One white container, the most subtle drop shadow, a headline + status pill, a grey season box and three tiles. */
+.rc-ol-wrap { margin-top: 20px; }
+.rc-ol-wrap-empty { display: none; }
+.rc-ol-section { background: var(--rc-white); border-radius: 12px; padding: 24px; box-shadow: 0 1px 4px rgba(23, 23, 23, 0.05); display: flex; flex-direction: column; gap: 16px; }
+.rc-ol-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.rc-ol-eyebrow { font-family: var(--rc-font-heading); font-size: 14px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--rc-steel); }
+.rc-ol-title { margin-top: 6px; font-family: var(--rc-font-heading); font-size: 30px; font-weight: 800; letter-spacing: 0.01em; text-transform: uppercase; color: var(--rc-carbon); line-height: 1.1; }
+.rc-ol-pill { font-family: var(--rc-font-heading); font-size: 12px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; padding: 7px 14px; border-radius: 999px; white-space: nowrap; }
+.rc-ol-pill-open { background: color-mix(in srgb, var(--rc-red) 12%, var(--rc-white)); color: var(--rc-red-dark); }
+.rc-ol-pill-ok { background: var(--rc-positive-bg); color: var(--rc-positive); }
+.rc-ol-pill-neutral { background: var(--rc-offwhite); color: var(--rc-steel); }
+.rc-ol-season { background: var(--rc-offwhite); border-radius: 10px; padding: 18px 20px; display: flex; flex-direction: column; gap: 12px; }
+.rc-ol-season-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.rc-ol-season-name { font-family: var(--rc-font-heading); font-size: 18px; font-weight: 800; letter-spacing: 0.02em; text-transform: uppercase; color: var(--rc-carbon); }
+.rc-ol-season-count { font-family: var(--rc-font-heading); font-size: 20px; font-weight: 800; color: var(--rc-steel); font-variant-numeric: tabular-nums; }
+.rc-ol-note { margin: 0; font-size: 14px; color: var(--rc-steel); line-height: 1.45; }
+.rc-ol-progress { height: 8px; border-radius: 999px; background: var(--rc-silver); overflow: hidden; }
+.rc-ol-progress-fill { height: 100%; background: var(--rc-red); border-radius: 999px; }
+.rc-ol-register { width: 100%; padding: 14px 18px; font-size: 15px; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 8px; }
+.rc-ol-details-link { align-self: flex-start; font-size: 13px; padding: 0; margin: 0; }
+.rc-ol-links { display: flex; gap: 16px; flex-wrap: wrap; }
+.rc-ol-links:empty { display: none; }
+.rc-ol-facts { display: flex; gap: 28px; flex-wrap: wrap; }
+.rc-ol-fact-label, .rc-ol-tile-label { font-family: var(--rc-font-heading); font-size: 12px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--rc-steel); }
+.rc-ol-fact-value { margin-top: 2px; font-size: 15px; font-weight: 700; color: var(--rc-carbon); }
+.rc-ol-flag { font-size: 13px; padding: 8px 12px; border-radius: 8px; }
+.rc-ol-flag-warn { background: color-mix(in srgb, var(--rc-role-admin) 20%, var(--rc-white)); color: var(--rc-carbon); }
+.rc-ol-flag-bad { background: color-mix(in srgb, var(--rc-red) 12%, var(--rc-white)); color: var(--rc-red-dark); }
+.rc-ol-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.rc-ol-tile { display: flex; flex-direction: column; gap: 6px; text-align: left; background: var(--rc-offwhite); border: 0; border-radius: 10px; padding: 16px 18px; font: inherit; color: inherit; min-width: 0; transition: transform 0.15s ease, box-shadow 0.15s ease; }
+.rc-ol-tile-click { cursor: pointer; }
+.rc-ol-tile-click:hover, .rc-ol-tile-click:focus-visible { transform: translateY(-3px); box-shadow: 0 6px 14px rgba(23, 23, 23, 0.08); }
+.rc-ol-tile-top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.rc-ol-tile-corner { font-family: var(--rc-font-heading); font-size: 11px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--rc-steel); white-space: nowrap; }
+.rc-ol-tile-value { font-family: var(--rc-font-heading); font-size: 20px; font-weight: 800; color: var(--rc-carbon); overflow-wrap: anywhere; }
+.rc-ol-tile-sub { font-size: 14px; color: var(--rc-steel); line-height: 1.35; overflow-wrap: anywhere; }
+/* Portrait: tiles stack one under another. */
+@media (orientation: portrait) { .rc-ol-tiles { grid-template-columns: 1fr; } .rc-ol-title { font-size: 26px; } }
+@media (orientation: portrait) and (max-aspect-ratio: 3/5) { .rc-ol-section { padding: 18px; } .rc-ol-title { font-size: 22px; } .rc-ol-season { padding: 16px; } }

@@ -64,7 +64,8 @@ body.rc-league-page.rcl-light {
 
 /* Calendar band (Matt, 2026-11-02): no longer black. A couple of shades darker than the page background, with the
    light palette's text colors so everything stays readable. Special events use a deeper gold that reads on light. */
-body.rcl-light #rcl-race-carousel {
+body.rcl-light #rcl-race-carousel,
+body.rcl-light.rc-league-page:not(.rcc-page) #rcl-race-carousel {   /* second selector outranks the dark band rule in league.css */
   background: #e7e7e4;
   --rcl-bg: var(--rc-offwhite);
   --rcl-bg-raised: var(--rc-white);
