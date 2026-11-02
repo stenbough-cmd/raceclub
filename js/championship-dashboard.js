@@ -45,7 +45,6 @@
       '.rcd-spacer { flex: 1 1 20px; }' +
       '.rcd-season { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 10px 2px; border-top: 1px solid var(--rc-silver); }' +
       '.rcd-season:first-child { border-top: 0; }' +
-      '.rcd-season-name { flex: 1 1 200px; min-width: 0; font-weight: 700; font-size: 14px; color: var(--rc-carbon); }' +
       '.rcd-pill { font-size: 11px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 9px; border-radius: 999px; background: var(--rc-silver); color: var(--rc-carbon); }' +
       '.rcd-pill.rcd-active { background: var(--rc-red); color: #fff; }' +
       '.rcd-note { margin: 0 0 12px; font-size: 14px; line-height: 1.55; color: var(--rc-steel); }' +
@@ -154,77 +153,95 @@
     // a right-aligned row with Create / End / Delete Season, then the list in its own box, grouped under year pills. Each season
     // is a .rc-group-row (name, gray meta line, its buttons underneath, a chevron) and its rounds open under it, indented.
     var CHEVRON = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>';
+    var seasons = (page && page.seasons) || [];
+
+    // "YOUR SEASONS" title with a count pill and a blue-gray rule, then the Create / End / Delete buttons (Matt's redesign, 2026-11-02).
+    var sHead = mk('div', 'rcd-seasons-head');
+    sHead.appendChild(mk('div', 'rcd-seasons-title', 'Your seasons'));
+    sHead.appendChild(mk('div', 'rcd-count-pill', seasons.length + (seasons.length === 1 ? ' season' : ' seasons')));
+    panel.appendChild(sHead);
     var row = mk('div', 'rcd-row');
-    row.appendChild(btn('Create a Season', !running, function () { rccOpenSeasonWizard(null); }, 'End the current season before creating a new one.', 'rc-btn-primary rc-btn-sm'));
+    row.appendChild(btn('+ Create Season', !running, function () { rccOpenSeasonWizard(null); }, 'End the current season before creating a new one.', 'rc-btn-primary rc-btn-sm'));
     row.appendChild(btn('End Season', active, function () { rccOpenEndSeason(); }, 'No season is currently eligible to end.'));
     row.appendChild(btn('Delete Season', hasSeason, function () { rccOpenDeleteSeason(); }, 'No season is currently eligible to delete.'));
     panel.appendChild(row);
 
     function rowBtn(label, enabled, onClick, why) { return btn(label, enabled, onClick, why, 'rc-btn-secondary rc-btn-row'); }
+    var seriesLabel = (page.seasonDetails && page.seasonDetails.series) || '';
 
-    // One round of the running season (same shape as buildSeasonRaceRow).
+    function niceDate(iso) {
+      var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso || ''));
+      if (!m) return '';
+      try { return new Date(+m[1], +m[2] - 1, +m[3]).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); } catch (e) { return m[0]; }
+    }
+
+    // One round (white row inside the calendar list): number pill, event name, "Track · Series", status line and status circle.
     var firstEmpty = cal.filter(function (x) { return !x.hasResults; })[0];
     var doneRounds = cal.filter(function (x) { return x.hasQualifyResults || x.hasRaceResults; });
     var lastDone = doneRounds[doneRounds.length - 1];
-    function roundRow(c, readOnly) {
-      var r = mk('div', 'rc-group-row');
-      var info = mk('div', 'rc-dm-row-info');
-      var col = mk('div', '');
-      col.appendChild(mk('span', 'rc-dm-row-label rc-round-title', 'Round ' + c.roundNum + ': ' + (c.eventName || c.track || '')));
+    function roundRow(c, readOnly, forSeries) {
+      var r = mk('div', 'rcd-round');
+      var top = mk('div', 'rcd-round-top');
+      top.appendChild(mk('span', 'rcd-round-num', (c.roundNum < 10 ? '0' : '') + c.roundNum));
+      var col = mk('div', 'rcd-round-main');
+      col.appendChild(mk('div', 'rcd-round-name', c.eventName || c.track || ('Round ' + c.roundNum)));
       var bits = [];
-      if (c.track) bits.push(c.track + (c.layout ? ': ' + c.layout : ''));
-      col.appendChild(mk('div', 'rc-hint', bits.join(' · ') || 'Track not set'));
-      var st = mk('div', 'rc-round-status');
-      var text, icon;
-      if (c.hasResults) { text = 'Results uploaded. Standings updated.'; icon = mk('span', 'rc-protest-dash-icon rc-statuscircle-green', '✓'); }
-      else if (c.hasQualifyResults || c.hasRaceResults) { text = c.hasRaceResults ? 'Race results uploaded, awaiting qualifying results.' : 'Qualifying results uploaded, awaiting race results.'; icon = mk('span', 'rc-protest-dash-icon rc-statuscircle-yellow', '~'); }
-      else { text = 'Awaiting results.'; icon = mk('span', 'rc-protest-dash-icon rc-protest-dash-icon-pending'); }
-      st.appendChild(icon);
-      st.appendChild(mk('span', 'rc-round-status-text', text));
-      col.appendChild(st);
-      var bg = mk('div', '');
-      bg.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;';
+      if (c.track) bits.push(c.track);
+      var sr = forSeries || seriesLabel;
+      if (sr) bits.push(sr); else if (c.layout) bits.push(c.layout);
+      col.appendChild(mk('div', 'rcd-round-sub', bits.join(' · ') || 'Track not set'));
+      top.appendChild(col);
+      var icon, text, tone = '';
+      if (c.hasResults) { text = 'Results uploaded · Standings updated'; tone = ' rcd-round-status-ok'; icon = mk('span', 'rc-protest-dash-icon rc-statuscircle-green', '✓'); }
+      else if (c.hasQualifyResults || c.hasRaceResults) { text = c.hasRaceResults ? 'Race results uploaded · Awaiting qualifying results' : 'Qualifying results uploaded · Awaiting race results'; tone = ' rcd-round-status-part'; icon = mk('span', 'rc-protest-dash-icon rc-statuscircle-yellow'); }
+      else { text = 'Awaiting results'; icon = mk('span', 'rc-protest-dash-icon rc-protest-dash-icon-pending'); }
+      top.appendChild(icon);
+      r.appendChild(top);
+      r.appendChild(mk('div', 'rcd-round-status' + tone, text));
       if (active && !readOnly) {
+        var bg = mk('div', 'rcd-round-actions');
         var canUp = !!page.registration && firstEmpty && firstEmpty.roundId === c.roundId;
         bg.appendChild(rowBtn('Upload Results', canUp, function () { rccOpenUpload(c.roundId, true); },
           c.hasResults ? 'Results already uploaded for this round. Erase them first to upload again.' : (!page.registration ? 'Choose your team first.' : 'Upload the earlier rounds first.')));
         bg.appendChild(rowBtn('Erase Results', !!lastDone && lastDone.roundId === c.roundId, function () { rccOpenErase(); },
           (c.hasQualifyResults || c.hasRaceResults) ? 'Only the latest round with results can be erased.' : 'No results uploaded for this round.'));
+        r.appendChild(bg);
       }
-      if (bg.childNodes.length) col.appendChild(bg);
-      info.appendChild(col);
-      r.appendChild(info);
       return r;
     }
+    function calendarBlock(rounds, ro, forSeries) {
+      var wrap = mk('div', 'rcd-cal');
+      var ch = mk('div', 'rcd-cal-head');
+      ch.appendChild(mk('div', 'rcd-cal-title', 'Championship calendar'));
+      ch.appendChild(mk('div', 'rcd-cal-count', rounds.length + (rounds.length === 1 ? ' round' : ' rounds')));
+      wrap.appendChild(ch);
+      var list = mk('div', 'rcd-cal-list');
+      if (!rounds.length) list.appendChild(mk('div', 'rc-dm-empty', 'No rounds in this season.'));
+      rounds.forEach(function (c) { list.appendChild(roundRow(c, ro, forSeries)); });
+      wrap.appendChild(list);
+      return wrap;
+    }
 
-    var box = mk('div', 'rc-panel');
-    var seasons = (page && page.seasons) || [];
+    var box = mk('div', 'rcd-list');
     if (!seasons.length) {
       box.appendChild(mk('div', 'rc-dm-empty', 'No seasons yet. Press Create Season above to start your first one, or open the Help guide for a walkthrough.'));
     } else {
-      var lastYear = null;
-      seasons.forEach(function (s, idx) {
+      seasons.forEach(function (s) {
         var year = s.createdAt ? String(s.createdAt).slice(0, 4) : 'Unknown Year';
-        if (year !== lastYear) {
-          var head = mk('div', 'rc-group-head');
-          head.appendChild(mk('span', 'rc-badge-chip rc-badge-graphite', year));
-          box.appendChild(head);
-          lastYear = year;
-        }
         var isCurrent = s.seasonId === page.seasonId;
-        var ended = s.status === 'Completed';
-        var container = mk('div', '');
-        var line = mk('div', 'rc-group-row rcd-season-row');
-        var info = mk('div', 'rc-dm-row-info');
-        var textCol = mk('div', '');
-        textCol.appendChild(mk('span', 'rc-dm-row-label', (s.seasonNumber ? 'Season ' + s.seasonNumber : 'Season') + (s.name ? ': ' + s.name : '')));
-        var meta = [statusOf(s, isCurrent && !!page.registration).label];
-        if (isCurrent && cal.length) meta.push(cal.length + ' race' + (cal.length === 1 ? '' : 's'));
-        else if (s.raceCount != null) meta.push(s.raceCount + ' race' + (s.raceCount === 1 ? '' : 's'));
-        if (s.createdAt) meta.push('Created ' + String(s.createdAt).slice(0, 10));
-        textCol.appendChild(mk('div', 'rc-hint', meta.join(' · ')));
-        var bg = mk('div', '');
-        bg.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;';
+        var st = statusOf(s, isCurrent && !!page.registration);
+        var container = mk('div', 'rcd-season-box');
+        var top = mk('div', 'rcd-season-top');
+        top.appendChild(mk('span', 'rc-badge-chip rc-badge-graphite', year));
+        top.appendChild(mk('span', 'rcd-status-pill ' + ((st.label === 'In progress' || st.label === 'Finished') ? 'rcd-status-ok' : 'rcd-status-neutral'), st.label));
+        container.appendChild(top);
+        container.appendChild(mk('div', 'rcd-season-name', (s.seasonNumber ? 'Season ' + s.seasonNumber : 'Season') + (s.name ? ': ' + s.name : '')));
+        var meta = [];
+        if (isCurrent && cal.length) meta.push(cal.filter(function (c) { return c.hasResults; }).length + ' rounds completed');
+        else if (s.raceCount != null) meta.push(s.raceCount + (s.raceCount === 1 ? ' round' : ' rounds'));
+        if (s.createdAt) meta.push('Created ' + niceDate(s.createdAt));
+        container.appendChild(mk('div', 'rcd-season-meta', meta.join(' · ')));
+        var bg = mk('div', 'rcd-season-actions');
         if (isCurrent) {
           bg.appendChild(rowBtn('Edit Season', active, function () { rccOpenSeasonWizard(page.seasonId); }, 'This season has ended, so its details can no longer be edited.'));
           bg.appendChild(rowBtn(hasSeason ? 'Season Preview' : 'Welcome', true, hasSeason ? rccOpenSeasonPreview : rccOpenWelcomeTip));
@@ -232,7 +249,7 @@
           // Before the first result is imported, the seat can be given back.
           if (page.registration && page.registration.canDropOut) bg.appendChild(rowBtn('Drop Out', active, function () { rccOpenDropOut(); }, 'This season has ended.'));
         }
-        // A past season: its own Season Preview, and its rounds (read only, no buttons) behind the arrow. Both come from that
+        // A past season: its own Season Preview, and its rounds (read only) behind the arrow. Both come from that
         // season's own page, fetched the first time either is used (an ended season is read from its saved file).
         var pastPage = null, pastLoading = null;
         function loadPast() {
@@ -263,31 +280,17 @@
           });
           bg.appendChild(pvBtn);
         }
-        var open = mk('a', 'rc-btn-secondary rc-btn-row', 'View');
+        var open = mk('a', 'rc-btn-primary rc-btn-row rcd-view-btn', 'View Season →');
         open.href = 'championship.html?id=' + encodeURIComponent(opts.profile.profileId) + '&season=' + encodeURIComponent(s.seasonId);
-        open.style.textDecoration = 'none';
         bg.appendChild(open);
-        var racesBox = null;
+        container.appendChild(bg);
         if (isCurrent && cal.length) {
-          racesBox = mk('div', '');
-          racesBox.style.cssText = 'padding-left:20px;';
-          cal.forEach(function (c) { racesBox.appendChild(roundRow(c)); });
-          var tg = mk('button', 'rc-disclosure-btn rc-disclosure-open');
-          tg.innerHTML = CHEVRON; tg.type = 'button';
-          tg.setAttribute('aria-expanded', 'true'); tg.setAttribute('aria-label', 'Hide races');
-          tg.addEventListener('click', function () {
-            var isOpen = racesBox.style.display !== 'none';
-            racesBox.style.display = isOpen ? 'none' : '';
-            tg.classList.toggle('rc-disclosure-open', !isOpen);
-            tg.setAttribute('aria-expanded', isOpen ? 'false' : 'true');
-            tg.setAttribute('aria-label', isOpen ? 'Show races' : 'Hide races');
-          });
-          bg.appendChild(tg);
+          container.appendChild(calendarBlock(cal, false, ''));
         }
         if (!isCurrent) {
-          racesBox = mk('div', '');
-          racesBox.style.cssText = 'padding-left:20px;display:none;';
-          var pastToggle = mk('button', 'rc-disclosure-btn');
+          var racesBox = mk('div', 'rcd-past-rounds');
+          racesBox.style.display = 'none';
+          var pastToggle = mk('button', 'rc-disclosure-btn rcd-past-toggle');
           pastToggle.innerHTML = CHEVRON; pastToggle.type = 'button';
           pastToggle.setAttribute('aria-expanded', 'false'); pastToggle.setAttribute('aria-label', 'Show rounds');
           var pastFilled = false;
@@ -303,9 +306,7 @@
             racesBox.appendChild(mk('div', 'rc-hint', 'Loading rounds...'));
             loadPast().then(function (pg) {
               racesBox.innerHTML = '';
-              var rounds = pg.calendar || [];
-              if (!rounds.length) racesBox.appendChild(mk('div', 'rc-dm-empty', 'No rounds in this season.'));
-              rounds.forEach(function (c) { racesBox.appendChild(roundRow(c, true)); });
+              racesBox.appendChild(calendarBlock(pg.calendar || [], true, (pg.seasonDetails && pg.seasonDetails.series) || ''));
             }).catch(function () {
               pastFilled = false;
               racesBox.innerHTML = '';
@@ -313,12 +314,8 @@
             });
           });
           bg.appendChild(pastToggle);
+          container.appendChild(racesBox);
         }
-        textCol.appendChild(bg);
-        info.appendChild(textCol);
-        line.appendChild(info);
-        container.appendChild(line);
-        if (racesBox) container.appendChild(racesBox);
         box.appendChild(container);
       });
     }
@@ -374,8 +371,18 @@
 
   window.rcBuildChampionshipDashboard = function (opts) {
     addStyle();
-    var panel = mk('div', 'rc-panel rc-dash-card rcd-panel');
-    panel.appendChild(mk('h3', 'rc-dash-card-title', 'Seasons'));
+    var panel = mk('div', 'rcd-panel');
+    var head = mk('div', 'rcd-head');
+    var headText = mk('div', 'rcd-head-text');
+    headText.appendChild(mk('div', 'rcd-eyebrow', 'Single Player'));
+    headText.appendChild(mk('div', 'rcd-title', 'Your championships.'));
+    headText.appendChild(mk('p', 'rcd-sub', 'Create, manage and follow your own racing seasons.'));
+    head.appendChild(headText);
+    var flag = mk('div', 'rcd-flag');
+    flag.setAttribute('aria-hidden', 'true');
+    flag.innerHTML = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4h12l-2 4 2 4H5"></path></svg>';
+    head.appendChild(flag);
+    panel.appendChild(head);
     var body = mk('div', '');
     panel.appendChild(body);
     // Own loading markup, drawn straight on the container (no card, no popup look): the site's start lights in the site red.

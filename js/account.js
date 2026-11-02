@@ -559,7 +559,7 @@
     function seasonHeader(data) {
       var row = el('div', 'rc-ol-season-row');
       row.appendChild(el('div', 'rc-ol-season-name', escapeHtml(seasonLabel(data))));
-      if (typeof data.seatsTotal === 'number') row.appendChild(el('div', 'rc-ol-season-count', (data.seatsTaken || 0) + '/' + data.seatsTotal));
+      if (typeof data.seatsTotal === 'number') row.appendChild(el('div', 'rc-ol-season-count', (data.seatsTaken || 0) + '/' + data.seatsTotal + ' <span class="rc-ol-season-count-unit">Drivers</span>'));
       seasonBox.appendChild(row);
     }
 
@@ -728,11 +728,8 @@
     // No ON/OFF switch any more (Matt, 2026-11-02): every member has the championship, so its page is requested at once, alongside
     // the Apps Script call below, and shown as soon as it is here (or the "no season yet" panel when there is none).
     try { if (typeof rcPrefetchChampionshipPage === 'function') rcPrefetchChampionshipPage({ token: token, spinner: buildSpinner }, profile.profileId); } catch (preErr) { /* ignore */ }
-    var champHost = el('div', 'margin-top:34px;');
-    var champHead = el('div', 'display:flex;align-items:center;gap:16px;flex-wrap:wrap;');
-    champHead.appendChild(el('h2', 'margin:0;', 'Single Player Championship'));
-    champHost.appendChild(champHead);
-    var champBody = el('div', 'margin-top:12px;');
+    var champHost = el('div', 'margin-top:20px;');
+    var champBody = el('div', '');
     champHost.appendChild(champBody);
     function buildChampPanel(page) {
       try {
