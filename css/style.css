@@ -661,7 +661,9 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   padding: 4px 8px;
 }
 
-@media (max-width: 640px) {
+/* The black sidebar is hidden on phones AND on any screen taller than it is wide (tablets held upright, narrow browser windows): the
+   dashboard body then fills the whole page and the avatar menu in the header carries every link the sidebar had (Matt, 2026-11-02). */
+@media (max-width: 640px), (orientation: portrait) {
   .rc-shell { flex-direction: column; }
   /* .rc-shell's own padding-top:70px (below, sitewide) is what clears the fixed site header now. */
   .rc-sidebar { display: none; }
@@ -676,6 +678,9 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
   /* Top padding now matches the left/right side padding (16px) so the gap above the dashboard card
      reads as even on all sides, same as the gap on its left/right edges. */
   .rc-main { padding: 16px 16px 48px; }
+}
+@media (min-width: 641px) and (orientation: portrait) {
+  .rc-main { padding: 24px 24px 56px; }
 }
 .rc-field-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; margin-top: 18px; }
 .rc-field-pair:first-child { margin-top: 0; }
@@ -2282,10 +2287,9 @@ a.rc-needs-item:hover { background: rgba(255, 255, 255, 0.06); }
   padding: 24px;
   z-index: 2000;
 }
-/* Center popups over the content area, not the whole screen. Desktop only (matches .rc-sidebar's
-   own 768px breakpoint -- below that the sidebar is hidden behind the hamburger menu, so there's
-   nothing to offset for). */
-@media (min-width: 641px) {
+/* Center popups over the content area, not the whole screen. Only while the sidebar is showing
+   (wider than 640px and not upright); with the sidebar hidden, popups sit in the middle of the screen. */
+@media (min-width: 641px) and (orientation: landscape) {
   .rc-modal-backdrop { padding-left: 244px; }
   /* Opt back out of the sidebar-offset centering above. Only a modal that explicitly knows there's
      no sidebar to offset for adds this class; every other .rc-modal-backdrop keeps the offset

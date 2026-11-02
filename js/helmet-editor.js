@@ -312,20 +312,6 @@
       });
       left.appendChild(sizeRow);
 
-      // Preview text boxes: type any name and number to see how the Player Name and Player Number layers look. Only the preview uses
-      // them (nothing is saved), and a helmet with no name or number layer simply ignores them.
-      var pvRow = mk('div', 'rch-btns rch-bgrow rch-pvrow');
-      var pvNameWrap = mk('label', 'rch-pvfield'); pvNameWrap.appendChild(mk('span', 'rch-label', 'Preview name'));
-      var pvName = mk('input', 'rch-input'); pvName.type = 'text'; pvName.maxLength = 40; pvName.placeholder = 'Type any name'; pvName.value = previewPlayer.n || '';
-      pvName.oninput = function () { previewPlayer.n = pvName.value; draw(true); };
-      pvNameWrap.appendChild(pvName);
-      var pvNumWrap = mk('label', 'rch-pvfield rch-pvnum'); pvNumWrap.appendChild(mk('span', 'rch-label', 'Preview number'));
-      var pvNum = mk('input', 'rch-input'); pvNum.type = 'text'; pvNum.maxLength = 4; pvNum.placeholder = 'e.g. 123'; pvNum.value = previewPlayer.u || '';
-      pvNum.oninput = function () { previewPlayer.u = pvNum.value; draw(true); };
-      pvNumWrap.appendChild(pvNum);
-      pvRow.appendChild(pvNameWrap); pvRow.appendChild(pvNumWrap);
-      left.appendChild(pvRow);
-
       /* ---------------- right: save bar ---------------- */
       var bar = mk('div', 'rch-section');
       var nameWrap = mk('div'); nameWrap.appendChild(mk('div', 'rch-label rch-boldlabel', 'File name'));
@@ -366,6 +352,43 @@
       descIn.oninput = function () { cur.desc = descIn.value; updateTab(); };
       descWrap.appendChild(descIn); bar.appendChild(descWrap);
       var kindHint = mk('p', 'rch-hint'); bar.appendChild(kindHint);
+      // PREVIEW: the name, country and number shown on the Player Name / Player Number layers. They are saved INTO the helmet (recipe.pl), so
+      // anywhere the helmet is shown outside a member's own profile (home page, helmet lists) it shows what is typed here. A member who picks
+      // the helmet gets their own name, country and number instead.
+      var pvTouched = false;
+      function syncPv() { R.pl = { n: String(previewPlayer.n || '').slice(0, 40), c: String(previewPlayer.c || '').slice(0, 60), u: String(previewPlayer.u || '').slice(0, 4) }; }
+      bar.appendChild(mk('div', 'rch-label rch-subhead rch-mt rch-boldlabel', 'Preview'));
+      var pvRow = mk('div', 'rch-pvrow');
+      var pvNameWrap = mk('label', 'rch-pvfield'); pvNameWrap.appendChild(mk('span', 'rch-label', 'Name'));
+      var pvName = mk('input', 'rch-input'); pvName.type = 'text'; pvName.maxLength = 40; pvName.placeholder = 'Type any name'; pvName.value = previewPlayer.n || '';
+      pvName.oninput = function () { previewPlayer.n = pvName.value; pvTouched = true; syncPv(); draw(true); };
+      pvNameWrap.appendChild(pvName);
+      var pvCtyWrap = mk('label', 'rch-pvfield'); pvCtyWrap.appendChild(mk('span', 'rch-label', 'Country'));
+      var pvCty = mk('select', 'rch-select-wide');
+      function fillCountries() {
+        pvCty.innerHTML = '';
+        var list = (typeof COUNTRIES !== 'undefined' ? COUNTRIES : []).slice();
+        if (previewPlayer.c && list.indexOf(previewPlayer.c) === -1) list.unshift(previewPlayer.c);
+        var blank = mk('option'); blank.value = ''; blank.textContent = 'No flag'; pvCty.appendChild(blank);
+        list.forEach(function (c) { var o = mk('option'); o.value = c; o.textContent = c; pvCty.appendChild(o); });
+        pvCty.value = previewPlayer.c || '';
+      }
+      fillCountries();
+      pvCty.onchange = function () { previewPlayer.c = pvCty.value; pvTouched = true; syncPv(); draw(true); };
+      pvCtyWrap.appendChild(pvCty);
+      var pvNumWrap = mk('label', 'rch-pvfield'); pvNumWrap.appendChild(mk('span', 'rch-label', 'Number'));
+      var pvNum = mk('input', 'rch-input'); pvNum.type = 'text'; pvNum.maxLength = 4; pvNum.placeholder = '123'; pvNum.value = previewPlayer.u || '';
+      pvNum.oninput = function () { previewPlayer.u = pvNum.value; pvTouched = true; syncPv(); draw(true); };
+      pvNumWrap.appendChild(pvNum);
+      pvRow.appendChild(pvNameWrap); pvRow.appendChild(pvCtyWrap); pvRow.appendChild(pvNumWrap);
+      bar.appendChild(pvRow);
+      // A helmet that is opened (or pasted in) brings its own saved preview along; a new one keeps what is typed.
+      function loadPvFrom(rec) {
+        if (rec && rec.pl) {
+          previewPlayer.n = rec.pl.n || ''; previewPlayer.c = rec.pl.c || ''; previewPlayer.u = rec.pl.u || '';
+          pvName.value = previewPlayer.n; pvNum.value = previewPlayer.u; fillCountries(); pvTouched = true;
+        } else pvTouched = false;
+      }
       kindSel.onchange = function () { cur.kind = kindSel.value; syncMeta(); };
       mfrSel.onchange = function () { cur.mfr = mfrSel.value; if (cur.kind === 'Manufacturer') { cur.name = cur.mfr; } syncMeta(); };
       var status = mk('p', 'rch-status'); bar.appendChild(status);
@@ -383,7 +406,7 @@
       newBtn.title = 'Start a new helmet: a plain white helmet with no design and no logos';
       function startNew() {
         R = blankRecipe(); sel = null; cur = { id: '', name: '', kind: 'Awards', mfr: '', desc: '', coll: '', tier: 'Common' }; baseline = JSON.parse(JSON.stringify(R));
-        nameIn.value = ''; syncMeta(); draw();
+        nameIn.value = ''; pvTouched = false; syncMeta(); draw();
       }
       newBtn.onclick = function () {
         afterOk = null;
@@ -563,7 +586,7 @@
         if (navigator.clipboard) navigator.clipboard.writeText(ta.value).then(done, function () { try { document.execCommand('copy'); } catch (e) {} done(); }); else { try { document.execCommand('copy'); } catch (e2) {} done(); }
       };
       ldB.onclick = function () {
-        try { R = H.normalizeRecipe(JSON.parse(ta.value)); sel = null; draw(); toast('Recipe loaded.', 'success'); } catch (e) { toast('That is not a valid recipe.', 'error'); }
+        try { R = H.normalizeRecipe(JSON.parse(ta.value)); sel = null; loadPvFrom(R); draw(); toast('Recipe loaded.', 'success'); } catch (e) { toast('That is not a valid recipe.', 'error'); }
       };
       rbtns.appendChild(cpB); rbtns.appendChild(ldB); rec.appendChild(rbtns);
       right.appendChild(rec);
@@ -821,6 +844,7 @@
       var busy = false, again = false, lastQuick = false;
       function put(el, cv) { el.innerHTML = ''; el.appendChild(cv); }
       function draw(quick) {
+        if (pvTouched) syncPv();
         syncControls(); updateTab();
         if (!quick) { renderLayers(); renderDetail(); }
         if (busy) { again = true; lastQuick = !!quick; return; }
@@ -977,6 +1001,7 @@
           });
           return;
         }
+        if ((R.logos || []).some(function (l) { return l && /^player/.test(l.s || ''); })) syncPv();   // the preview name, country and number stay with the helmet
         setSaving(true);
         fetchApi('adminSaveHelmetPreset', {
           method: 'POST', token: token,
@@ -995,7 +1020,7 @@
       saveBtn.onclick = function () { afterOk = null; doSave(false); };
       saveNewBtn.onclick = function () { afterOk = null; doSave(false, true, true); };
       function loadPreset(p) {
-        R = H.normalizeRecipe(p.recipe); sel = null; baseline = JSON.parse(JSON.stringify(R));
+        R = H.normalizeRecipe(p.recipe); sel = null; loadPvFrom(R); baseline = JSON.parse(JSON.stringify(R));
         cur = { id: p.presetId, name: p.name, kind: (KINDS.indexOf(p.kind) >= 0 ? p.kind : 'Awards'), mfr: p.manufacturer || '', desc: p.description || '', coll: p.collection || '', tier: p.tier || 'Common' };
         cur.saved = { name: p.name, kind: cur.kind, mfr: cur.kind === 'Manufacturer' ? cur.mfr : '', desc: p.description || '', coll: COLL_KINDS.indexOf(cur.kind) >= 0 ? (p.collection || '') : '', tier: COLL_KINDS.indexOf(cur.kind) >= 0 ? (p.tier || 'Common') : 'Common' };
         syncMeta(); draw(); toast('Loaded "' + p.name + '".', 'success');
