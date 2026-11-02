@@ -1956,6 +1956,8 @@
         return fetchApi('joinTeam', { method: 'POST', token: token, body: { seasonId: activeSeasonData.seasonId, teamId: team.teamId } });
       },
       reload: rcReloadAfterSave,
+      // League: redraw the Dashboard in place as soon as the seat is confirmed (no reload, popups stay open).
+      refresh: function () { if (onDone) onDone(); },
       toast: showToast,
       onClose: onDone
     });

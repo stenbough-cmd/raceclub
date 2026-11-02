@@ -254,15 +254,54 @@
       return card;
     }
 
-    // The save goes out the moment Join is clicked, while the signing sequence plays; its answer is only read when the
-    // driver presses Continue. After Continue: close the picker, redraw the dashboard, then the season notice.
+    // The save goes out the moment Join is clicked, while the signing sequence plays. With cfg.refresh (the League), the dashboard
+    // is redrawn in place the moment the save is confirmed (behind the signing screen, no page reload), and Continue goes straight to the
+    // season notice without waiting for anything. Without cfg.refresh (Championship) it works as before: after Continue the
+    // answer is read, the page is reloaded, then the notice shows.
     function joinTeam(team, cls, btn, err) {
       btn.disabled = true;
       err.textContent = '';
       joined = true;
       var joinPromise = cfg.join(team);
+      var quick = typeof cfg.refresh === 'function';
+      var outcome = null;        // null = still waiting, 'ok', 'fail'
+      var failText = '';
+      var noticeModal = null;
+      var continued = false;
+
+      function failed(message) {
+        outcome = 'fail';
+        failText = message;
+        if (continued) {
+          if (noticeModal && noticeModal.close) noticeModal.close(true);
+          cfg.toast(failText, 'error');
+          cfg.reload();
+        }
+      }
+      if (quick) {
+        joinPromise.then(function (res) {
+          if (cfg.onAuthError && cfg.onAuthError(res)) { outcome = 'auth'; return; }
+          if (res && res.success) {
+            outcome = 'ok';
+            cfg.toast(W.registered, 'success');
+            cfg.refresh();
+            return;
+          }
+          failed((res && res.message) || (res && res.error === 'TEAM_TAKEN'
+            ? 'That seat was just taken -- reloading to show what’s still open.'
+            : 'Could not confirm this registration -- reloading to check.'));
+        }).catch(function () { failed('Could not confirm this registration -- reloading to check.'); });
+      }
+
       openSigningSequence(team, cls, function () {
         modal.close(true);
+        if (quick) {
+          continued = true;
+          if (outcome === 'fail') { cfg.toast(failText, 'error'); cfg.reload(); return; }
+          if (outcome === 'auth') return;
+          noticeModal = openNotice(team, cls);   // right away; a late failure closes it again (see failed above)
+          return;
+        }
         joinPromise.then(function (res) {
           if (cfg.onAuthError && cfg.onAuthError(res)) return;
           if (res && res.success) {
@@ -311,6 +350,7 @@
       ok.addEventListener('click', function () { m.close(true); });
       row.appendChild(ok);
       body.appendChild(row);
+      return m;
     }
 
     showClassScreen();
