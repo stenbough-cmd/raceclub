@@ -972,3 +972,9 @@ body.rcc-page { --rcc-true-red: #F21B0C; }
 
 /* Highlights container (the whole strip behind the label and the scrolling bar) is black, like the hub's (Matt, 2026-11-02). */
 .rcc-page .rcl-ticker-wrap { background: #141416; }
+
+/* Link bar shows at once (Matt, 2026-11-02): while the page waits for its data (html.rc-pending hides everything under the
+   header), the black link bar is the one thing drawn, just under the header and above the loading overlay. When the data
+   arrives the ticker and hero appear above it and it moves down with the layout, or stays put on the sign-up and
+   switched-off views. */
+html.rc-pending .rcc-actionbar { display: block !important; position: relative; z-index: 950; }
