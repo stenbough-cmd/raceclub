@@ -371,24 +371,13 @@
 
   window.rcBuildChampionshipDashboard = function (opts) {
     addStyle();
-    var panel = mk('div', 'rcd-panel rc-collapsed');
+    var panel = mk('div', 'rcd-panel rc-acc rc-collapsed');
     var head = mk('div', 'rcd-head');
     var headText = mk('div', 'rcd-head-text');
     headText.appendChild(mk('div', 'rcd-eyebrow', 'Single Player'));
     headText.appendChild(mk('div', 'rcd-title', 'Your championships.'));
-    // Loads collapsed (Matt, 2026-11-03): only this header shows until the arrow in front of the subtitle is pressed.
+    // Loads collapsed; the Dashboard's accordion (js/account.js) opens it when the container is clicked.
     var subRow = mk('div', 'rc-coll-sub');
-    var toggle = mk('button', 'rc-disclosure-btn');
-    toggle.type = 'button';
-    toggle.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>';
-    toggle.setAttribute('aria-expanded', 'false');
-    toggle.setAttribute('aria-label', 'Show your championships');
-    toggle.addEventListener('click', function () {
-      var collapsed = panel.classList.toggle('rc-collapsed');
-      toggle.classList.toggle('rc-disclosure-open', !collapsed);
-      toggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
-    });
-    subRow.appendChild(toggle);
     subRow.appendChild(mk('p', 'rcd-sub', 'Create, manage and follow your own racing seasons.'));
     headText.appendChild(subRow);
     head.appendChild(headText);

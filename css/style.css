@@ -3471,8 +3471,6 @@ button.rc-switch { display: inline-flex; align-items: center; gap: 12px; width: 
 .rc-adm .rc-group-head { padding: 0 0 10px; }
 .rc-adm-season { background: var(--rc-offwhite); border-radius: 10px; padding: 18px 20px; margin-bottom: 16px; }
 .rc-adm-season > .rc-season-record { background: none; padding: 0; border: 0; }
-.rc-adm-season > div:last-child { padding-left: 0 !important; margin-top: 12px; display: flex; flex-direction: column; gap: 8px; }
-.rc-adm-season > div:last-child > div { display: flex; flex-direction: column; gap: 8px; }
 .rc-adm .rc-adm-season .rc-group-row:not(.rc-season-record), .rc-adm-news .rc-group-row { background: var(--rc-white); border: 0; border-radius: 10px; padding: 12px 14px; }
 .rc-adm-news .rc-panel .rc-panel > div { display: flex; flex-direction: column; gap: 8px; background: var(--rc-offwhite); border-radius: 10px; padding: 16px; }
 .rc-adm .rc-btn-row { box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; height: 34px; padding: 0 14px; font-size: 12px; line-height: 1; }
@@ -3487,3 +3485,12 @@ button.rc-switch { display: inline-flex; align-items: center; gap: 12px; width: 
 .rc-collapsed > .rc-coll-body { display: none; }
 .rc-collapsed { gap: 0; }
 .rc-collapsed .rc-adm-head { margin-bottom: 0; }
+.rc-adm.rc-stw { --rc-adm-accent: #66849D; }
+
+/* Accordion look: a collapsed container is a clickable rounded rectangle that lifts on hover. */
+.rc-acc { transition: transform 0.15s ease, box-shadow 0.15s ease; }
+.rc-acc.rc-collapsed { cursor: pointer; }
+.rc-acc.rc-collapsed:hover { transform: translateY(-3px); box-shadow: 0 8px 18px rgba(23, 23, 23, 0.09); }
+.rc-acc:not(.rc-collapsed) .rc-ol-head, .rc-acc:not(.rc-collapsed) .rcd-head, .rc-acc:not(.rc-collapsed) .rc-adm-head { cursor: pointer; }
+.rc-ol-section:not(.rc-collapsed) > .rc-coll-body { display: flex; flex-direction: column; gap: 16px; }
+.rc-ol-sub { margin: 8px 0 0; font-size: 14px; color: var(--rc-steel); }

@@ -209,7 +209,6 @@ function _rcBuildAccountMenuSectionLinks(role) {
   var DIV = '<hr class="rc-header-menu-divider">';
   // Same grouping and order as Account.html's sidebar (reorganized 2026-10-17):
   //   Me: Dashboard | The league: League Hub, Championship |
-  //   Staff (only the ones this role unlocks): League Tools, Stewarding, Admin.
   // The caller adds a divider, then League Help / Feedback / Discord, a divider, and Logout.
   var html = link('dashboard', 'Dashboard', 'dash');
   html += DIV;
@@ -226,11 +225,6 @@ function _rcBuildAccountMenuSectionLinks(role) {
   var profHref = (myProfile && /^RC-\d+$/.test(String(myProfile.profileId || ''))) ? 'profile.html?id=' + encodeURIComponent(myProfile.profileId) : 'profile.html';
   html += '<a class="rc-header-menu-item" href="' + profHref + '">' + _rcMenuIcon_('profile') + '<span>Driver Profiles</span>' + EXT + '</a>';
   // no Championship access (no +): the link is simply not there (Matt, 2026-10-24)
-  var staff = '';
-  if (role === 'Admin' || role === 'Organizer') staff += link('league', 'League Tools', 'league');
-  if (role === 'Admin' || role === 'Organizer' || role === 'Steward') staff += link('stewarding', 'Stewarding', 'steward');
-  if (role === 'Admin') staff += link('admin', 'Admin', 'admin');
-  if (staff) html += DIV + '<div class="rc-header-menu-label">Staff</div>' + staff;
   return html;
 }
 

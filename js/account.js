@@ -272,8 +272,6 @@
   // than being pre-rendered by buildFullProfileUI (Dashboard/Help/every placeholder are rendered
   // unconditionally up front, so they don't need an entry here).
   var RC_LAZY_SECTION_RENDERERS = {
-    admin: function (token) { renderAdminSection(token); },
-    stewarding: function (token) { renderStewardingSection(token); }
   };
 
   // "reload". rcReloadAfterSave() below is the one place that clears it -- a save happened, so
@@ -379,23 +377,6 @@
     markExternal('rc-nav-championship');
     
     nav.appendChild(navDivider());
-    var staffLabel = document.createElement('div');
-    staffLabel.className = 'rc-nav-group-label';
-    staffLabel.textContent = 'Staff';
-    nav.appendChild(staffLabel);
-    // League Tools now lives on the Dashboard, in the ADMINISTRATION container (renderLeagueManagementSection).
-    // Sits right below League Tools, Steward-and-above (same Driver<Steward<Organizer<Admin
-    // cumulative access hierarchy every other gated nav item on this page already follows) -- and
-    // unlike League Tools, a Steward DOES see this one.
-    var stewardingBtn = makeNavButton('stewarding', 'Stewarding', ICON_STEWARDING, 'rc-nav-stewarding', false, function () {
-      showLazySection('stewarding', currentToken);
-    });
-    nav.appendChild(stewardingBtn);
-    var adminBtn = makeNavButton('admin', 'Admin', ICON_ADMIN, 'rc-nav-admin', false, function () {
-      showLazySection('admin', currentToken);
-    });
-    nav.appendChild(adminBtn);
-    nav.appendChild(navDivider());
     // Help is an ordinary in-page section again (see renderHelpSection()) -- it briefly lived on
     // its own page (help.html) so the Rulebook would have room to grow, but that meant losing the
     // sidebar/nav chrome, which read as leaving the site rather than part of the account.
@@ -494,20 +475,23 @@
   // same popups the old separate cards used.
   // ---------------------------------------------------------------------
   function buildOnlineLeagueSection(profile, token, dashboardData, onRegistered) {
-    var box = el('div', 'rc-ol-section');
+    var box = el('div', 'rc-ol-section rc-acc');
     var head = el('div', 'rc-ol-head');
     var headText = el('div', 'rc-ol-head-text');
     headText.appendChild(el('div', 'rc-ol-eyebrow', 'Online League'));
     var titleEl = el('div', 'rc-ol-title', '');
     headText.appendChild(titleEl);
+    headText.appendChild(el('p', 'rc-ol-sub', 'Register for the season, track your seat and follow every race.'));
     head.appendChild(headText);
     var pillEl = el('div', 'rc-ol-pill', '');
     head.appendChild(pillEl);
     box.appendChild(head);
+    var olBody = el('div', 'rc-coll-body');
+    box.appendChild(olBody);
     var seasonBox = el('div', 'rc-ol-season');
-    box.appendChild(seasonBox);
+    olBody.appendChild(seasonBox);
     var tiles = el('div', 'rc-ol-tiles');
-    box.appendChild(tiles);
+    olBody.appendChild(tiles);
 
     function safe(promise) { return Promise.resolve(promise).catch(function () { return { success: false }; }); }
 
@@ -724,6 +708,7 @@
     try { if (typeof rcPrefetchChampionshipPage === 'function') rcPrefetchChampionshipPage({ token: token, spinner: buildSpinner }, profile.profileId); } catch (preErr) { /* ignore */ }
     var champHost = el('div', 'margin-top:20px;');
     var admHost = el('div', 'margin-top:20px;'); admHost.id = 'rc-adm-host';
+    var stwHost = el('div', 'margin-top:20px;'); stwHost.id = 'rc-stw-host';
     var champBody = el('div', '');
     champHost.appendChild(champBody);
     function buildChampPanel(page) {
@@ -756,6 +741,8 @@
 
     function swapRows(data) {
       var fresh = buildDashboardDataRows(profile, token, data, onRegisteredRebuild);
+      var oldOl = rows.topRow.querySelector('.rc-ol-section'), newOl = fresh.topRow.querySelector('.rc-ol-section');
+      if (oldOl && newOl && oldOl.classList.contains('rc-collapsed')) newOl.classList.add('rc-collapsed');
       rows.topRow.innerHTML = '';
       while (fresh.topRow.firstChild) rows.topRow.appendChild(fresh.topRow.firstChild);
       rows.resultsRow.innerHTML = '';
@@ -792,9 +779,25 @@
       });
     }
 
+    // ACCORDION (Matt, 2026-11-03): the Dashboard's containers are collapsed except one. Hovering a collapsed container lifts it; clicking it
+    // opens it and closes the others, so only one is open at a time. Clicking the header of the open one closes it again.
+    section.addEventListener('click', function (ev) {
+      var box = ev.target.closest && ev.target.closest('.rc-acc');
+      if (!box || !section.contains(box)) return;
+      var collapsed = box.classList.contains('rc-collapsed');
+      if (collapsed) {
+        Array.prototype.forEach.call(section.querySelectorAll('.rc-acc'), function (o) { if (o !== box) o.classList.add('rc-collapsed'); });
+        box.classList.remove('rc-collapsed');
+        try { box.dispatchEvent(new CustomEvent('rcaccopen')); } catch (e) { /* older browsers: the container just stays as is */ }
+      } else if (ev.target.closest('.rc-ol-head, .rcd-head, .rc-adm-head')) {
+        box.classList.add('rc-collapsed');
+      }
+    });
+
     Promise.all([_rcDashboardAllSettled_(dashboardData), champReady.catch(function () {})]).then(function () {
       spinner.remove();
       section.appendChild(champHost);
+      if (profile.role === 'Admin' || profile.role === 'Organizer' || profile.role === 'Steward') { currentProfile = currentProfile || profile; section.appendChild(stwHost); renderStewardingSection(token); }
       if (profile.role === 'Admin' || profile.role === 'Organizer') { section.appendChild(admHost); currentProfile = currentProfile || profile; renderLeagueManagementSection(token); }
       rows = paintRows(dashboardData, onRegisteredRebuild);
     });
@@ -3013,85 +3016,91 @@
   }
 
   // ---------------------------------------------------------------------
-  // STEWARDING -- Steward's own page, separate from League Tools (Admin/Organizer only). Each
-  // protest inside renders in the same open-circle/checkmark format as the Dashboard's Protest card
-  // (buildStewardingProtestItem_), most recent first.
+  // STEWARDING container on the Dashboard (Steward, Organizer and Admin). Same look as the other containers, steel blue accent, loads
+  // collapsed and fetches the protests the first time it is opened. One block per season, a grey box per round with protests.
   function renderStewardingSection(token) {
-    var section = document.getElementById('rc-section-stewarding');
-    if (!section) return;
-    section.innerHTML = '';
-    section.appendChild(buildPageSpinner('Loading protests...'));
+    var host = document.getElementById('rc-stw-host');
+    if (!host) return;
+    var role = currentProfile && currentProfile.role;
+    if (!(role === 'Admin' || role === 'Organizer' || role === 'Steward')) { host.innerHTML = ''; return; }
+    var wasOpen = !!host.querySelector('.rc-stw:not(.rc-collapsed)');
+    host.innerHTML = '';
+    var box = el('div', 'rc-ol-section rc-adm rc-acc rc-stw' + (wasOpen ? '' : ' rc-collapsed'));
+    var head = el('div', 'rc-adm-head');
+    var ht = el('div', '');
+    ht.appendChild(el('div', 'rc-adm-eyebrow', 'Stewarding'));
+    ht.appendChild(el('div', 'rc-adm-title', 'Protest docket.'));
+    var subRow = el('div', 'rc-coll-sub');
+    subRow.appendChild(el('p', 'rc-adm-sub', 'Review every protest filed this season and rule on it.'));
+    ht.appendChild(subRow);
+    head.appendChild(ht);
+    head.appendChild(el('div', 'rc-adm-icon', ICON_STEWARDING.replace('width="16" height="16"', 'width="26" height="26"')));
+    box.appendChild(head);
+    var body = el('div', 'rc-coll-body');
+    box.appendChild(body);
+    host.appendChild(box);
 
-    return fetchApi('getStewardingFeed', { token: token, timeoutMs: RC_FETCH_TIMEOUT_MS_LONG }).then(function (data) {
-      section.innerHTML = '';
-      section.appendChild(el('h2', 'margin-top:0;', 'Stewarding'));
-
-      if (!data || !data.success) {
-        var feedDetail = data && (data.message || data.error) ? ' (' + escapeHtml(String(data.message || data.error)) + ')' : '';
-        section.appendChild(el('p', 'color:var(--rc-red);', 'Could not load protests right now.' + feedDetail));
-        return;
-      }
-      if (!data.rounds || !data.rounds.length) {
-        section.appendChild(buildEmptyStatePanel('No Protests Filed', 'Protests will appear here for review once a season begins.'));
-        return;
-      }
-
-      // One container per SEASON. Inside it, a graphite pill per round that has protests ("ROUND N: EVENT
-      // SHORTNAME"), with that round's protests listed just under it, inset a little. A round with no protests
-      // gets no pill. The only badge at the top is PENDING, shown while any ruling in the season is still open.
-      var seasonOrder = [], bySeason = {};
-      data.rounds.forEach(function (r) {
-        if (!r.protests || !r.protests.length) return;
-        var key = r.seasonId || 'none';
-        if (!bySeason[key]) { bySeason[key] = []; seasonOrder.push(key); }
-        bySeason[key].push(r);
-      });
-      if (!seasonOrder.length) {
-        section.appendChild(buildEmptyStatePanel('No Protests Filed', 'Protests will appear here for review once a season begins.'));
-        return;
-      }
-      seasonOrder.forEach(function (key) {
-        var roundsInSeason = bySeason[key].slice().sort(function (a, b) { return (b.roundNumber || 0) - (a.roundNumber || 0); });
-        var first = roundsInSeason[0];
-        var panel = el('div', 'rc-panel rc-dash-card');
-        panel.style.cssText = 'margin-bottom:16px;';
-
-        // "SEASON <n>: <SEASON NAME>" -- the title itself spans the card so its red underline runs to the end.
-        var seasonNum = seasonNumberLabel(first.seasonId);
-        var titleText = 'Season' + (seasonNum ? (' ' + seasonNum) : '') + (first.seasonName ? (': ' + first.seasonName) : '');
-        var pendingTotal = roundsInSeason.reduce(function (t, r) { return t + (r.pendingCount || 0); }, 0);
-        var title = el('h3', 'rc-dash-card-title', '');
-        title.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;';
-        title.appendChild(el('span', '', escapeHtml(titleText)));
-        if (pendingTotal) {
-          title.appendChild(el('span', 'rc-badge-chip rc-badge-race-noresults', pendingTotal + ' Pending'));
+    var loaded = false;
+    function load() {
+      if (loaded) return;
+      loaded = true;
+      body.appendChild(buildSpinner('Loading protests...'));
+      fetchApi('getStewardingFeed', { token: token, timeoutMs: RC_FETCH_TIMEOUT_MS_LONG }).then(function (data) {
+        body.innerHTML = '';
+        if (!data || !data.success) {
+          var feedDetail = data && (data.message || data.error) ? ' (' + escapeHtml(String(data.message || data.error)) + ')' : '';
+          body.appendChild(el('p', 'color:var(--rc-red);', 'Could not load protests right now.' + feedDetail));
+          return;
         }
-        panel.appendChild(title);
-
-        roundsInSeason.forEach(function (r) {
-          var pillText = 'Round ' + (r.roundNumber || '?') + ': ' + (r.eventName || '') + (r.shortName ? ' ' + r.shortName : '');
-          var head = el('div', 'rc-group-head');
-          head.appendChild(el('span', 'rc-badge-chip rc-badge-graphite', escapeHtml(pillText.toUpperCase())));
-          panel.appendChild(head);
-
-          // Protest rows -- same open-circle/red-X/yellow-check/green-check format as the Dashboard's own
-          // Protest card (buildDashProtestItem), most recent first, inset a little under the pill.
-          var sortedProtests = (r.protests || []).slice().sort(function (a, b) {
-            return new Date(b.submittedAt || 0).getTime() - new Date(a.submittedAt || 0).getTime();
-          });
-          var list = el('div', 'rc-protest-dash-list');
-          list.style.cssText = 'margin:8px 0 16px 14px;';
-          sortedProtests.forEach(function (p) { list.appendChild(buildStewardingProtestItem_(p)); });
-          panel.appendChild(list);
+        var seasonOrder = [], bySeason = {};
+        (data.rounds || []).forEach(function (r) {
+          if (!r.protests || !r.protests.length) return;
+          var key = r.seasonId || 'none';
+          if (!bySeason[key]) { bySeason[key] = []; seasonOrder.push(key); }
+          bySeason[key].push(r);
         });
-
-        section.appendChild(panel);
+        if (!seasonOrder.length) {
+          var empty = el('div', 'rc-adm-season');
+          empty.appendChild(el('div', 'rcd-season-name', 'No protests filed.'));
+          empty.appendChild(el('div', 'rcd-round-sub', 'Protests appear here for review once a season begins.'));
+          body.appendChild(empty);
+          return;
+        }
+        seasonOrder.forEach(function (key) {
+          var roundsInSeason = bySeason[key].slice().sort(function (a, b) { return (b.roundNumber || 0) - (a.roundNumber || 0); });
+          var first = roundsInSeason[0];
+          var seasonNum = seasonNumberLabel(first.seasonId);
+          var pendingTotal = roundsInSeason.reduce(function (t, r) { return t + (r.pendingCount || 0); }, 0);
+          var sh = el('div', 'rc-adm-sec-head');
+          sh.appendChild(el('div', 'rc-adm-sec-title', escapeHtml('Season' + (seasonNum ? (' ' + seasonNum) : '') + (first.seasonName ? (': ' + first.seasonName) : ''))));
+          sh.appendChild(el('div', 'rcd-count-pill', pendingTotal ? (pendingTotal + ' pending') : 'All ruled'));
+          body.appendChild(sh);
+          var list = el('div', 'rcd-list');
+          list.style.marginTop = '18px';
+          roundsInSeason.forEach(function (r) {
+            var rb = el('div', 'rcd-season-box rc-adm-season');
+            var pillText = 'Round ' + (r.roundNumber || '?') + ': ' + (r.eventName || '') + (r.shortName ? ' ' + r.shortName : '');
+            var top = el('div', 'rcd-season-top');
+            top.appendChild(el('span', 'rc-badge-chip rc-badge-graphite', escapeHtml(pillText.toUpperCase())));
+            if (r.pendingCount) top.appendChild(el('span', 'rcd-status-pill rcd-status-neutral', r.pendingCount + ' pending'));
+            rb.appendChild(top);
+            var sorted = (r.protests || []).slice().sort(function (a, b) {
+              return new Date(b.submittedAt || 0).getTime() - new Date(a.submittedAt || 0).getTime();
+            });
+            var pl = el('div', 'rc-protest-dash-list rcd-cal-list');
+            sorted.forEach(function (p) { pl.appendChild(buildStewardingProtestItem_(p)); });
+            rb.appendChild(pl);
+            list.appendChild(rb);
+          });
+          body.appendChild(list);
+        });
+      }).catch(function () {
+        body.innerHTML = '';
+        body.appendChild(el('p', 'color:var(--rc-red);', 'Could not reach the server.'));
       });
-    }).catch(function () {
-      section.innerHTML = '';
-      section.appendChild(el('h2', 'margin-top:0;', 'Stewarding'));
-      section.appendChild(el('p', 'color:var(--rc-red);', 'Could not reach the server.'));
-    });
+    }
+    box.addEventListener('rcaccopen', load);
+    if (wasOpen) load();
   }
 
   // ADMINISTRATION container on the Dashboard (Organizer and Admin only). It holds what used to be the League Tools page: the
@@ -3101,23 +3110,13 @@
     if (!host) return;
     if (!(currentProfile && (currentProfile.role === 'Admin' || currentProfile.role === 'Organizer'))) { host.innerHTML = ''; return; }
     host.innerHTML = '';
-    var box = el('div', 'rc-ol-section rc-adm rc-collapsed');
+    var box = el('div', 'rc-ol-section rc-adm rc-acc rc-collapsed');
     var head = el('div', 'rc-adm-head');
     var ht = el('div', '');
     ht.appendChild(el('div', 'rc-adm-eyebrow', 'Administration'));
     ht.appendChild(el('div', 'rc-adm-title', 'League tools.'));
-    // Loads collapsed: only this header shows until the arrow in front of the subtitle is pressed.
+    // Loads collapsed; the Dashboard's accordion opens it when the container is clicked.
     var subRow = el('div', 'rc-coll-sub');
-    var toggle = el('button', 'rc-disclosure-btn', ICON_CHEVRON_DOWN);
-    toggle.type = 'button';
-    toggle.setAttribute('aria-expanded', 'false');
-    toggle.setAttribute('aria-label', 'Show administration');
-    toggle.addEventListener('click', function () {
-      var collapsed = box.classList.toggle('rc-collapsed');
-      toggle.classList.toggle('rc-disclosure-open', !collapsed);
-      toggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
-    });
-    subRow.appendChild(toggle);
     subRow.appendChild(el('p', 'rc-adm-sub', 'Run the season, the calendar, the results and the league news.'));
     ht.appendChild(subRow);
     head.appendChild(ht);
@@ -3163,9 +3162,18 @@
             top.appendChild(el('div', 'rc-ol-tile-label', escapeHtml(t[0])));
             top.appendChild(el('div', 'rc-ol-tile-corner', 'Open →'));
             b.appendChild(top);
-            b.appendChild(el('div', 'rc-ol-tile-value', escapeHtml(t[1])));
+            var valueEl = el('div', 'rc-ol-tile-value', escapeHtml(t[1]));
+            b.appendChild(valueEl);
             b.appendChild(el('div', 'rc-ol-tile-sub', escapeHtml(t[2])));
-            b.addEventListener('click', t[3]);
+            // The old Admin buttons changed their own label and disabled state while working; this stand-in maps that onto the tile.
+            var proxy = {
+              get textContent() { return valueEl.textContent; },
+              set textContent(v) { valueEl.textContent = v; },
+              get disabled() { return b.disabled; },
+              set disabled(v) { b.disabled = v; },
+              querySelector: function (q) { return b.querySelector(q); }
+            };
+            b.addEventListener('click', function (ev) { t[3].call(proxy, ev); });
             grid.appendChild(b);
           });
           wrap.appendChild(grid);
@@ -3186,6 +3194,21 @@
           ['Garage', 'Cars', 'Cars and team seats.', function () { openCarsModal(token); }],
           ['Health', 'Integrity Check', 'Scan the current season.', function () { openIntegrityCheckModal(token); }]
         ]));
+        // WEBSITE TOOLS: what the old Admin page held. Each tile runs the same action as the old button.
+        var webTools = collectWebsiteTools(token);
+        var webSpecs = [];
+        webTools.forEach(function (t) {
+          if (t.staged) return;
+          var meta = { 'Update Home Page Helmets': ['Update', 'Home Page Helmets', 'Choose the four showcase helmets.'], 'Update Home Page Grid': ['Update', 'Home Page Grid', 'Refresh Meet The Grid.'], 'Backup Now': ['Safety', 'Backup Now', 'Copy the whole Sheet to Drive.'] }[t.label] || ['Website', t.label, ''];
+          webSpecs.push([meta[0], meta[1], meta[2], t.onClick, t.tooltip]);
+        });
+        var webSection = toolTiles('Website', webSpecs.map(function (x) { return [x[0], x[1], x[2], x[3]]; }).concat([['Preview', 'Staged League Hub', rcStagedHubOn() ? 'On in this browser.' : 'Off in this browser.', function () {
+          var turningOn = !rcStagedHubOn();
+          rcSetStagedHub(turningOn);
+          showToast(turningOn ? 'Staged League Hub is ON in this browser. Open the League Hub to see it.' : 'Staged League Hub is OFF. The League Hub shows the real league again.', 'success');
+          this.querySelector('.rc-ol-tile-sub').textContent = turningOn ? 'On in this browser.' : 'Off in this browser.';
+        }]]));
+        body.appendChild(webSection);
       }
     }).catch(function () {
       body.innerHTML = '';
@@ -5367,92 +5390,13 @@
   // Management") with a row of buttons: Members / Tracks / Cars / Sponsors. Separate from the plain
   // "Admin" placeholder link.
   // ---------------------------------------------------------------------
-  function renderAdminSection(token) {
-    var section = document.getElementById('rc-section-admin');
-    if (!section) return;
-    section.innerHTML = '';
-    section.appendChild(el('h2', 'margin-top:0;', 'Admin'));
-    renderAdminSectionBody(section, token);
-  }
-
-  function renderAdminSectionBody(section, token) {
-    // DESIGN STUDIO container (ECO chat) -- ABOVE Data Management. The button opens the Helmet Designer popup (js/helmet-editor.js).
-    var studioPanel = el('div', 'rc-panel rc-dash-card');
-    studioPanel.appendChild(el('h3', 'rc-dash-card-title', 'Design Studio'));
-    var studioBox = el('div', 'display:flex;flex-direction:column;align-items:flex-start;gap:8px;');
-    var studioBtn = el('button', 'rc-btn-secondary rc-btn-sm rch-blackbtn', 'Helmet Designer');
-    studioBtn.type = 'button';
-    studioBtn.addEventListener('click', function () {
-      if (!window.RCHelmetEditor) { showToast('The helmet designer did not load. Refresh the page and try again.', 'error'); return; }
-      window.RCHelmetEditor.openDesigner({ token: token, fetchApi: fetchApi, showModal: showModal, showToast: showToast });
-    });
-    studioBox.appendChild(studioBtn);
-    studioBox.appendChild(el('p', 'margin:0;font-size:14px;line-height:1.55;color:var(--rc-steel);max-width:760px;', escapeHtml('Design the helmets the site uses: the default helmet, each manufacturer\'s team helmet, and special event, premium and award helmets. Open, edit details, share and archive designs, and manage the logo library, all from inside the designer.')));
-    // Manage Helmet Designs / Manage Logos: open just that list (Open is left out, nothing is loaded into a designer), no designer window.
-    function addStudioManager(label, only, descr) {
-      var item = el('div', 'display:flex;flex-direction:column;align-items:flex-start;gap:8px;margin-top:14px;');
-      var b = el('button', 'rc-btn-secondary rc-btn-sm', label);
-      b.type = 'button';
-      b.addEventListener('click', function () {
-        if (!window.RCHelmetEditor) { showToast('The helmet designer did not load. Refresh the page and try again.', 'error'); return; }
-        window.RCHelmetEditor.openDesigner({ token: token, fetchApi: fetchApi, showModal: showModal, showToast: showToast }, { only: only });
-      });
-      item.appendChild(b);
-      item.appendChild(el('p', 'margin:0;font-size:14px;line-height:1.55;color:var(--rc-steel);max-width:760px;', escapeHtml(descr)));
-      studioBox.appendChild(item);
-    }
-    addStudioManager('Manage Helmet Designs', 'manage', 'Opens the list of every saved helmet design without opening the designer. From here you can edit a design\'s details (name, category, tier, description and who it is given to), archive it, restore an archived one, or delete it forever. To change how a helmet looks, open it in the Helmet Designer.');
-    addStudioManager('Manage Logos', 'logos', 'Opens the list of every helmet logo without opening the designer. From here you can upload a logo, edit one, archive it, restore an archived one, or delete it forever.');
-    studioPanel.appendChild(studioBox);
-    section.appendChild(studioPanel);
-
-    var panel = el('div', 'rc-panel rc-dash-card');
-    panel.appendChild(el('h3', 'rc-dash-card-title', 'Data Management'));
-
-    // Layout: each button sits ABOVE its own thorough description -- [BUTTON] then description,
-    // repeated -- instead of one row of buttons.
-    var list = el('div', 'display:flex;flex-direction:column;gap:22px;');
-
-    var addTarget = null;   // where addItem puts the next item: the Data Management list, or the Website Tools list once it is set
+  // WEBSITE TOOLS (Administration container, Admin only). The old Admin page is gone; its Website Tools now draw as tiles in the
+  // ADMINISTRATION container. This collects them as { label, onClick, tooltip } (or { staged: true } for the Staged League Hub switch).
+  function collectWebsiteTools(token) {
+    var tools = [];
     function addItem(label, onClick, descriptionParas, tooltip) {
-      var item = el('div', 'display:flex;flex-direction:column;align-items:flex-start;gap:8px;');
-      var btn = el('button', 'rc-btn-secondary rc-btn-sm', label);
-      btn.type = 'button';
-      if (tooltip) withTooltip(btn, tooltip);
-      btn.addEventListener('click', onClick);
-      item.appendChild(btn);
-      descriptionParas.forEach(function (text) {
-        item.appendChild(el('p', 'margin:0;font-size:14px;line-height:1.55;color:var(--rc-steel);max-width:760px;', escapeHtml(text)));
-      });
-      (addTarget || list).appendChild(item);
+      tools.push({ label: label, onClick: onClick, tooltip: tooltip || '', short: (descriptionParas && descriptionParas[0]) || '' });
     }
-
-    // Create a Season / End Season / Clear Season Draft live on the League Tools page's Seasons
-    // container, not here.
-    addItem('Members', function () { openMembersModal(token); }, [
-      'Opens the full list of every account on the site, including prospects who have registered but not yet joined a season. From here you can add a driver yourself, open any member to change their role, disable or re-enable their account, and send them a password reset.',
-      'Use this when someone needs their access changed (for example promoting a driver to Steward or Organizer), when a driver is locked out of their account, or when you want to look someone up.'
-    ]);
-
-    addItem('Tracks', function () { openTracksModal(token); }, [
-      'Opens the list of every track and layout the league can race on. You can add a new track with its first layout, add more layouts to an existing track, edit a track\'s name, nickname, region and country, and deactivate or reactivate a track or a single layout.',
-      'Deactivating hides a track or layout from the choices used when building a season, but it is never deleted, so past rounds and results that used it keep working. The nickname is the short name shown in tight spaces such as the calendar.'
-    ]);
-
-    addItem('Cars', function () { openCarsModal(token); }, [
-      'Opens the list of every car and team seat drivers can register for. Each entry holds a class, manufacturer, car model, car number, team name and the short team description drivers see on the Choose Your Team screen. You can add a car, edit any of those fields, and deactivate or reactivate it.',
-      'Deactivating takes a car out of future registrations without deleting it, so drivers already registered to it and past results are unaffected. Keep the details here accurate, since race imports and the registration mismatch check compare against them.'
-    ]);
-
-    // INTEGRITY CHECK -- see openIntegrityCheckModal. Gray like every other opener
-    // (race-club-ui-consistency's "gray unless it saves" rule) -- this button only opens a modal;
-    // the check itself runs once the modal is up.
-    addItem('Integrity Check', function () { openIntegrityCheckModal(token); }, [
-      'A one-click health check for the current season (the one that is open for registration or running). It looks for anything that should be in sync across the site and the Google Sheet but is not, repairs what is safe to repair automatically, and reports anything that needs a human decision. It only ever looks at the current season, and it can take up to a few minutes on a season with many completed rounds, so leave the popup open until it finishes.',
-      'What it fixes automatically: it refreshes the League Hub (standings, calendar, ticker and news), refreshes the Meet The Grid section on the landing page, rebuilds the standings for every round that has results, and refreshes the public results and qualifying popups for each of those rounds. These rebuilds are safe to repeat and are what fix a page that looks stale or out of date, for example when an import was interrupted or someone edited the Sheet by hand.',
-      'What it only flags: a registration that points to a team or car that no longer exists, two drivers registered to the same team seat, and standings history for a driver who no longer has a registration this season. These are reported, never changed, because removing or reassigning someone\'s seat or history is a judgment call that depends on why it happened.',
-      'It never edits race results, penalties, rulings, accounts or registrations, so it is safe to run as often as you like. Run it whenever something on the League Hub, the standings or a results popup looks wrong, after you edit the Sheet directly, after deleting or replacing a team or car, or simply as a routine check mid-season. The popup shows how many items were fixed and how many were flagged, with a plain explanation for each.'
-    ], 'Scans the current season for anything out of sync, fixes what is safe automatically, and lists anything that needs your call.');
 
     // Saves an exported data file straight into the race-club-data GitHub repo through Apps Script (adminPublishDataFile, website/data/ only).
     // If GitHub can't be reached or isn't set up, the file is downloaded instead so nothing is lost. Resolves after showing a toast.
@@ -5482,10 +5426,6 @@
     // Designer's presets), then download home-helmets.json. Saved at website/data/ in the race-club-data repo, it is what the helmet
     // showcase on index.html draws. Read-only and gray: nothing is written to the Sheet.
     // WEBSITE TOOLS container (below Data Management): the Update buttons, Backup Now and the Staged League Hub switch.
-    var webPanel = el('div', 'rc-panel rc-dash-card');
-    webPanel.appendChild(el('h3', 'rc-dash-card-title', 'Website Tools'));
-    var webList = el('div', 'display:flex;flex-direction:column;gap:22px;');
-    addTarget = webList;
     addItem('Update Home Page Helmets', function () {
       var modal = showModal('Home Page Helmets', { wide: true });
       var body = modal.body;
@@ -5620,7 +5560,7 @@
       ].forEach(function (text) {
         item.appendChild(el('p', 'margin:0;font-size:14px;line-height:1.55;color:var(--rc-steel);max-width:760px;', escapeHtml(text)));
       });
-      webList.appendChild(item);
+      tools.push({ staged: true });
     })(); } catch (stagedErr) { /* the switch is optional: Data Management must always draw */ }
 
     // BACKUP NOW (ECO chat, 2026-11-01). Asks Apps Script to copy the whole Sheet into the owner's Drive folder "Race Club Backups".
@@ -5647,10 +5587,7 @@
       'Weekly copies are switched on from the Sheet menu: Race Club > Turn On Weekly Backup.'
     ], 'Saves a dated copy of the whole Sheet in your Google Drive.');
 
-    panel.appendChild(list);
-    section.appendChild(panel);
-    webPanel.appendChild(webList);
-    section.appendChild(webPanel);
+    return tools;
   }
 
   // (Generated Story Feedback list removed 2026-10-15: story feedback is emailed to the admin when it is submitted.)
@@ -8452,8 +8389,6 @@
     // sidebar.
     // Stewarding -- Steward and above (cumulative hierarchy: Steward < Organizer < Admin), same
     // level Protests RULING already requires server-side (Protests.gs).
-    setNavAccess('rc-nav-stewarding', profile.role === 'Admin' || profile.role === 'Organizer' || profile.role === 'Steward', 'Requires Steward, Organizer, or Admin access.');
-    setNavAccess('rc-nav-admin', profile.role === 'Admin', 'Requires Admin access.');
     // Championship: only Admins and accounts with the + see this link at all (Matt, 2026-10-24); it starts hidden so nobody sees it flash.
     var champNav = document.getElementById('rc-nav-championship');
     if (champNav) champNav.style.display = '';   // everyone sees the link (Matt, 2026-10-25)
