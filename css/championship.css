@@ -980,3 +980,6 @@ html.rc-pending .rcc-actionbar { display: none !important; }
 
 .rcc-actionbar:empty { display: none !important; }
 .rcc-actionbar-inner > .rcc-actionbar-season { margin-left: auto; }
+
+/* Season bar: the League Hub's exact shade (#1b1c1f), so the thin line under the header looks the same on both pages when the bar slides up under it (Matt, 2026-11-02). */
+.rcc-page .rcc-actionbar { background: #1b1c1f; }
