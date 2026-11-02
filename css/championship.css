@@ -906,7 +906,7 @@ body.rcc-page { --rcc-true-red: #F21B0C; }
 .rcc-page .rcl-hero-season-sep,
 .rcc-page .rcl-panel-title::before { color: var(--rcc-true-red); }
 .rcc-page .rcl-panel-head { border-bottom-color: var(--rcc-true-red); }
-.rcc-page .rcc-actionbar { border-bottom-color: #5f7d99; border-bottom-width: 3px; }
+.rcc-page .rcc-actionbar { border-bottom-color: #5f7d99; border-bottom-width: 2px; }
 /* Red again too (Matt): the SINGLE PLAYER MODE eyebrow and links (text links, plus the black link
    bar's hover and open states). Links styled as buttons keep the blue-gray. */
 .rcc-page .rcl-hero-eyebrow { color: var(--rcc-true-red); }
@@ -936,14 +936,14 @@ body.rcc-page { --rcc-true-red: #F21B0C; }
   display: flex; align-items: center; min-height: 48px; padding: 0 18px;
   font-size: 13px; text-decoration: none; color: rgba(255, 255, 255, 0.82);
   border-left: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: inset 0 -3px 0 transparent;
+  box-shadow: inset 0 -2px 0 transparent;
   transition: background-color .15s ease, color .15s ease, box-shadow .15s ease;
 }
 .rcc-actionbar-link:last-child { border-right: 1px solid rgba(255, 255, 255, 0.12); }
 .rcc-actionbar-link:first-child { padding-left: 18px; }
 .rcc-actionbar-link:disabled { color: var(--rc-steel); box-shadow: none; background: none; }
-.rcc-actionbar-link:hover:not(:disabled), a.rcc-actionbar-link:hover { color: var(--rc-white); background: rgba(255, 255, 255, 0.08); box-shadow: inset 0 -3px 0 #e0b64c; }
-.rcc-page .rcc-actionbar-current, .rcc-page .rcc-actionbar-current:hover { color: var(--rc-white); background: rgba(255, 255, 255, 0.1); box-shadow: inset 0 -3px 0 #e0b64c; }
+.rcc-actionbar-link:hover:not(:disabled), a.rcc-actionbar-link:hover { color: var(--rc-white); background: rgba(255, 255, 255, 0.08); box-shadow: inset 0 -2px 0 #e0b64c; }
+.rcc-page .rcc-actionbar-current, .rcc-page .rcc-actionbar-current:hover { color: var(--rc-white); background: rgba(255, 255, 255, 0.1); box-shadow: inset 0 -2px 0 #e0b64c; }
 @media (max-width: 640px), (orientation: portrait) { .rcc-actionbar-link, a.rcc-actionbar-link { min-height: 44px; padding: 0 12px; } .rcc-actionbar-link:first-child { padding-left: 12px; } }
 
 /* The Championship's own banner photo instead of the League Hub's (Matt, 2026-11-02). */

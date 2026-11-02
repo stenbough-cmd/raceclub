@@ -3283,7 +3283,7 @@ button.rc-switch { display: inline-flex; align-items: center; gap: 12px; width: 
    white links, red line underneath (copied from .rcl-navbar in css/league.css). */
 /* Always visible: it sits right under the hero image in the page, but is sticky on both edges, so on a short window it
    rests on the bottom edge of the screen, rises as you scroll, and then stays pinned just under the fixed 70px header. */
-.rc-home-navbar { background: #141416; border-bottom: 3px solid #e0b64c; position: sticky; top: 70px; bottom: 0; z-index: 3; }
+.rc-home-navbar { background: #141416; border-bottom: 2px solid #e0b64c; position: sticky; top: 70px; bottom: 0; z-index: 3; }
 .rc-home-navbar-inner { max-width: 1180px; margin: 0 auto; padding: 0 32px; display: flex; align-items: center; flex-wrap: wrap; min-height: 48px; }
 .rc-home-navbar-link { padding: 14px 14px; font-family: var(--rc-font-heading); font-size: 12px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--rc-white); text-decoration: none; position: relative; }
 .rc-home-navbar-link:hover { color: var(--rc-white); }
@@ -3309,9 +3309,9 @@ button.rc-switch { display: inline-flex; align-items: center; gap: 12px; width: 
 .rc-home-navbar-inner { align-items: stretch; }
 .rc-home-navbar-link {
   display: flex; align-items: center; min-height: 48px; padding: 0 18px; font-size: 13px; text-decoration: none;
-  color: rgba(255, 255, 255, 0.82); border-left: 1px solid rgba(255, 255, 255, 0.12); box-shadow: inset 0 -3px 0 transparent;
+  color: rgba(255, 255, 255, 0.82); border-left: 1px solid rgba(255, 255, 255, 0.12); box-shadow: inset 0 -2px 0 transparent;
   transition: background-color .15s ease, color .15s ease, box-shadow .15s ease;
 }
 .rc-home-navbar-link:last-child { border-right: 1px solid rgba(255, 255, 255, 0.12); }
-.rc-home-navbar-link:hover { background: rgba(255, 255, 255, 0.08); box-shadow: inset 0 -3px 0 #e0b64c; }
+.rc-home-navbar-link:hover { background: rgba(255, 255, 255, 0.08); box-shadow: inset 0 -2px 0 #e0b64c; }
 @media (max-width: 640px), (orientation: portrait) { .rc-home-navbar-link { min-height: 44px; padding: 0 12px; } }
