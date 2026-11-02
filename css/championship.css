@@ -969,3 +969,6 @@ body.rcc-page { --rcc-true-red: #F21B0C; }
 .rcc-page .rcl-ticker-viewport .rcl-ticker-driver-rank { color: #ffffff; }
 .rcc-page .rcl-ticker-viewport .rcl-ticker-driver-num { color: #f2f2f0; }
 /* ===== END CHAMPIONSHIP TICKER BAR ===== */
+
+/* Highlights container (the whole strip behind the label and the scrolling bar) is black, like the hub's (Matt, 2026-11-02). */
+.rcc-page .rcl-ticker-wrap { background: #141416; }

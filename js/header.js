@@ -682,7 +682,7 @@ function rcOpenLegalModal() {
   // padding-left:244px (style.css, desktop only) shifts every modal right to center it over
   // Account.html's content area beside the sidebar, which is correct there but leaves this same
   // modal off-center on league.html/index.html, neither of which has a sidebar to offset for.
-  if (!document.querySelector('.rc-sidebar')) {
+  if (true) {   // the Account sidebar is gone, so every popup centers
     backdrop.classList.add('rc-modal-backdrop-centered');
   }
   var modal = document.createElement('div');
