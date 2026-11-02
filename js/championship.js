@@ -419,7 +419,34 @@ function rccRenderActionBar(page) {
   var bar = document.getElementById('rcc-actionbar');
   bar.innerHTML = '';
   var inner = _rccEl('div', 'rcc-actionbar-inner');
-  // The three page links moved into the white bar under the header (js/header.js); this bar holds only the season picker.
+  bar.appendChild(inner);
+  var links = _rccEl('div', 'rcc-actionbar-links');
+  inner.appendChild(links);
+
+  var hasSeason = !!(page && page.hasSeason);
+  var active = hasSeason && !page.seasonEnded;
+  // The black bar is the site navbar (Matt, 2026-10-27). First link: DASHBOARD (Account.html) when
+  // signed in, LOGIN (white, not gold) when not; then League Hub and Championship. Signed-in members
+  // also get Season Tools at the end. There is no Home link (the home page is an advertisement).
+  function addLink(label, href) {
+    var a = _rccText('a', 'rcc-actionbar-link rcc-actionbar-navlink', label);
+    a.href = href;
+    links.appendChild(a);
+    return a;
+  }
+  var signedIn = !!getToken();
+  if (signedIn) addLink('Dashboard', 'Account.html');
+  else {
+    var login = addLink('Log In', 'login.html');
+    login.addEventListener('click', function () { if (typeof rcRememberReturnPage === 'function') rcRememberReturnPage(); });
+  }
+  addLink('League Hub', 'league.html');
+  // The page you are on is red (Matt, 2026-10-27).
+  var here = addLink('Championship', 'championship.html');
+  here.classList.add('rcc-actionbar-current');
+  here.setAttribute('aria-current', 'page');
+  // The Season Tools menu left this bar (Matt, 2026-11-01): the season tools, Season Preview, Choose Your Team and Help now live in the
+  // SINGLE PLAYER CHAMPIONSHIP container on the Account dashboard (js/championship-dashboard.js).
 
   // Season picker (Matt, 2026-10-20, same as the League Hub's): every season, newest first, at the
   // right end of the bar, shown once any season exists. Labels are "Season N: Name" (no dates: rounds
@@ -435,7 +462,6 @@ function rccRenderActionBar(page) {
       else window.location.href = 'championship.html?id=' + encodeURIComponent(RCC.ownerId) + '&season=' + encodeURIComponent(sel.value);
     });
     inner.appendChild(sel);
-    bar.appendChild(inner);
   }
 }
 

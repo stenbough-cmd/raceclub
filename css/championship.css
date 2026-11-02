@@ -117,7 +117,7 @@ body.rc-league-page.rcc-page {
   /* Pins under the fixed 70px header once it scrolls up to it, like the home page and League Hub
      navbars (Matt, 2026-10-27). Above the page content (so the Season Tools menu shows over it),
      below the header (1000) and every popup (500 and up). */
-  position: sticky; top: calc(70px + var(--rc-hnav-h)); bottom: 0; z-index: 50;
+  position: sticky; top: 70px; bottom: 0; z-index: 50;
 }
 .rcc-actionbar-inner {
   max-width: 1180px;
@@ -976,7 +976,4 @@ body.rcc-page { --rcc-true-red: #F21B0C; }
    header), the black link bar is the one thing drawn, just under the header and above the loading overlay. When the data
    arrives the ticker and hero appear above it and it moves down with the layout, or stays put on the sign-up and
    switched-off views. */
-html.rc-pending .rcc-actionbar { display: none !important; }
-
-.rcc-actionbar:empty { display: none !important; }
-.rcc-actionbar-inner > .rcc-actionbar-season { margin-left: auto; }
+html.rc-pending .rcc-actionbar { display: block !important; position: relative; z-index: 950; }

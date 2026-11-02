@@ -16,16 +16,16 @@
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="assets/images/favicon-32.png">
 <link rel="apple-touch-icon" href="assets/images/apple-touch-icon.png">
-<link rel="stylesheet" href="css/style.css?v=0.9.32">
-<script src="js/version.js?v=0.9.32"></script>
-<script src="js/img-loader.js?v=0.9.32"></script>
-<script src="js/api.js?v=0.9.32"></script>
-<script src="js/auth.js?v=0.9.32"></script>
-<script src="js/header.js?v=0.9.32"></script>
+<link rel="stylesheet" href="css/style.css?v=0.9.30">
+<script src="js/version.js?v=0.9.30"></script>
+<script src="js/img-loader.js?v=0.9.30"></script>
+<script src="js/api.js?v=0.9.30"></script>
+<script src="js/auth.js?v=0.9.30"></script>
+<script src="js/header.js?v=0.9.30"></script>
 <!-- reference-data.js + edit-profile.js -- let the header's Edit Profile menu item open its
      popup in place on this page instead of navigating to Account.html first. -->
-<script src="js/reference-data.js?v=0.9.32"></script>
-<script src="js/edit-profile.js?v=0.9.32"></script>
+<script src="js/reference-data.js?v=0.9.30"></script>
+<script src="js/edit-profile.js?v=0.9.30"></script>
 </head>
 <body>
 
@@ -50,7 +50,20 @@ var RC_DATA_BASE = 'https://stenbough-cmd.github.io/race-club-data/website/data/
   <img class="rc-hero-badge" src="assets/images/Race Club R White.webp" alt="">
 </div>
 
-
+<!-- Navbar above "What Is Race Club?": sits at the bottom of the first screen, rides up as you scroll, then stays pinned under the header. The last link depends on whether someone is signed in. -->
+<nav class="rc-home-navbar" aria-label="Main">
+  <div class="rc-home-navbar-inner">
+    <a class="rc-home-navbar-link" id="rc-home-navbar-account" href="login.html">Log In</a>
+    <a class="rc-home-navbar-link" href="league.html">League Hub</a>
+    <a class="rc-home-navbar-link" href="championship.html">Championship</a>
+  </div>
+</nav>
+<script>
+  (function () {
+    var a = document.getElementById('rc-home-navbar-account');
+    try { if (a && typeof getToken === 'function' && getToken()) { a.textContent = 'Dashboard'; a.setAttribute('href', 'Account.html'); } } catch (e) {}
+  })();
+</script>
 
 <div class="rc-hero-content">
 
@@ -754,6 +767,6 @@ var RC_DATA_BASE = 'https://stenbough-cmd.github.io/race-club-data/website/data/
 
 </div>
 
-<script src="js/index-showcase.js?v=0.9.32"></script>
+<script src="js/index-showcase.js?v=0.9.30"></script>
 </body>
 </html>

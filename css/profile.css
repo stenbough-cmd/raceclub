@@ -331,7 +331,7 @@ body.rc-league-page.rcc-page { overflow-x: clip; }
 .rdp-head-avatar .rcl-panel-title, .rdp-head-season .rcl-panel-title, .rdp-head-team .rcl-panel-title { color: #fff; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6); }
 
 /* Driver Profile link bar (ECO chat, 2026-10-27): same look as the League Hub bar, pinned under the 70px header. */
-.rc-profile-navbar { position: sticky; top: calc(70px + var(--rc-hnav-h)); bottom: 0; z-index: 50; background: #1b1c1f; }
+.rc-profile-navbar { position: sticky; top: 70px; bottom: 0; z-index: 50; background: #1b1c1f; }
 /* This page uses the light palette, so the member dropdown gets the League Hub's dark colors written out. */
 .rc-profile-navbar .rcl-navbar-season { background: #0a0a0b; color: #f2f2f0; border: 1px solid #45474d; color-scheme: dark; }
 .rc-profile-navbar .rcl-navbar-season option { background: #0a0a0b; color: #f2f2f0; }
@@ -340,6 +340,3 @@ body.rc-league-page.rcc-page { overflow-x: clip; }
 /* Navbar: Home starts where the page's panels start, and the member dropdown ends where the last panel ends
    (the page is 1280px wide with 16px side padding). */
 .rc-profile-navbar .rcl-navbar-inner { max-width: 1280px; padding: 0 16px; box-sizing: border-box; }
-
-.rc-profile-navbar:not(:has(select)) { display: none; }
-.rc-profile-navbar .rcl-navbar-season { margin-left: auto; }

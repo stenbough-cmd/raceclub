@@ -16,18 +16,18 @@
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="assets/images/favicon-32.png">
 <link rel="apple-touch-icon" href="assets/images/apple-touch-icon.png">
-<link rel="stylesheet" href="css/style.css?v=0.9.32">
-<link rel="stylesheet" href="css/league.css?v=0.9.32">
-<link rel="stylesheet" href="css/profile.css?v=0.9.32">
-<link rel="stylesheet" href="css/driver-report.css?v=0.9.32">
-<script src="js/version.js?v=0.9.32"></script>
-<script src="js/img-loader.js?v=0.9.32"></script>
-<script src="js/api.js?v=0.9.32"></script>
-<script src="js/auth.js?v=0.9.32"></script>
-<script src="js/header.js?v=0.9.32"></script>
-<script src="js/reference-data.js?v=0.9.32"></script>
-<script src="js/edit-profile.js?v=0.9.32"></script>
-<script src="js/rulebook-content.js?v=0.9.32"></script>
+<link rel="stylesheet" href="css/style.css?v=0.9.30">
+<link rel="stylesheet" href="css/league.css?v=0.9.30">
+<link rel="stylesheet" href="css/profile.css?v=0.9.30">
+<link rel="stylesheet" href="css/driver-report.css?v=0.9.30">
+<script src="js/version.js?v=0.9.30"></script>
+<script src="js/img-loader.js?v=0.9.30"></script>
+<script src="js/api.js?v=0.9.30"></script>
+<script src="js/auth.js?v=0.9.30"></script>
+<script src="js/header.js?v=0.9.30"></script>
+<script src="js/reference-data.js?v=0.9.30"></script>
+<script src="js/edit-profile.js?v=0.9.30"></script>
+<script src="js/rulebook-content.js?v=0.9.30"></script>
 </head>
 <body class="rc-league-page rcc-page">
 <div id="rc-header"></div>
@@ -37,10 +37,19 @@
      League Hub has its season dropdown. It pins under the header like the home page and League Hub bars. -->
 <nav class="rcl-navbar rc-profile-navbar" id="rc-profile-navbar" aria-label="Driver Profile">
   <div class="rcl-navbar-inner">
+    <div class="rcl-navbar-links">
+      <a class="rcl-navbar-link rcl-navbar-gold" id="rc-profile-navbar-account" href="login.html">Log In</a>
+      <a class="rcl-navbar-link" href="league.html">League Hub</a>
+      <a class="rcl-navbar-link" href="championship.html">Championship</a>
+    </div>
   </div>
 </nav>
 <script>
 (function () {
+  var acct = document.getElementById('rc-profile-navbar-account');
+  try { if (acct && typeof getToken === 'function' && getToken()) { acct.textContent = 'Dashboard'; acct.setAttribute('href', 'Account.html'); } } catch (e) {}
+  if (acct && acct.getAttribute('href') === 'login.html') acct.addEventListener('click', function () { if (typeof rcRememberReturnPage === 'function') rcRememberReturnPage(); });
+
   // Member dropdown: every active member (the driver directory). Choosing one opens that driver's profile.
   var inner = document.querySelector('#rc-profile-navbar .rcl-navbar-inner');
   var currentId = (new URLSearchParams(window.location.search).get('id') || '').trim();
@@ -153,8 +162,8 @@
 </footer>
 <script>rcWireFooterLegalLink();</script>
 
-<script src="js/driver-report.js?v=0.9.32"></script>
-<script src="js/profile.js?v=0.9.32"></script>
-<script src="js/profile-page.js?v=0.9.32"></script>
+<script src="js/driver-report.js?v=0.9.30"></script>
+<script src="js/profile.js?v=0.9.30"></script>
+<script src="js/profile-page.js?v=0.9.30"></script>
 </body>
 </html>
