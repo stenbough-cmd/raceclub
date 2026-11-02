@@ -3241,6 +3241,45 @@
       newsWrap.appendChild(sectionHead('League news', items + (items === 1 ? ' post' : ' posts')));
       newsWrap.appendChild(buildLeagueNewsPanel(newsRows, token, reload, stories));
       body.appendChild(newsWrap);
+
+      // HELMET DESIGNER and DATA MANAGEMENT (Admin only): short tiles that open the same popups the Admin page uses. No descriptions here,
+      // just a title and one short line; the full explanations stay on the Admin page.
+      if (currentProfile.role === 'Admin') {
+        function toolTiles(title, tiles) {
+          var wrap = el('div', 'rc-adm-news');
+          wrap.appendChild(sectionHead(title, tiles.length + ' tools'));
+          var grid = el('div', 'rc-adm-tiles');
+          tiles.forEach(function (t) {
+            var b = el('button', 'rc-ol-tile rc-ol-tile-click');
+            b.type = 'button';
+            var top = el('div', 'rc-ol-tile-top');
+            top.appendChild(el('div', 'rc-ol-tile-label', escapeHtml(t[0])));
+            top.appendChild(el('div', 'rc-ol-tile-corner', 'Open →'));
+            b.appendChild(top);
+            b.appendChild(el('div', 'rc-ol-tile-value', escapeHtml(t[1])));
+            b.appendChild(el('div', 'rc-ol-tile-sub', escapeHtml(t[2])));
+            b.addEventListener('click', t[3]);
+            grid.appendChild(b);
+          });
+          wrap.appendChild(grid);
+          return wrap;
+        }
+        function openDesigner(opts) {
+          if (!window.RCHelmetEditor) { showToast('The helmet designer did not load. Refresh the page and try again.', 'error'); return; }
+          window.RCHelmetEditor.openDesigner({ token: token, fetchApi: fetchApi, showModal: showModal, showToast: showToast }, opts);
+        }
+        body.appendChild(toolTiles('Helmet designer', [
+          ['Design', 'Helmet Designer', 'Create and edit helmets.', function () { openDesigner(); }],
+          ['Library', 'Manage Designs', 'Edit, archive and share.', function () { openDesigner({ only: 'manage' }); }],
+          ['Library', 'Manage Logos', 'Upload and organize logos.', function () { openDesigner({ only: 'logos' }); }]
+        ]));
+        body.appendChild(toolTiles('Data management', [
+          ['People', 'Members', 'Accounts and roles.', function () { openMembersModal(token); }],
+          ['Circuits', 'Tracks', 'Tracks and layouts.', function () { openTracksModal(token); }],
+          ['Garage', 'Cars', 'Cars and team seats.', function () { openCarsModal(token); }],
+          ['Health', 'Integrity Check', 'Scan the current season.', function () { openIntegrityCheckModal(token); }]
+        ]));
+      }
     }).catch(function () {
       body.innerHTML = '';
       body.appendChild(el('p', 'color:var(--rc-red);', 'Could not reach the server.'));

@@ -3478,3 +3478,5 @@ button.rc-switch { display: inline-flex; align-items: center; gap: 12px; width: 
 .rc-adm .rc-btn-row { box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; height: 34px; padding: 0 14px; font-size: 12px; line-height: 1; }
 @media (orientation: portrait) { .rc-adm-title { font-size: 26px; } .rc-adm-icon { width: 46px; height: 46px; } }
 @media (orientation: portrait) and (max-aspect-ratio: 3/5) { .rc-adm-title { font-size: 22px; } .rc-adm-icon { display: none; } .rc-adm-season { padding: 16px; } }
+.rc-adm-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; margin-top: 18px; }
+@media (orientation: portrait) { .rc-adm-tiles { grid-template-columns: 1fr; } }
