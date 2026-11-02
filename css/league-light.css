@@ -1,0 +1,62 @@
+/* Race Club -- css/league-light.css
+   OPTIONAL LIGHT BODY for the League Hub (Matt, 2026-11-02): everything below the navbar uses the
+   same light look as the Championship page. Loaded only by league.html and switched on by the
+   `rcl-light` class on its <body>.
+   TO REVERT: delete the <link ... league-light.css> line and the `rcl-light` class from league.html
+   (or `git revert` the commit that added this file). Nothing else was changed to make this work.
+   Hero, highlights ticker and navbar keep the hub's dark look (their dark colors are pinned below). */
+
+body.rc-league-page.rcl-light {
+  --rcl-bg: var(--rc-offwhite);
+  --rcl-bg-raised: var(--rc-white);
+  --rcl-bg-raised-2: var(--rc-offwhite);
+  --rcl-line: var(--rc-silver);
+  --rcl-line-bright: color-mix(in srgb, var(--rc-steel) 45%, var(--rc-white));
+  --rcl-ink: var(--rc-carbon);
+  --rcl-ink-dim: var(--rc-steel);
+  --rcl-ink-faint: color-mix(in srgb, var(--rc-steel) 75%, var(--rc-white));
+  background: var(--rcl-bg);
+  color: var(--rcl-ink);
+}
+
+/* Dark parts keep the hub's dark palette. */
+.rcl-light .rcl-hero,
+.rcl-light .rcl-ticker-wrap,
+.rcl-light .rcl-navbar,
+.rcl-light #rcl-race-carousel {
+  --rcl-bg: #0a0a0b;
+  --rcl-bg-raised: #141416;
+  --rcl-bg-raised-2: #1b1c1f;
+  --rcl-line: #2c2d31;
+  --rcl-line-bright: #45474d;
+  --rcl-ink: #f2f2f0;
+  --rcl-ink-dim: #b4b7bd;
+  --rcl-ink-faint: #7d8088;
+}
+
+/* Same generic tweaks the Championship page applies to the shared markup. */
+.rcl-light .rcl-panel { box-shadow: var(--rc-shadow-sm); }
+.rcl-light .rcl-panel-title { text-shadow: none; }
+.rcl-light .rcl-report-name { color: var(--rc-carbon); font-weight: 400; }
+.rcl-light .rcl-report-line [class^="rcl-report-clause-"] { font-weight: 400; }
+.rcl-light .rcl-report-line [class^="rcl-report-clause-"]:not(.rcl-report-clause-gain):not(.rcl-report-clause-loss):not(.rcl-report-clause-fastest) { color: var(--rc-steel); }
+.rcl-light .rcl-report-clause-car { color: #a16207; }
+.rcl-light .rcl-modal-overlay { background: color-mix(in srgb, var(--rc-carbon) 55%, transparent); }
+.rcl-light .rcl-mfr-tile-p1 .rcl-mfr-tile-rank { color: color-mix(in srgb, var(--rcl-gold) 70%, var(--rc-carbon)); }
+.rcl-light .rcl-mfr-tile-p2 .rcl-mfr-tile-rank { color: var(--rc-steel); }
+.rcl-light .rcl-mfr-tile-p3 .rcl-mfr-tile-rank { color: color-mix(in srgb, var(--rcl-gold) 40%, var(--rc-red-dark)); }
+.rcl-light .rcl-carousel-hero-btn:not(:disabled):hover { color: var(--rc-white); }
+.rcl-light #rcl-race-carousel .rcl-carousel-hero-btn:not(:disabled):hover { color: #0a0a0b; }
+.rcl-light .rcl-mfr-tile-logo { max-height: 140px; }
+.rcl-light .rcl-mfr-rest { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.rcl-light .rcl-mfr-rest-item { min-width: 0; color: var(--rc-carbon); }
+.rcl-light .rcl-mfr-rest-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 400; }
+.rcl-light .rcl-mfr-rest-logo-slot { height: 28px; }
+.rcl-light .rcl-mfr-rest-logo { max-height: 28px; }
+.rcl-light .rcl-lr-class > .rcl-standings-class-header { margin-bottom: 37px; }
+@media (max-width: 640px), (orientation: portrait) {
+  .rcl-light .rcl-mfr-tile-box-inner { padding: 16px; }
+  .rcl-light .rcl-mfr-tile-logo { max-height: 70%; }
+}
+/* Footer + legal link read on the light page like Championship's. */
+.rcl-light .rc-footer-legal-link { color: #F21B0C; }

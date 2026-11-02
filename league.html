@@ -16,9 +16,10 @@
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="assets/images/favicon-32.png">
 <link rel="apple-touch-icon" href="assets/images/apple-touch-icon.png">
-<link rel="stylesheet" href="css/style.css?v=0.9.24">
-<link rel="stylesheet" href="css/league.css?v=0.9.24">
-<link rel="stylesheet" href="css/driver-report.css?v=0.9.24">
+<link rel="stylesheet" href="css/style.css?v=0.9.25">
+<link rel="stylesheet" href="css/league.css?v=0.9.25">
+<link rel="stylesheet" href="css/driver-report.css?v=0.9.25">
+<link rel="stylesheet" href="css/league-light.css?v=0.9.25">
 <!-- If a saved copy of the hub exists in this browser, js/league.js draws it immediately, so skip
      the loading overlay entirely (it only shows on a first-ever visit or after storage is cleared). -->
 <script>
@@ -27,20 +28,20 @@ document.documentElement.classList.add('rc-pending');
 window.rcRevealPage = function () { document.documentElement.classList.remove('rc-pending'); };
 setTimeout(window.rcRevealPage, 25000);
 </script>
-<script src="js/version.js?v=0.9.24"></script>
-<script src="js/img-loader.js?v=0.9.24"></script>
-<script src="js/api.js?v=0.9.24"></script>
-<script src="js/auth.js?v=0.9.24"></script>
-<script src="js/header.js?v=0.9.24"></script>
-<script src="js/reference-data.js?v=0.9.24"></script>
+<script src="js/version.js?v=0.9.25"></script>
+<script src="js/img-loader.js?v=0.9.25"></script>
+<script src="js/api.js?v=0.9.25"></script>
+<script src="js/auth.js?v=0.9.25"></script>
+<script src="js/header.js?v=0.9.25"></script>
+<script src="js/reference-data.js?v=0.9.25"></script>
 <!-- edit-profile.js -- lets the header's Edit Profile menu item open its popup in place on this
      page (dark-themed) instead of navigating to Account.html first. -->
-<script src="js/edit-profile.js?v=0.9.24"></script>
+<script src="js/edit-profile.js?v=0.9.25"></script>
 <!-- rulebook-content.js -- RULEBOOK_SECTIONS, the same source Account.html's own Rules and
      Regulations card reads from. -->
-<script src="js/rulebook-content.js?v=0.9.24"></script>
+<script src="js/rulebook-content.js?v=0.9.25"></script>
 </head>
-<body class="rc-league-page">
+<body class="rc-league-page rcl-light">
 
 <!-- Full-page loading overlay -- sits on top of everything, including the header, until
      js/league.js's initial getLeagueHub fetch resolves, then fades out and removes itself. -->
@@ -68,7 +69,7 @@ setTimeout(window.rcRevealPage, 25000);
 
 <section class="rcl-hero">
   <div class="rcl-hero-inner">
-    <div class="rcl-hero-eyebrow">Race Club</div>
+    <div class="rcl-hero-eyebrow">Race Club Online</div>
     <!-- Split into two weighted spans -- both spans inherit the same font-family/font-size from
      .rcl-hero-title (see css/league.css) and differ only in font-weight, so neither one renders
      at a different size/height than the other. -->
@@ -150,7 +151,7 @@ setTimeout(window.rcRevealPage, 25000);
 </footer>
 <script>rcWireFooterLegalLink();</script>
 
-<script src="js/driver-report.js?v=0.9.24"></script>
-<script src="js/league.js?v=0.9.24"></script>
+<script src="js/driver-report.js?v=0.9.25"></script>
+<script src="js/league.js?v=0.9.25"></script>
 </body>
 </html>
