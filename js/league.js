@@ -2964,23 +2964,40 @@ function _rclRenderNews(hub) {
     return;
   }
 
-  // One story drawn in full: picture, headline row, every paragraph, edit note and the vote bar. Used for the story on the page and in the popup.
-  var layout = _rclEl('div', 'rcl-news-layout' + (_rclNewsList.length > 1 ? '' : ' rcl-news-layout-single'));
+  // League News: the newest story as a 1000-character preview with a red Continue Reading link, then the older stories stacked below it.
+  var layout = _rclEl('div', 'rcl-news-layout');
+  var cur = _rclNewsList[0];
+  var current = _rclEl('div', 'rcl-news-item rcl-news-current');
+  if (cur.heroImageUrl) {
+    var heroImg = document.createElement('img');
+    heroImg.className = 'rcl-news-hero';
+    heroImg.src = cur.heroImageUrl;
+    heroImg.alt = cur.title || '';
+    heroImg.loading = 'lazy';
+    current.appendChild(heroImg);
+  }
+  current.appendChild(_rclNewsHeadRow(cur));
+  var pv = _rclStoryPreviewHtml(cur.body, 1000);
+  current.appendChild(_rclEl('div', 'rcl-news-current-body', pv.html));
+  var cont = _rclEl('button', 'rcl-news-continue', 'Continue Reading');
+  cont.type = 'button';
+  cont.addEventListener('click', function () { _rclOpenStoryModal(0, true); });
+  current.appendChild(cont);
+  layout.appendChild(current);
   if (_rclNewsList.length > 1) {
-    // Older stories, newest first, to the left of the story. Each one opens by itself in a popup.
+    // Older stories, newest first, under the story. Each one opens by itself in a popup.
     var older = _rclEl('div', 'rcl-news-previous');
     older.appendChild(_rclEl('div', 'rcl-news-previous-head', 'Older Stories'));
     _rclNewsList.slice(1).forEach(function (item, i) {
-      var titleBtn = _rclEl('button', 'rcl-news-previous-title', _rclNewsBadgeHtml(item, true) + '<span class="rcl-news-previous-text">' + _rclEscapeHtml(item.title || '(untitled)') + '</span>');
+      var tagKind = item.isStory ? (Number(item.roundNum) > 0 ? 'Race Story' : 'Season Preview') : 'League News';
+      var sub = tagKind.toUpperCase() + ' ' + _rclNewsMetaLine(item);
+      var titleBtn = _rclEl('button', 'rcl-news-previous-title', _rclNewsBadgeHtml(item, true) + '<span class="rcl-news-previous-text"><span class="rcl-news-previous-name">' + _rclEscapeHtml(item.title || '(untitled)') + '</span><span class="rcl-news-previous-sub">' + _rclEscapeHtml(sub) + '</span></span>');
       titleBtn.type = 'button';
       titleBtn.addEventListener('click', function () { _rclOpenStoryModal(i + 1, true); });
       older.appendChild(titleBtn);
     });
     layout.appendChild(older);
   }
-  var current = _rclBuildStoryEl_(_rclNewsList[0]);
-  current.classList.add('rcl-news-current');
-  layout.appendChild(current);
   body.appendChild(layout);
 }
 
