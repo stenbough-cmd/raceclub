@@ -424,10 +424,10 @@ function rccRenderActionBar(page) {
   // Season picker (Matt, 2026-10-20, same as the League Hub's): every season, newest first, at the
   // right end of the bar, shown once any season exists. Labels are "Season N: Name" (no dates: rounds
   // have no calendar dates in championship mode). Picking one swaps the page in place.
-  var barTitle = null;
+  var barTitle = _rccText('div', 'rcc-actionbar-title', 'Championship');
+  barTitle.style.opacity = '1';
+  inner.appendChild(barTitle);
   if (page && page.seasons && page.seasons.length) {
-    barTitle = _rccText('div', 'rcc-actionbar-title', 'Single Player Championship');
-    inner.appendChild(barTitle);
     var sel = document.createElement('select');
     sel.className = 'rcc-actionbar-season';
     sel.setAttribute('aria-label', 'Season');
@@ -438,9 +438,8 @@ function rccRenderActionBar(page) {
       else window.location.href = 'championship.html?id=' + encodeURIComponent(RCC.ownerId) + '&season=' + encodeURIComponent(sel.value);
     });
     inner.appendChild(sel);
-    bar.appendChild(inner);
-    if (typeof rcWireBarTitle_ === 'function') rcWireBarTitle_(bar, barTitle, document.querySelector('.rcl-hero'));
   }
+  bar.appendChild(inner);
 }
 
 function _rccSeasonLabel(s) {
@@ -775,18 +774,22 @@ function _rccHighlightsBody(result, el) {
 function rccRenderLastRace(page) {
   var body = document.getElementById('rcl-last-race');
   var titleEl = document.getElementById('rcl-last-race-title');
+  var panel = document.getElementById('rcl-last-race-panel');
+  var classesHost = document.getElementById('rcl-numbers-classes');
   body.innerHTML = '';
-  var oldBtn = document.getElementById('rcc-lr-recap-btn');
-  if (oldBtn) oldBtn.parentNode.removeChild(oldBtn);
+  if (classesHost) classesHost.innerHTML = '';
   body.classList.remove('rcl-seasonfmt-modal-body');
+  if (panel) panel.hidden = true;
   if (!page || !page.hasSeason) {
+    if (panel) panel.hidden = false;
     titleEl.textContent = 'Welcome';
     body.appendChild(_rccEmpty('No Championship Yet', 'Open the Single Player Championship section of your Dashboard and press Create Season to set up your first offline season. Pick the series, year, classes, rounds and AI difficulty, then choose your team there.'));
     return;
   }
-  // An ended season keeps showing Last Race and the last round's highlights; no Season Recap or
-  // Champions view (Matt, 2026-10-13: titles never change at season end).
+  // An ended season keeps showing the last round's highlights; no Season Recap or Champions view
+  // (Matt, 2026-10-13: titles never change at season end).
   if (!page.lastRace) {
+    if (panel) panel.hidden = false;
     titleEl.textContent = 'Season Preview';
     body.classList.add('rcl-seasonfmt-modal-body');
     if (!page.registration) {
@@ -800,20 +803,27 @@ function rccRenderLastRace(page) {
     _rccSeasonFormat(page, body);
     return;
   }
-  // "Round N Highlights" instead of "Last Race" (Matt, 2026-10-20).
-  titleEl.textContent = 'Round ' + page.lastRace.roundNum + ' Highlights';
+  // One highlights container per class, like the League Hub's By The Numbers.
   var r = page.lastRace;
-  // (The Race Recap button in this header was removed, Matt 2026-10-13. RACE RECAP on the round's
-  // calendar card opens the same recap.)
-  _rccHighlightBlocks(page, r, body);
-  // (The "Your Result" line under the highlights was removed, Matt 2026-10-09.)
-  // Footer under a gray line: opens this round's Race Recap (Matt, 2026-10-17).
-  var foot = _rccEl('div', 'rcl-results-bottom-row rcc-lr-footer');
-  var link = _rccText('a', 'rcc-lr-footer-link', 'See The Full Race Recap And Driver Report \u2192');
-  link.href = 'javascript:void(0)';
+  (r.classes || []).forEach(function (cls) {
+    var cp = _rccEl('section', 'rcl-panel rcl-lr-panel');
+    var head = _rccEl('div', 'rcl-panel-head');
+    head.appendChild(_rccText('div', 'rcl-panel-title', String(cls.className || 'Class').toUpperCase() + ' HIGHLIGHTS'));
+    if (r.roundNum || r.track) head.appendChild(_rccText('div', 'rcl-panel-note', 'FROM ROUND ' + (r.roundNum || '') + (r.track ? ' AT ' + String(r.track).toUpperCase() : '')));
+    cp.appendChild(head);
+    var cb = _rccEl('div', 'rcl-panel-body');
+    cb.appendChild(_rccPodium(cls.standings, _rccClassYear(page, cls.className), (page.seasonDetails || {}).series));
+    if ((cls.headlineMentions || []).length) cb.appendChild(_rccMentions(cls.headlineMentions));
+    cp.appendChild(cb);
+    classesHost.appendChild(cp);
+  });
+  // Link under the containers: opens this round's Race Recap and Driver Reports.
+  var foot = _rccEl('div', 'rcl-lr-footer');
+  var link = _rccEl('button', 'rcl-lr-footer-link', 'SEE THE FULL RACE RECAPS AND DRIVER REPORTS <span class="rcl-lr-footer-arrow" aria-hidden="true">&rarr;</span>');
+  link.type = 'button';
   link.addEventListener('click', function () { rccOpenResults(r.roundId, 'race'); });
   foot.appendChild(link);
-  body.appendChild(foot);
+  classesHost.appendChild(foot);
 }
 
 // ---------------------------------------------------------------------
@@ -1211,9 +1221,7 @@ function rccRenderStandings(page) {
     else { var trophy = _rccTeamTrophy(page, className); if (trophy) host.appendChild(trophy); }
     var row = _rccEl('div', 'rcl-row-full');
     var panel = _rccEl('section', 'rcl-panel');
-    // Class photo behind the title, like the Season Stories header (Matt, 2026-10-17).
-    var banner = (className === 'LMGTE' || className === 'LMGT3') ? 'gt' : (className === 'Hypercar' ? 'hyper' : 'proto');
-    var headEl = _rccEl('div', 'rcl-panel-head rcc-panel-head-tabs rcc-class-head rcc-class-head-' + banner);
+    var headEl = _rccEl('div', 'rcl-panel-head');
     // Titles stay the same when the season ends, no "Final" (Matt, 2026-10-13).
     headEl.appendChild(_rccText('div', 'rcl-panel-title', className + ' Standings'));
     var body = _rccEl('div', 'rcl-panel-body');
@@ -2972,10 +2980,10 @@ function rccRenderStories(page) {
     }
     return;
   }
+  var layout = _rccEl('div', 'rcl-news-layout');
   var cur = published[0];
   var wrap = _rccEl('div', 'rcl-news-item rcl-news-current');
-  // Story badge back beside the title (Matt, 2026-10-17); league.css centers it against the title only.
-  // The byline keeps "By Race Club Press" (Matt, 2026-10-27). The title opens the full story, like Continue Reading.
+  // Story badge beside the title; the byline keeps "By Race Club Press". The title opens the full story, like Continue Reading.
   var curHead = _rccStoryHeadRow(cur);
   var curTitle = curHead.querySelector('.rcl-news-title');
   curTitle.classList.add('rcc-story-title-link');
@@ -2986,26 +2994,30 @@ function rccRenderStories(page) {
   wrap.appendChild(curHead);
   var pv = _rccStoryPreview(cur.body, RCC_STORY_PREVIEW_CHARS);
   wrap.appendChild(pv.el);
-  var more = _rccText('a', 'rcl-news-continue', 'Continue Reading');
-  more.href = 'javascript:void(0)';
+  var more = _rccText('button', 'rcl-news-continue', 'Continue Reading');
+  more.type = 'button';
   more.addEventListener('click', function () { rccOpenStory(0); });
   wrap.appendChild(more);
-  body.appendChild(wrap);
+  layout.appendChild(wrap);
   if (published.length > 1) {
+    // Older stories under the preview, newest first; each opens by itself in a popup, with a subheading like the League Hub's.
     var prev = _rccEl('div', 'rcl-news-previous');
-    prev.appendChild(_rccText('div', 'rcl-news-previous-head', 'More Stories'));
-    // Up to 6 under the preview (Matt, 2026-10-17; was 5).
-    published.slice(1, 7).forEach(function (s, i) {
-      // Round badge (Matt): a small square with RD over 01, 02... or PRE for the season preview.
+    prev.appendChild(_rccText('div', 'rcl-news-previous-head', 'Older Stories'));
+    published.slice(1).forEach(function (s, i) {
       var b = _rccEl('button', 'rcl-news-previous-title rcc-story-prev');
       b.type = 'button';
       b.appendChild(_rccStoryBadge(s, true));
-      b.appendChild(_rccText('span', 'rcc-story-prev-title', s.title || 'Untitled'));
+      var tx = _rccEl('span', 'rcl-news-previous-text');
+      tx.appendChild(_rccText('span', 'rcl-news-previous-name', s.title || 'Untitled'));
+      var kind = s.kind === 'preview' ? 'Season Preview' : (s.kind === 'finale' ? 'Season Finale' : 'Race Story');
+      tx.appendChild(_rccText('span', 'rcl-news-previous-sub', (kind + ' ' + _rccStoryMeta(s)).toUpperCase()));
+      b.appendChild(tx);
       b.addEventListener('click', function () { rccOpenStory(i + 1); });
       prev.appendChild(b);
     });
-    body.appendChild(prev);
+    layout.appendChild(prev);
   }
+  body.appendChild(layout);
 }
 
 // Thumbs up / down under a story (owner only; a thumbs down asks why).
@@ -3093,8 +3105,8 @@ function rccOpenStory(startIndex) {
     m.body.appendChild(w);
   }
   add(list[startIndex]);
-  m.body.appendChild(more);
-  function vis() { more.style.display = shownUpTo >= list.length - 1 ? 'none' : ''; }
+  // Shows just the story that was clicked (no Load More), like the League Hub.
+  function vis() { more.style.display = 'none'; }
   vis();
   moreBtn.addEventListener('click', function () {
     m.body.removeChild(more);

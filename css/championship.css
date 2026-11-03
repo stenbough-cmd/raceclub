@@ -985,3 +985,16 @@ html.rc-pending .rcc-actionbar { display: none !important; }
 .rcc-page #rcl-race-carousel .rcl-carousel-item-special .rcl-carousel-compact-track,
 .rcc-page #rcl-race-carousel .rcl-carousel-item-special .rcl-carousel-countdown-label b { color: #a16207; }
 .rcc-page #rcl-race-carousel .rcl-carousel-datetime { color: var(--rcc-true-red, #F21B0C); }
+
+/* ===== Championship page = League Hub layout (body.rcl-hub rules in league.css do the containers, bars and standings) ===== */
+body.rcc-page.rcl-hub .rcl-head-pin { display: none !important; }
+body.rcc-page.rcl-hub .rcc-actionbar-title { display: block; }
+body.rcc-page.rcl-hub .rcc-actionbar-inner { padding-top: 0; }
+@media (orientation: portrait) { body.rcc-page.rcl-hub .rcc-actionbar-inner { padding-top: 10px; gap: 8px; } }
+body.rcc-page.rcl-hub #rcc-stories-panel .rcl-panel-title { color: var(--rc-carbon); text-shadow: none; }
+/* This page's --rc-red is steel blue (your own rows are blue-gray), so the hub's red accents are set directly here. */
+body.rcc-page.rcl-hub .rcl-panel-head { border-bottom-color: #F21B0C; }
+body.rcc-page.rcl-hub .rcl-news-continue { color: #F21B0C; }
+body.rcc-page.rcl-hub .rcl-news-continue:hover { color: #c81509; }
+body.rcc-page.rcl-hub .rcl-lr-footer-link:hover { color: #F21B0C; }
+body.rcc-page.rcl-hub .rcl-lr-mention-title { color: #F21B0C; }

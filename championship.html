@@ -16,27 +16,27 @@
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="assets/images/favicon-32.png">
 <link rel="apple-touch-icon" href="assets/images/apple-touch-icon.png">
-<link rel="stylesheet" href="css/style.css?v=0.9.86">
-<link rel="stylesheet" href="css/league.css?v=0.9.86">
-<link rel="stylesheet" href="css/driver-report.css?v=0.9.86">
-<link rel="stylesheet" href="css/championship.css?v=0.9.86">
+<link rel="stylesheet" href="css/style.css?v=0.9.87">
+<link rel="stylesheet" href="css/league.css?v=0.9.87">
+<link rel="stylesheet" href="css/driver-report.css?v=0.9.87">
+<link rel="stylesheet" href="css/championship.css?v=0.9.87">
 <script>
 /* Plain empty page until the data is ready (css/league.css, html.rc-pending). Always lifted after 25 s so a failure can never leave a blank page. */
 document.documentElement.classList.add('rc-pending');
 window.rcRevealPage = function () { document.documentElement.classList.remove('rc-pending'); };
 setTimeout(window.rcRevealPage, 25000);
 </script>
-<script src="js/version.js?v=0.9.86"></script>
-<script src="js/img-loader.js?v=0.9.86"></script>
-<script src="js/api.js?v=0.9.86"></script>
-<script src="js/auth.js?v=0.9.86"></script>
-<script src="js/header.js?v=0.9.86"></script>
-<script src="js/reference-data.js?v=0.9.86"></script>
-<script src="js/edit-profile.js?v=0.9.86"></script>
+<script src="js/version.js?v=0.9.87"></script>
+<script src="js/img-loader.js?v=0.9.87"></script>
+<script src="js/api.js?v=0.9.87"></script>
+<script src="js/auth.js?v=0.9.87"></script>
+<script src="js/header.js?v=0.9.87"></script>
+<script src="js/reference-data.js?v=0.9.87"></script>
+<script src="js/edit-profile.js?v=0.9.87"></script>
 </head>
 <!-- rc-league-page gives this page the League Hub's exact layout; rcc-page (css/championship.css)
      swaps its colors to the light member-page palette. -->
-<body class="rc-league-page rcc-page">
+<body class="rc-league-page rcc-page rcl-hub">
 
 <div class="rcl-page-loader" id="rcl-page-loader">
   <!-- Same markup as Account.html's #rc-loading card, so the lights look identical. -->
@@ -55,15 +55,17 @@ setTimeout(window.rcRevealPage, 25000);
 <div id="rc-header"></div>
 <script>renderHeader();</script>
 
-<!-- Ticker and title banner stay in place; the link bar and the page slide up over them (same idea as the home page banner). -->
-<div class="rcl-head-pin">
+<!-- Link bar under the header (js/championship.js, rccRenderActionBar): page title and season picker, like the League Hub. -->
+<nav class="rcc-actionbar" id="rcc-actionbar" aria-label="Season"></nav>
+
+<!-- No banner or highlights ticker any more (same as the League Hub); the elements stay in the page, hidden, because the scripts still fill them. -->
+<div class="rcl-head-pin" hidden>
 <div class="rcl-ticker-wrap">
   <div class="rcl-ticker-label">Highlights</div>
   <div class="rcl-ticker-viewport">
     <div class="rcl-ticker-track" id="rcl-ticker-track"></div>
   </div>
 </div>
-
 <section class="rcl-hero">
   <div class="rcl-hero-inner">
     <div class="rcl-hero-eyebrow">Single Player Mode</div>
@@ -74,22 +76,23 @@ setTimeout(window.rcRevealPage, 25000);
 </section>
 </div>
 
-
 <div class="rcl-cover">
-<!-- Black link bar: every championship tool lives here (filled by js/championship.js). -->
-<nav class="rcc-actionbar" id="rcc-actionbar" aria-label="Season"></nav>
 
 <main class="rcl-main">
 
-  <!-- Season Stories (33%) + Last Race (67%), like the League Hub's News + Last Race row. -->
-  <div class="rcl-row-full rcl-news-lastrace-row rcc-stories-row" id="rcc-stories-row">
-    <section class="rcl-panel" id="rcc-stories-panel">
-      <div class="rcl-panel-head rcl-panel-head-news">
+  <!-- Season Stories (full width: preview, older stories under it), then one highlights container per class from the last race.
+     Before any race has been scored (or with no season) the Season Preview / Welcome container shows instead. -->
+  <div class="rcl-row-full rcl-numbers" id="rcc-stories-row">
+    <section class="rcl-panel rcl-news-panel" id="rcc-stories-panel">
+      <div class="rcl-panel-head">
         <div class="rcl-panel-title">Season Stories</div>
       </div>
       <div class="rcl-panel-body" id="rcc-stories-body"></div>
     </section>
-    <section class="rcl-panel" id="rcl-last-race-panel">
+
+    <div class="rcl-numbers-classes" id="rcl-numbers-classes"></div>
+
+    <section class="rcl-panel" id="rcl-last-race-panel" hidden>
       <div class="rcl-panel-head">
         <div class="rcl-panel-title" id="rcl-last-race-title">Last Race</div>
       </div>
@@ -116,9 +119,9 @@ setTimeout(window.rcRevealPage, 25000);
 </div>
 <script>rcWireFooterLegalLink();</script>
 
-<script src="js/championship-help.js?v=0.9.86"></script>
-<script src="js/car-picker.js?v=0.9.86"></script>
-<script src="js/championship.js?v=0.9.86"></script>
-<script src="js/driver-report.js?v=0.9.86"></script>
+<script src="js/championship-help.js?v=0.9.87"></script>
+<script src="js/car-picker.js?v=0.9.87"></script>
+<script src="js/championship.js?v=0.9.87"></script>
+<script src="js/driver-report.js?v=0.9.87"></script>
 </body>
 </html>
