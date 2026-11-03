@@ -380,34 +380,6 @@ function rccConfirm(title, message, commitLabel, pendingLabel, doWrite, onSucces
 // ---------------------------------------------------------------------
 // Eyebrow above CHAMPIONSHIP (Matt, 2026-10-15): "<FULL NAME>'S SINGLE PLAYER" for a signed-in driver,
 // "SINGLE PLAYER MODE" when nobody is signed in. The name comes from the saved sign-in profile.
-function _rccRenderEyebrow(page) {
-  var eb = document.querySelector('.rcl-hero-eyebrow');
-  if (!eb) return;
-  var me = getToken() ? (getProfileCache() || {}) : {};
-  var name = String(me.displayName || (getToken() && page && page.owner && page.owner.displayName) || '').trim();
-  eb.textContent = name ? name + '\u2019s Single Player' : 'Single Player Mode';
-}
-
-function rccRenderHero(page) {
-  _rccRenderEyebrow(page);
-  var seasonEl = document.getElementById('rcl-hero-season');
-  var metaEl = document.getElementById('rcc-hero-meta');
-  seasonEl.innerHTML = '';
-  metaEl.innerHTML = '';
-  // No season to show: the season line reads OFFLINE SEASON MANAGER instead (navy, same size).
-  // No drop shadow on OFFLINE SEASON MANAGER (Matt, 2026-10-14).
-  seasonEl.classList.toggle('rcc-hero-offline', !page || !page.hasSeason);
-  if (!page || !page.hasSeason) {
-    seasonEl.appendChild(_rccText('span', 'rcl-hero-season-num', 'Single Player Championship'));
-    return;
-  }
-  seasonEl.appendChild(_rccText('span', 'rcl-hero-season-num', 'Season ' + page.seasonNumber));
-  seasonEl.appendChild(_rccText('span', 'rcl-hero-season-sep', ' / '));
-  // An ended season reads "<NAME> (FINISHED)" (Matt, 2026-10-17).
-  seasonEl.appendChild(_rccText('span', 'rcl-hero-season-name', page.seasonName + (page.seasonEnded ? ' (Finished)' : '')));
-  // (The seat line left the header, Matt 2026-10-14: it sits at the top of the Season Preview popup.)
-}
-
 // WELCOME popup (no season yet): how to start (Matt, 2026-10-17).
 function rccOpenWelcomeTip() {
   var m = rccOpenModal('Welcome', { narrow: true });
@@ -469,146 +441,6 @@ function _rccShowLoadError(onRetry, title) {
   box.appendChild(btn);
   main.insertBefore(box, main.firstChild);
 }
-
-// ---------------------------------------------------------------------
-// TICKER (adapted from league.js's _rclBuildTickerItems/_rclRenderTicker)
-// ---------------------------------------------------------------------
-// Gaps are runs of non-breaking spaces (league.js does the same): a run of plain spaces collapses
-// to a single space in HTML, which is what squeezed every entry together.
-function _rccNbsp(n) { return document.createTextNode(new Array(n + 1).join('\u00a0')); }
-
-function rccRenderTicker(page) {
-  var track = document.getElementById('rcl-ticker-track');
-  if (!track) return;
-  track.innerHTML = '';
-  if (!page || !page.hasSeason) { track.style.animation = 'none'; return; }
-  var items = [];
-  items.push({ tag: 'SEASON ' + page.seasonNumber, text: page.seasonName });
-  var lr = page.lastRace;
-  if (lr) {
-    var groups = _rccSortClasses(lr.classes || [], function (c) { return c.className; }).map(function (cls) {
-      return { tag: 'TOP TEN ' + cls.className.toUpperCase() + ' RESULTS', rows: (cls.standings || []).slice(0, 10) };
-    });
-    items.push({ tag: 'ROUND ' + lr.roundNum, bold: lr.eventName, dim: lr.track ? ' at ' + lr.track + (lr.layout ? ': ' + lr.layout : '') : '', groups: groups, country: lr.country });
-    var mfr = (page.standings.manufacturers || []).slice(0, 3);
-    if (mfr.length && mfr.some(function (m) { return m.points > 0; })) items.push({ tag: 'TOP 3 MANUFACTURER STANDINGS', mfr: mfr });
-  } else {
-    // Before any results: the entry list, one entry per car ([logo] Team #n). The game's driver for
-    // each car is only known once a result file is in, so only your own car shows a driver name.
-    var byClass = {};
-    (page.grid || []).forEach(function (g) { (byClass[g.carClass] || (byClass[g.carClass] = [])).push(g); });
-    _rccSortClasses(Object.keys(byClass), function (c) { return c; }).forEach(function (cls) {
-      var cars = byClass[cls];
-      if (!cars.length) return;
-      items.push({ tag: cls.toUpperCase() + ' ENTRY LIST', cars: cars });
-    });
-  }
-  var where = function (c) { return c.track ? ' at ' + c.track + (c.layout ? ': ' + c.layout : '') : ''; };
-  if (!page.registration && !page.seasonEnded && (page.calendar || []).length) {
-    // Season created but no seat chosen yet: the whole calendar, one entry per round (Matt, 2026-10-09).
-    page.calendar.forEach(function (c) { items.push({ tag: 'ROUND ' + c.roundNum, bold: c.eventName, dim: where(c), country: c.country }); });
-  } else if (page.nextRound) {
-    items.push({ tag: 'NEXT ROUND', bold: page.nextRound.eventName, dim: where(page.nextRound), country: page.nextRound.country });
-  }
-
-  // Welcome view: the welcome line and the four perks from the Welcome box (Matt).
-  if (page.welcomeTicker) items = page.welcomeTicker.slice();
-
-  function driverEntry(row) {
-    var entry = _rccEl('span', 'rcl-ticker-driver-entry');
-    if (row.manufacturer) entry.appendChild(_rccLogo('rcl-ticker-driver-logo', row.manufacturer));
-    // Car number before the driver name (Matt, 2026-10-13).
-    if (row.carNumber) entry.appendChild(_rccText('span', 'rcl-ticker-driver-num rcc-ticker-num-first', '#' + row.carNumber + ' '));
-    entry.appendChild(_rccText('span', 'rcl-ticker-driver-name', row.name));
-    return entry;
-  }
-  function rowList(rows, ranked) {
-    var list = _rccEl('span', 'rcl-ticker-driver-list');
-    rows.forEach(function (row, i) {
-      if (i > 0) list.appendChild(_rccNbsp(10));
-      if (ranked) { list.appendChild(_rccText('span', 'rcl-ticker-driver-rank', _rccOrdinal(i + 1))); list.appendChild(_rccNbsp(2)); }
-      list.appendChild(driverEntry(row));
-    });
-    return list;
-  }
-  function buildRun() {
-    var frag = document.createDocumentFragment();
-    items.forEach(function (item) {
-      var el = _rccEl('div', 'rcl-ticker-item');
-      if (item.lead) el.appendChild(_rccText('span', 'rcc-ticker-lead', item.lead));
-      if (item.tag) el.appendChild(_rccText('span', 'rcl-ticker-item-tag' + (item.tagBold ? ' rcc-ticker-tag-bold' : ''), item.tag + ':'));
-      if (item.bold !== undefined) {
-        // One inline group (flag, event, " at track") so the item's flex gap doesn't add extra
-        // space between the event and the track.
-        var grp = _rccEl('span', 'rcc-ticker-event');
-        var fl = item.country ? _rccFlag('rcc-ticker-flag', item.country) : null;
-        if (fl) { grp.appendChild(fl); grp.appendChild(document.createTextNode(' ')); }
-        grp.appendChild(_rccText('span', 'rcl-ticker-prefix-bold', item.bold));
-        if (item.dim) grp.appendChild(_rccText('span', 'rcl-ticker-prefix-dim', item.dim));
-        el.appendChild(grp);
-        if (item.groups) el.appendChild(_rccNbsp(5));
-      } else if (item.text) {
-        if (item.plain) el.appendChild(_rccText('span', 'rcc-ticker-plain', item.text));
-        else el.appendChild(document.createTextNode(item.text));
-      }
-      if (item.groups) {
-        var all = _rccEl('span', 'rcl-ticker-driver-list');
-        item.groups.forEach(function (g, gi) {
-          if (gi > 0) all.appendChild(_rccNbsp(15));
-          var sec = _rccEl('span', 'rcl-ticker-class-section');
-          sec.appendChild(_rccText('span', 'rcl-ticker-item-tag', g.tag + ':'));
-          sec.appendChild(rowList(g.rows, true));
-          all.appendChild(sec);
-        });
-        el.appendChild(all);
-      } else if (item.rows) {
-        el.appendChild(rowList(item.rows, !item.unranked));
-      } else if (item.cars) {
-        var cl = _rccEl('span', 'rcl-ticker-driver-list');
-        item.cars.forEach(function (g, i) {
-          if (i > 0) cl.appendChild(_rccNbsp(10));
-          var entry = _rccEl('span', 'rcl-ticker-driver-entry');
-          if (g.manufacturer) entry.appendChild(_rccLogo('rcl-ticker-driver-logo', g.manufacturer));
-          var label = g.isMine ? (g.crew || []).join(', ') : ((g.crew || []).length ? g.crew[0] : g.teamName);
-          if (g.carNumber) entry.appendChild(_rccText('span', 'rcl-ticker-driver-num rcc-ticker-num-first', '#' + g.carNumber + ' '));
-          entry.appendChild(_rccText('span', 'rcl-ticker-driver-name', label));
-          cl.appendChild(entry);
-        });
-        el.appendChild(cl);
-      } else if (item.mfr) {
-        var ml = _rccEl('span', 'rcl-ticker-driver-list');
-        item.mfr.forEach(function (m, i) {
-          if (i > 0) ml.appendChild(_rccNbsp(8));
-          ml.appendChild(_rccText('span', 'rcl-ticker-driver-rank', _rccOrdinal(i + 1)));
-          ml.appendChild(_rccNbsp(2));
-          var entry = _rccEl('span', 'rcl-ticker-driver-entry');
-          entry.appendChild(_rccLogo('rcl-ticker-driver-logo', m.manufacturer));
-          entry.appendChild(_rccText('span', 'rcl-ticker-driver-name', m.manufacturer));
-          ml.appendChild(entry);
-        });
-        el.appendChild(ml);
-      }
-      frag.appendChild(el);
-    });
-    frag.appendChild(_rccEl('div', 'rcl-ticker-loop-dot', '&bull;'));
-    return frag;
-  }
-  track.appendChild(buildRun());
-  track.appendChild(buildRun());
-  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (reduce) return;
-  requestAnimationFrame(function () {
-    var viewport = track.parentElement;
-    if (!viewport) return;
-    var runWidth = track.scrollWidth / 2;
-    var mainSec = Math.max(runWidth / 64, 12);
-    track.style.setProperty('--rcl-ticker-start', viewport.clientWidth + 'px');
-    track.style.animation = 'none';
-    void track.offsetWidth;
-    track.style.animation = 'rcl-ticker-intro 1.10s linear forwards, rcl-ticker-scroll ' + mainSec.toFixed(2) + 's linear 1.10s infinite';
-  });
-}
-
 // ---------------------------------------------------------------------
 // LAST RACE / SEASON PREVIEW / SEASON RECAP
 // ---------------------------------------------------------------------
@@ -2682,10 +2514,6 @@ function _rccShowOnlyMessage(panelId, title, text, actions) {
   _rccClearLoadError();
   _rccHidePageLoader();
   _rccUnlockScroll();
-  ['.rcl-ticker-wrap', '.rcl-hero'].forEach(function (sel) {
-    var node = document.querySelector(sel);
-    if (node) node.style.display = 'none';
-  });
   // The black link bar stays under the site header (Matt, 2026-11-02): Log In or Dashboard, League Hub, Championship.
   var bar = document.getElementById('rcc-actionbar');
   if (bar) { rccRenderActionBar(null); bar.style.display = ''; }
@@ -2774,9 +2602,7 @@ function rccRenderAll(page) {
   // A season showed up after the "no season" message was drawn (for example the first answer came from a saved copy): start over.
   if (page && page.hasSeason && document.getElementById('rcc-noseason-panel')) { window.location.reload(); return; }
   if (page && page.success !== false && !page.hasSeason && !window.RCC_EMBEDDED && !RCC.viewSeasonId) { _rccShowNoSeason(); return; }
-  rccRenderHero(page);
   rccRenderActionBar(page);
-  rccRenderTicker(page);
   rccRenderLastRace(page);
   rccRenderCarousel(page);
   rccRenderStandings(page);

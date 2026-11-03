@@ -35,8 +35,7 @@ body.rc-league-page.rcc-page {
 .rcc-page .rcl-page-loader .rc-loading-text,
 .rcc-page .rcl-modal-dialog .rc-loading-text { color: var(--rc-steel); }
 .rcc-page .rcl-panel { box-shadow: var(--rc-shadow-sm); }
-.rcc-page .rcl-panel-title,
-.rcc-page .rcl-hero-title { text-shadow: none; }
+.rcc-page .rcl-panel-title { text-shadow: none; }
 .rcc-page .rcl-report-name { color: var(--rc-carbon); font-weight: 400; }
 .rcc-page .rcl-report-name.rcc-report-me { font-weight: 700; }
 /* Race Report on the light page (Matt): no bold clauses, and the collision yellow darkened to amber
@@ -44,12 +43,6 @@ body.rc-league-page.rcc-page {
 .rcc-page .rcl-report-line [class^="rcl-report-clause-"] { font-weight: 400; }
 .rcc-page .rcl-report-clause-car { color: #a16207; }
 .rcc-page .rcl-modal-overlay { background: color-mix(in srgb, var(--rc-carbon) 55%, transparent); }
-/* The hub's banner photo is dark; on a light page it sits further back so the title stays legible. */
-.rcc-page .rcl-hero::before { opacity: 0.16; }
-/* "CHAMPIONSHIP" title in black (the hub's is red); the "RACE CLUB" eyebrow above it stays red. */
-.rcc-page .rcl-hero-title-hub { color: var(--rc-carbon); -webkit-text-stroke-color: var(--rc-carbon); }
-/* "Season N" in the championship navy instead of the hub's gold. */
-.rcc-page .rcl-hero-season-num { color: var(--rcc-navy); }
 
 /* Manufacturers' podium rank numbers: the hub's pale gold/silver/bronze are tuned for black and
    disappear on white, so they're darkened here. */
@@ -67,18 +60,11 @@ body.rc-league-page.rcc-page {
 }
 
 /* Season title in white; "Season N" stays navy and the slash red (Matt). */
-/* No shadow on "Season N" and "/"; the white season title keeps a lighter one (Matt, 2026-10-15). */
-.rcc-page .rcl-hero-season { text-shadow: none; }
-.rcc-page .rcl-hero-season-name { color: var(--rc-white); }
 /* Car maker logo in front of the team name, sized like the ticker's logos. */
 
 /* -------------------------------------------------------------------- */
 /* Highlights ticker (league.css look, light-page colors)                */
 /* -------------------------------------------------------------------- */
-/* Category labels in the championship navy instead of the hub's gold (hard to read on white). */
-.rcc-page .rcl-ticker-item-tag { color: var(--rcc-navy); }
-/* The hub's ranks are white for a black ticker; dark here so they show on white. */
-.rcc-page .rcl-ticker-driver-rank { color: var(--rc-carbon); }
 
 /* Calendar card button: the hub's hover fills it with the ink color and turns the text near-black,
    which on this page is black on black. Text goes white instead. */
@@ -491,7 +477,6 @@ a.rcc-actionbar-link { display: inline-block; text-decoration: none; }
 
 /* Welcome ticker: bold navy welcome line; perk labels bold navy, perk text normal black. */
 .rcc-page .rcc-ticker-lead { font-weight: 800; color: var(--rcc-navy); }
-.rcc-page .rcl-ticker-item-tag.rcc-ticker-tag-bold { font-weight: 800; }
 .rcc-page .rcc-ticker-plain { font-weight: 400; color: var(--rc-carbon); }
 
 /* RACE RECAP button in the Last Race header: the metal switch's track with a single full-width knob. */
@@ -508,13 +493,8 @@ a.rcc-actionbar-link { display: inline-block; text-decoration: none; }
      line's -3px pull-up);
    - with the seat line (about 55px taller): 24.3px + 24.3px.
    Phones: League is a 150px centred band; the seat line's car box shrinks to 36px tall so it fits. */
-@media (orientation: landscape) {
-  .rcc-page .rcl-hero { padding-top: 53.4px; padding-bottom: 53.4px; }
-  .rcc-page .rcl-hero:has(.rcc-seat-line) { padding-top: 24.3px; padding-bottom: 24.3px; }
-}
 @media (orientation: portrait) {
-  .rcc-page .rcl-hero:has(.rcc-seat-line) { padding-top: 7.5px; padding-bottom: 7.5px; }
-  .rcc-hero-meta .rcc-seat-line { margin-top: 4px; }
+    .rcc-hero-meta .rcc-seat-line { margin-top: 4px; }
   .rcc-hero-meta .rc-cs-logo-wrap { height: 36px; min-width: 0; }
   .rcc-hero-meta .rc-cs-logo { max-height: 36px; max-width: 90px; }
 }
@@ -743,9 +723,6 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
   
 }
 
-/* OFFLINE SEASON MANAGER: no drop shadow (Matt, 2026-10-14). */
-.rcc-page .rcl-hero-season.rcc-hero-offline, .rcc-page .rcl-hero-season.rcc-hero-offline * { text-shadow: none; }
-
 /* Race Recap on phones (Matt, 2026-10-14): every column stays and each class table pans sideways
    (league.css gives the rows their desktop width). The award key under the table stays screen-wide. */
 @media (orientation: portrait) {
@@ -864,8 +841,6 @@ body.rcc-page {
   --rc-red: #F21B0C;
   --rc-red-dark: #c81509;
 }
-/* Header: a stronger shadow on the season name. */
-.rcc-page .rcl-hero-season-name { text-shadow: 0 1px 4px rgba(0, 0, 0, 0.38), 0 0 2px rgba(0, 0, 0, 0.28); }
 /* Calendar band (dark): ROUND N OF N in a lighter blue-gray. */
 .rcc-page .rcl-carousel-datetime { color: var(--rcc-accent-light); }
 /* The player's name and team in blue-gray on the boards, lists and Race Recap tables. */
@@ -878,13 +853,11 @@ body.rcc-page {
    container and popup header slash, the line under every container and popup header, the line under
    the black link bar, and the Season Stories badges' bottom line. */
 body.rcc-page { --rcc-true-red: #F21B0C; }
-.rcc-page .rcl-hero-season-sep,
 .rcc-page .rcl-panel-title::before { color: var(--rcc-true-red); }
 .rcc-page .rcl-panel-head { border-bottom-color: var(--rcc-true-red); }
 .rcc-page .rcc-actionbar { border-bottom-color: #2c2d31; border-bottom-width: 1px; }
 /* Red again too (Matt): the SINGLE PLAYER MODE eyebrow and links (text links, plus the black link
    bar's hover and open states). Links styled as buttons keep the blue-gray. */
-.rcc-page .rcl-hero-eyebrow { color: var(--rcc-true-red); }
 .rcc-page a:not([class*="rc-btn"]), .rcc-page .rcc-actionbar { --rc-red: #F21B0C; --rc-red-dark: #c81509; }
 /* Red again (Matt): buttons that save to the sheet (.rc-btn-primary, the Feedback popup's send button)
    and the loading start lights. The demo / access popup buttons keep their own blue-gray. */
@@ -921,32 +894,8 @@ body.rcc-page { --rcc-true-red: #F21B0C; }
 .rcc-page .rcc-actionbar-current, .rcc-page .rcc-actionbar-current:hover { color: var(--rc-white); background: rgba(255, 255, 255, 0.1); box-shadow: inset 0 -2px 0 #e0b64c; }
 @media (orientation: portrait) { .rcc-actionbar-link, a.rcc-actionbar-link { min-height: 44px; padding: 0 12px; } .rcc-actionbar-link:first-child { padding-left: 12px; } }
 
-/* The Championship's own banner photo instead of the League Hub's (Matt, 2026-11-02). */
-.rcc-page .rcl-hero::before {
-  background-image: url('../assets/images/championship_header.jpg');
-  background-image: image-set(url('../assets/images/championship_header.webp') type('image/webp'), url('../assets/images/championship_header.jpg') type('image/jpeg'));
-}
-
 /* ===== CHAMPIONSHIP TICKER BAR = HUB LOOK (Matt, 2026-11-02) -- delete this whole block to revert ===== */
-/* Only the scrolling bar: dark background and the League Hub's ticker text colors. The "Highlights" label
-   and the outer container keep their Championship look. */
-.rcc-page .rcl-ticker-viewport {
-  background: #141416;
-  --rcl-ink: #f2f2f0;
-  --rcl-ink-dim: #b4b7bd;
-  --rcl-ink-faint: #7d8088;
-  color: #f2f2f0;
-}
-.rcc-page .rcl-ticker-viewport .rcl-ticker-item { color: #f2f2f0; }
-.rcc-page .rcl-ticker-viewport .rcl-ticker-item-tag,
-.rcc-page .rcl-ticker-viewport .rcc-ticker-lead { color: #e0b64c; }
-.rcc-page .rcl-ticker-viewport .rcc-ticker-plain { color: #f2f2f0; }
-.rcc-page .rcl-ticker-viewport .rcl-ticker-driver-rank { color: #ffffff; }
-.rcc-page .rcl-ticker-viewport .rcl-ticker-driver-num { color: #f2f2f0; }
 /* ===== END CHAMPIONSHIP TICKER BAR ===== */
-
-/* Highlights container (the whole strip behind the label and the scrolling bar) is black, like the hub's (Matt, 2026-11-02). */
-.rcc-page .rcl-ticker-wrap { background: #141416; }
 
 /* Link bar shows at once (Matt, 2026-11-02): while the page waits for its data (html.rc-pending hides everything under the
    header), the black link bar is the one thing drawn, just under the header and above the loading overlay. When the data
@@ -961,9 +910,6 @@ html.rc-pending .rcc-actionbar { display: none !important; }
 .rcc-page .rcc-actionbar { background: #1b1c1f; }
 
 /* Page title in the season bar: it fades in as the bar slides up under the header (js/header.js rcWireBarTitle_). */
-
-/* The line between the hero and the black link bar: same dark line as the League Hub's hero (#2c2d31), not the light silver (Matt, 2026-11-02). */
-.rcc-page .rcl-hero { border-bottom-color: #2c2d31; }
 
 /* Calendar band (Matt, 2026-11-02): no longer black. A couple of shades darker than the page background, with the
    light palette's text colors so everything stays readable. Special events use a deeper gold that reads on light. */
@@ -987,7 +933,6 @@ html.rc-pending .rcc-actionbar { display: none !important; }
 .rcc-page #rcl-race-carousel .rcl-carousel-datetime { color: var(--rcc-true-red, #F21B0C); }
 
 /* ===== Championship page = League Hub layout (body.rcl-hub rules in league.css do the containers, bars and standings) ===== */
-body.rcc-page.rcl-hub .rcl-head-pin { display: none !important; }
 body.rcc-page.rcl-hub .rcc-actionbar-title { display: block; }
 body.rcc-page.rcl-hub .rcc-actionbar-inner { padding-top: 0; }
 @media (orientation: portrait) { body.rcc-page.rcl-hub .rcc-actionbar-inner { padding-top: 10px; gap: 8px; } }

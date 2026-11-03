@@ -59,8 +59,10 @@ body.rc-league-page {
 .rcl-has-cache .rcl-page-loader { display: none; }
 /* While a League Hub / Championship page waits for its data (html.rc-pending, set in the page's <head> and removed by
    rcRevealPage()), everything under the site header is hidden: a plain empty page, then every container at once. */
-html.rc-pending .rcl-ticker-wrap, html.rc-pending .rcl-hero, html.rc-pending .rcl-navbar,
-html.rc-pending .rcc-actionbar, html.rc-pending .rcl-main, html.rc-pending .rc-site-footer { display: none !important; }
+html.rc-pending .rcl-navbar,
+html.rc-pending .rcc-actionbar,
+html.rc-pending .rcl-main,
+html.rc-pending .rc-site-footer { display: none !important; }
 /* .rc-loading-text (style.css) is tuned for the site's light theme (var(--rc-steel)) -- this
    overlay is dark, so it needs its own color here rather than inheriting an unreadable
    dark-gray-on-black. */
@@ -68,46 +70,6 @@ html.rc-pending .rcc-actionbar, html.rc-pending .rcl-main, html.rc-pending .rc-s
 
 /* -------------------------------------------------------------------- */
 /* Ticker -- scrolling strip, right under the fixed header              */
-/* -------------------------------------------------------------------- */
-.rcl-ticker-wrap {
-  position: relative;
-  overflow: hidden;
-  background: var(--rcl-bg-raised);
-  border-bottom: 2px solid var(--rc-red);
-  height: 40px;
-  display: flex;
-  align-items: center;
-}
-.rcl-ticker-label {
-  flex: none;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  padding: 0 16px;
-  background: var(--rc-red);
-  color: var(--rc-white);
-  font-family: var(--rc-font-heading);
-  font-size: 13px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  /* Hard diagonal cut on the trailing edge -- the one recurring "angle"
-     motif this page uses everywhere a colored block meets a dark one. */
-  clip-path: polygon(0 0, 100% 0, calc(100% - 14px) 100%, 0 100%);
-  padding-right: 28px;
-  z-index: 2;
-}
-.rcl-ticker-viewport { flex: 1 1 auto; overflow: hidden; height: 100%; position: relative; }
-.rcl-ticker-track {
-  display: flex;
-  align-items: center;
-  height: 100%;
-  width: max-content;
-  /* This starting duration is only ever seen for a split second before js/league.js overrides it
-     inline with a per-load, content-aware value. */
-  animation: rcl-ticker-scroll 19s linear infinite;
-}
-.rcl-ticker-wrap:hover .rcl-ticker-track { animation-play-state: paused; }
 /* Back to the original plain 0%/-50% loop. -50% (one full run's width, since both duplicate runs
    are equal) is what makes the loop land seamlessly back on the identical second run -- this rule
    alone is exactly what ran before ANY "roll in" work started, and is only ever used after the
@@ -118,210 +80,14 @@ html.rc-pending .rcc-actionbar, html.rc-pending .rcl-main, html.rc-pending .rc-s
   from { transform: translateX(0); }
   to { transform: translateX(-50%); }
 }
-/* One-time intro -- js/league.js runs this once per page load, immediately followed (via
-   animation-delay, not overlapping) by the loop above starting fresh from translateX(0), exactly
-   where this leaves off. */
-@keyframes rcl-ticker-intro {
-  from { transform: translateX(var(--rcl-ticker-start, 0)); }
-  to { transform: translateX(0); }
-}
-@media (prefers-reduced-motion: reduce) {
-  .rcl-ticker-track { animation: none; }
-  .rcl-ticker-viewport { overflow-x: auto; }
-}
-.rcl-ticker-item {
-  flex: none;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 0 24px;
-  font-family: var(--rc-font-body);
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--rcl-ink);
-  white-space: nowrap;
-  /* Vertical divider between items removed -- the loop-seam dot (.rcl-ticker-loop-dot, below) plus
-     each item's own gold tag/colon already read as clear item boundaries without a literal rule
-     line down the ticker. */
-}
-/* Same font/weight as the item's own body copy -- the trailing colon (added in the tag text itself,
-   js/league.js) is what marks where the label ends. */
-.rcl-ticker-item-tag {
-  font-family: var(--rc-font-body);
-  font-size: 14px;
-  font-weight: 600;
-  color: #e0b64c;
-}
-/* Driver-list ticker entries. Built by buildDriverEntry (js/league.js), used for both the
-   pre-results "N DRIVERS" items and the in-season "N TOP 5" items. */
-.rcl-ticker-driver-list {
-  display: inline-flex;
-  align-items: center;
-  flex-wrap: nowrap;
-}
-.rcl-ticker-driver-entry {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-}
-.rcl-ticker-driver-logo {
-  flex: none;
-  display: block;
-  height: 17px;
-  width: auto;
-  max-width: 37px;
-  object-fit: contain;
-}
-/* Lighter than the item's own base 600 weight (.rcl-ticker-item) -- the
-   name is now the quieter part of each entry. */
-.rcl-ticker-driver-name { font-weight: 500; }
 /* Nationality flag, between the name and the car number -- same .rcl-standings-flag look (16x12,
    rounded corners, thin border) the Leaderboard/Recent Results/View All Results identity block
    already uses (_rclBuildDriverIdentity_ above), reused as-is here rather than a new
    ticker-specific size, since the ticker entry's own 8px gap (.rcl-ticker-driver-entry) already
    gives it the same breathing room as the logo and name around it. */
-/* Weight is the same the whole line used to render at before this split -- stays the heaviest part
-   of each driver entry. */
-.rcl-ticker-driver-num { font-weight: 600; color: var(--rcl-ink); }
-/* Class pill riding right behind the car number. */
-.rcl-ticker-class-pill { font-size: 9px; padding: 1px 5px; line-height: 1.3; letter-spacing: 0.02em; }
-/* Per-class "TOP TEN RESULTS:" tag wrapper -- same 8px gap as .rcl-ticker-item's own outer
-   tag-to-content spacing, so each class group's own tag reads identically to SEASON/NEXT RACE/ROUND
-   n's tag spacing instead of a manual nbsp gap. */
-.rcl-ticker-class-section {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-}
-/* TOP 5 prefix split -- bold is heavier than the item's own base 600 (.rcl-ticker-item), dim is
-   lighter. */
-.rcl-ticker-prefix-bold { font-weight: 800; color: var(--rcl-ink); }
-.rcl-ticker-prefix-dim { font-weight: 400; color: var(--rcl-ink); }
-/* Ordinal rank prefix on TOP 5 rows. */
-.rcl-ticker-driver-rank { font-weight: 800; color: var(--rc-white); }
-/* Season dates, lighter than the SEASON item's own base 600 weight -- same 500 weight as
-   .rcl-ticker-driver-name, keeping the dates as the quieter half of the line the way the driver
-   number/name pairing already reads. */
-.rcl-ticker-season-dates { font-weight: 500; color: var(--rcl-ink-dim); }
-/* Loop-seam dot -- closes out each run before it repeats, so the ticker reads as a continuous
-   "...item • item..." at the point it loops back to the start, the same way a real news ticker
-   marks its repeat. */
-.rcl-ticker-loop-dot {
-  flex: none;
-  display: flex;
-  align-items: center;
-  padding: 0 24px;
-  font-size: 18px;
-  font-weight: 800;
-  color: var(--rc-red);
-}
 
 /* -------------------------------------------------------------------- */
 /* Hero band -- season name, hard angled bottom edge                    */
-/* -------------------------------------------------------------------- */
-.rcl-hero {
-  position: relative;
-  padding: 51px 32px 53px;
-  background: linear-gradient(135deg, var(--rcl-bg-raised) 0%, var(--rcl-bg) 70%);
-  border-bottom: 1px solid var(--rcl-line);
-  overflow: hidden;
-}
-/* Banner image layer -- sits behind the red angled accent (::after, below) and behind the text
-   (.rcl-hero-inner, z-index:1), but above the hero's own gradient background. inset:0 sizes the
-   layer to the hero's own box (.rcl-hero is already a full-bleed section, so this reaches the
-   window's edges without the 100vw/translateX viewport-anchoring trick this used to need).
-   background-size:cover + background-position:center (crops symmetrically top/bottom, so the header
-   always shows the image's middle section, not whatever the top-anchored crop happened to land on).
-   overflow:hidden on .rcl-hero crops whatever spills past the hero's own height so the container
-   never grows to match the banner's natural size. */
-.rcl-hero::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  /* Relative to THIS file (css/league.css), not the page -- assets/images/ is a sibling of css/,
-     not a child of it, same gotcha style.css's own banner rules already have a comment for. */
-  background-image: url('../assets/images/league_header.jpg');
-  background-image: image-set(url('../assets/images/league_header.webp') type('image/webp'), url('../assets/images/league_header.jpg') type('image/jpeg')); /* WebP first, JPG for browsers without WebP */
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: cover;
-  opacity: 0.5;
-  z-index: 0;
-  pointer-events: none;
-}
-.rcl-hero::after {
-  /* Diagonal red bar bleeding off the right edge -- the page's one loud
-     brand mark, echoing the ticker label's angled cut. */
-  content: '';
-  position: absolute;
-  top: -40%;
-  right: -6%;
-  width: 220px;
-  height: 220%;
-  background: var(--rc-red);
-  opacity: 0.9;
-  transform: rotate(18deg);
-  z-index: 0;
-}
-.rcl-hero-inner { position: relative; z-index: 1; max-width: 1180px; margin: 0 auto; }
-.rcl-hero-eyebrow {
-  font-family: var(--rc-font-heading);
-  font-size: 13px;
-  font-weight: 800;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--rc-red);
-  margin-bottom: 10px;
-}
-.rcl-hero-title {
-  /* Helvetica -- scoped to just this title, not the sitewide --rc-font-heading var, since this is a
-     one-off typographic treatment (mixed weights below) rather than a site-wide font change. */
-  font-family: Helvetica, Arial, sans-serif;
-  /* Slightly larger -- was clamp(32px, 5.4vw, 56px). */
-  font-size: clamp(36px, 6vw, 64px);
-  font-weight: 800;
-  letter-spacing: 0.01em;
-  text-transform: uppercase;
-  line-height: 1.02;
-  color: var(--rcl-ink);
-  margin: 0;
-  /* Same subtle drop shadow as .rcl-panel-title -- this title sits directly on top of the hero
-     banner image too, so it benefits the same way. */
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
-}
-/* "LEAGUE" lighter, "HUB" heavier -- both spans inherit font-family/font-size/line-height straight
-   from .rcl-hero-title above and change ONLY font-weight, which is what keeps them "the same
-   height" as each other instead of one span's weight pulling in a different font file with
-   different metrics. */
-.rcl-hero-title-league { font-weight: 400; }
-/* Plain Helvetica/Arial also don't ship a 900 ("black") weight face on most systems -- the browser
-   just renders its regular bold at 900, which is why it wasn't reading any heavier than before. */
-.rcl-hero-title-hub {
-  font-family: 'Arial Black', Helvetica, Arial, sans-serif;
-  font-weight: 900;
-  color: var(--rc-red);
-  -webkit-text-stroke: 0.6px var(--rc-red);
-}
-/* Season number line -- sits between the big title and the season-context details, its own size
-   step between the small eyebrow above and the body-text sub-line below. */
-.rcl-hero-season {
-  margin-top: 10px;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.45);
-  font-family: var(--rc-font-heading);
-  /* Bumped up substantially -- its own dedicated size step above the general "one level" bump the
-     rest of the League Hub text got, between the sub-line and the hero title itself. */
-  font-size: 24px;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--rcl-ink-dim);
-}
-/* "Season N / Name" -- the "/" reads in the brand accent and the season name reads bright white
-   against it. Built as spans in js/league.js's _rclRenderHero rather than one plain text string. */
-.rcl-hero-season-num { color: #e0b64c; }
-.rcl-hero-season-sep { color: var(--rc-red); }
-.rcl-hero-season-name { color: var(--rcl-ink); }
-.rcl-hero-sub { margin-top: 12px; font-size: 15px; color: var(--rcl-ink-dim); max-width: 560px; line-height: 1.55; }
 
 /* Season snapshot / League Format stat strips. Two groups (This Season / League Format) rather than
    one long row so the two different kinds of information -- what's happening this season vs. how
@@ -817,29 +583,6 @@ html.rc-pending .rcc-actionbar, html.rc-pending .rcl-main, html.rc-pending .rc-s
   border-bottom: 2px solid var(--rc-red);
   background: var(--rcl-bg-raised-2);
 }
-/* League News panel header banner -- same layering technique as .rcl-hero::before above (banner
-   image on its own ::before, behind the title text): position:relative + overflow:hidden on the
-   header itself so the banner is clipped to this one header bar rather than spilling into the panel
-   body below or past the panel's own rounded corners; the image sits on ::before at z-index:0, and
-   .rcl-panel-title gets its own explicit stacking (position:relative, z-index:1) so it stays
-   readable on top of it. */
-.rcl-panel-head-news { position: relative; overflow: hidden; }
-.rcl-panel-head-news::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  /* Relative to THIS file (css/league.css), not the page.rcl-hero::before above for why this needs
-     the ../ prefix. Same bug was hiding this image too. */
-  background-image: url('../assets/images/news_header.jpg');
-  background-image: image-set(url('../assets/images/news_header.webp') type('image/webp'), url('../assets/images/news_header.jpg') type('image/jpeg')); /* WebP first, JPG for browsers without WebP */
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: cover;
-  opacity: 0.5;
-  z-index: 0;
-  pointer-events: none;
-}
-.rcl-panel-head-news .rcl-panel-title { position: relative; z-index: 1; }
 
 /* Class banners behind each Championship Standings title -- same layering and 0.5 opacity as the
    League News header above. Plain "Championship Standings" (empty state) uses the GT champion image;
@@ -2022,17 +1765,8 @@ body.rc-league-page:not(.rcc-page) .rcl-allresults-session-select { min-width: 1
   /* Ticker label -- the label's shape comes from its clip-path, unchanged: a rectangle with the
      trailing (right) edge cut diagonally in by 14px (.rcl-ticker-label above). */
 
-  /* Hero's big diagonal red accent -- narrowed and pushed further right/off-screen than the desktop
-     -6%/220px version so only a slim sliver shows on a phone-width hero instead of the bar
-     dominating the whole banner. */
-  .rcl-hero::after { width: 120px; right: -62px; }
-
-  /* RACE CLUB eyebrow + SEASON N / SEASON NAME pulled tighter around LEAGUE HUB, and both shrunk a
-     touch further. LEAGUE HUB's own .rcl-hero-title is deliberately untouched -- only the two lines
-     around it move. */
-  .rcl-hero-eyebrow { font-size: 11px; margin-bottom: 4px; }
-  .rcl-hero-season { font-size: 13px; margin-top: 4px; }
-
+    
+      
   /* Vertically center the whole LEAGUE HUB text block within the banner -- was relying on
      padding-top/padding-bottom happening to roughly balance around the text's own height, which
      drifts off-center as soon as that height changes (e.g. a long season name wrapping to two
@@ -2040,15 +1774,7 @@ body.rc-league-page:not(.rcc-page) .rcl-allresults-session-select { min-width: 1
   /* Height reduced -- the desktop banner image is a wide panoramic strip (~5.94:1 width:height); at
      a 240px min-height on a ~375px-wide phone the mobile hero was only ~1.56:1, so background-cover
      was cropping deep into a heavily zoomed vertical slice of the image. */
-  /* Nudged back up slightly -- 120px/16px above read a little too tight after the previous pass;
-     150px/20px gives the hero a bit more room while staying far more panoramic than the original
-     240px/28px. */
-  .rcl-hero { display: flex; align-items: center; min-height: 150px; padding: 20px 20px; }
-  /* Left-aligned, not centered -- .rcl-hero-inner's own margin:0 auto (base rule) is what was
-     centering it horizontally: a flex item's auto margins still soak up free main-axis space in a
-     flex row, the same trick that centers a block element outside of flex. */
-  .rcl-hero-inner { margin: 0; }
-
+        
   /* Race Recap tables (Race and Qualifying): every column is back on phones. Each class block scrolls
      sideways (finger pan) and its rows keep their full desktop column widths. The icon key under the
      table stays the width of the screen. (Matt, 2026-10-14) */
@@ -2056,8 +1782,7 @@ body.rc-league-page:not(.rcc-page) .rcl-allresults-session-select { min-width: 1
   .rcl-modal-dialog-allresults .rcl-race-scroll-inner { min-width: 980px; }
   .rcl-modal-dialog-allresults .rcl-race-scroll-inner:has(.rcl-race-grid-recap-q) { min-width: 860px; }
   .rcl-modal-dialog-allresults .rcl-standings-team { display: none; }
-  #rcl-standings-body .rcl-standings-team,
-  #rcl-results-body .rcl-standings-team { display: none; }
+  #rcl-standings-body .rcl-standings-team { display: none; }
   /* Driver standings boards: no team names on any class. */
   .rcl-board .rcl-standings-team { display: none; }
 
@@ -2099,36 +1824,9 @@ body.rc-league-page:not(.rcc-page) .rcl-allresults-session-select { min-width: 1
   flex-wrap: wrap;
   min-height: 48px;
 }
-.rcl-navbar-links { display: flex; flex-wrap: wrap; align-items: center; }
-.rcl-navbar-link {
-  background: none;
-  border: none;
-  padding: 14px 14px;
-  font-family: var(--rc-font-heading);
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--rc-white);
-  cursor: pointer;
-  position: relative;
-}
-.rcl-navbar-link + .rcl-navbar-link::before {
-  content: '\00B7';
-  position: absolute;
-  left: -3px;
-  color: #000;
-}
-.rcl-navbar-link:first-child { padding-left: 0; }
-a.rcl-navbar-link { text-decoration: none; display: inline-block; }
-a.rcl-navbar-link.rcl-navbar-gold[href="login.html"] { color: var(--rc-white); }
-a.rcl-navbar-link.rcl-navbar-gold[href="login.html"]:hover { color: var(--rc-red); }
-.rcl-navbar-link:hover { color: var(--rc-red); }
-.rcl-navbar-link:focus-visible { outline: 2px solid var(--rc-white); outline-offset: -2px; }
 @media (orientation: portrait) {
   .rcl-navbar-inner { padding: 0 16px; }
-  .rcl-navbar-link { padding: 10px 8px; }
-}
+  }
 
 /* -------------------------------------------------------------------- */
 /* LEAGUE RULES popup -- reuses Account.html's own .rc-rulebook-* markup  */
@@ -2276,20 +1974,6 @@ body.rc-league-page { --rcl-bonus: #7fa8d4; }
 /* Single-plate version of the switch above: same graphite track and plate, one side only, acts as a
    button. Sits at the right end of a .rcl-panel-head (flex, align-items:center) so it is vertically
    centered with the title. */
-.rcl-metal-button {
-  flex: none;
-  height: 34px;
-  padding: 3px;
-  border-radius: 10px;
-  border: 1px solid var(--rcl-line-bright);
-  background:
-    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.04) 0 1px, rgba(0, 0, 0, 0.12) 1px 3px),
-    linear-gradient(180deg, #2a2b2f 0%, #1d1e21 50%, #18191b 52%, #232427 100%);
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.6), inset 0 -1px 0 rgba(255, 255, 255, 0.05);
-  cursor: pointer;
-}
-
-.rcl-metal-button:focus-visible { outline: 2px solid var(--rcl-ink); outline-offset: 2px; }
 
 @media (orientation: portrait) {
   /* Phones: Pos, Drivers/Teams and Pts only, no sideways scroll. The column list is set inline per
@@ -2429,10 +2113,6 @@ body.rc-league-page:not(.rcc-page) .rcl-report-clause-pit,
 body.rc-league-page:not(.rcc-page) .rcl-report-clause-penalty,
 body.rc-league-page:not(.rcc-page) .rcl-report-clause-retirement { color: var(--rcl-ink-dim); font-weight: 400; }
 
-/* Ticker: driver names in ALL CAPS. */
-.rcl-ticker-driver-name { text-transform: uppercase; }
-.rcl-ticker-driver-name.rcl-me { font-weight: 900; }
-
 /* Last Race podium: car number in normal weight on PC, hidden on phones. */
 .rcl-lr-podium-num { font-weight: 400; }
 
@@ -2544,8 +2224,6 @@ body.rc-league-page .rcl-navbar-season {
 .rcl-news-badge-icon { width: 26px; height: 26px; }
 .rcl-news-badge-sm .rcl-news-badge-icon { width: 19px; height: 19px; }
 
-a.rcl-navbar-link.rcl-navbar-active { color: var(--rc-white); }
-
 /* League Hub navbar works like the home page one (Matt, 2026-10-27): it rides up with the page, then stays pinned
    right under the 70px fixed header while the page keeps scrolling beneath it. Also rests on the bottom edge on a very short window. */
 body.rc-league-page:not(.rcc-page) .rcl-navbar { position: sticky; top: 69px; bottom: 0; z-index: 50; }
@@ -2578,28 +2256,6 @@ body.rc-league-page:not(.rcc-page) .rcl-navbar { position: sticky; top: 69px; bo
 /* The byline row (label pill, author, round, date) sits on its own row under the title and tile and spans the whole news window. */
 .rcl-news-headrow .rcl-news-meta { grid-column: 1 / -1; grid-row: 2; margin-top: 10px; }
 
-.rcl-news-title-link { cursor: pointer; }
-.rcl-news-title-link:hover { text-decoration: underline; }
-.rcl-news-title-link:focus-visible { outline: 2px solid var(--rcl-ink-dim); outline-offset: 2px; }
-
-/* Navigation look for the black bar's page links (Matt, 2026-11-02; the same rules are in css/style.css for the home page and
-   css/championship.css): each link is a full-height tab with a divider between tabs, a light fill on hover, and an accent
-   bar along the bottom for the hovered and the current page, so the row reads as the site's navigation. */
-.rcl-navbar-links { align-self: stretch; align-items: stretch; }
-.rcl-navbar-link, a.rcl-navbar-link {
-  display: flex; align-items: center; min-height: 48px; padding: 0 18px;
-  font-size: 13px; text-decoration: none; color: rgba(255, 255, 255, 0.82);
-  border-left: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: inset 0 -2px 0 transparent;
-  transition: background-color .15s ease, color .15s ease, box-shadow .15s ease;
-}
-.rcl-navbar-link:last-child { border-right: 1px solid rgba(255, 255, 255, 0.12); }
-.rcl-navbar-link + .rcl-navbar-link::before { content: none; }
-.rcl-navbar-link:first-child { padding-left: 18px; }
-.rcl-navbar-link:hover, a.rcl-navbar-link:hover, a.rcl-navbar-link.rcl-navbar-gold[href="login.html"]:hover { color: var(--rc-white); background: rgba(255, 255, 255, 0.08); box-shadow: inset 0 -2px 0 #e0b64c; }
-a.rcl-navbar-link.rcl-navbar-active, a.rcl-navbar-link.rcl-navbar-active:hover { color: var(--rc-white); background: rgba(255, 255, 255, 0.1); box-shadow: inset 0 -2px 0 #e0b64c; }
-@media (orientation: portrait) { .rcl-navbar-link, a.rcl-navbar-link { min-height: 44px; padding: 0 12px; } .rcl-navbar-link:first-child { padding-left: 12px; } }
-
 /* Bar left only for the season picker: gone when there is none. */
 .rcl-navbar:empty { display: none !important; }
 .rcl-navbar-inner > .rcl-navbar-season { margin-left: auto; }
@@ -2614,28 +2270,20 @@ a.rcl-navbar-link.rcl-navbar-active, a.rcl-navbar-link.rcl-navbar-active:hover {
 }
 @media (orientation: portrait) { .rcl-navbar-title, .rcc-actionbar-title { display: none; } }
 
-/* League News header (League Hub): white title with a soft shadow over the news photo (Matt, 2026-11-02), like Season Stories on the Championship page. */
-.rcl-panel-head-news .rcl-panel-title { color: #ffffff; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55); }
-
-/* Tall portrait (phones): the ticker's HIGHLIGHTS label shrinks to a small tab with no text; portrait (tablets) keeps the full label. */
-@media (orientation: portrait) and (max-aspect-ratio: 3/5) {
-  .rcl-ticker-label { width: 24px; padding: 0; font-size: 0; }
-}
-
 /* Signed-out League Hub: the sign-up panel's Log In / Create An Account buttons */
 .rcl-empty-state .rcc-off-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 18px; }
 
 /* Same side spacing as the Driver Profile page (Matt, 2026-11-02): 1280px wide with 16px at each side, on the hero, link bars and page body. */
-.rcl-main, .rcl-hero-inner, .rcl-navbar-inner, .rcc-actionbar-inner { max-width: 1280px; box-sizing: border-box; }
+.rcl-main,
+.rcl-navbar-inner,
+.rcc-actionbar-inner { max-width: 1280px; box-sizing: border-box; }
 .rcl-main { padding-left: 16px; padding-right: 16px; }
-.rcl-hero { padding-left: 16px; padding-right: 16px; }
 .rcl-navbar-inner, .rcc-actionbar-inner { padding-left: 16px; padding-right: 16px; }
 
 /* ===== HEADER SECTION STAYS PUT (Matt, 2026-11-02) ===== */
 /* The highlights ticker and the title banner are pinned under the site header (like the home page banner). The link bar, the page
    content and the footer sit in .rcl-cover, which has the page background, so they slide up OVER the pinned banner while the link bar
    parks under the header (it is sticky inside .rcl-cover). */
-.rcl-head-pin { position: sticky; top: 70px; z-index: 1; }
 .rcl-cover { position: relative; z-index: 2; background-color: inherit; }
 
 /* ===== RACE CLUB DESIGN DIRECTION on the League Hub (Matt, 2026-11-04) =====
@@ -2643,16 +2291,17 @@ a.rcl-navbar-link.rcl-navbar-active, a.rcl-navbar-link.rcl-navbar-active:hover {
    rule (no picture banners), flat Steel Blue bars for the section and sub headers. No hero banner or ticker; the link bar sits under
    the site header and carries the page title. */
 body.rcl-hub .rcl-panel { background: #fff; border: 1px solid var(--rc-silver); border-radius: 12px; box-shadow: 0 1px 4px rgba(23, 23, 23, 0.05); }
-body.rcl-hub .rcl-panel-head, body.rcl-hub .rcl-panel-head-news, body.rcl-hub .rcl-panel-head-banner {
+body.rcl-hub .rcl-panel-head,
+body.rcl-hub .rcl-panel-head-banner {
   margin: 0 24px; padding: 20px 0 12px; background: none; border-bottom: 2px solid var(--rc-red);
 }
-body.rcl-hub .rcl-panel-head-news::before, body.rcl-hub .rcl-panel-head-banner::before { display: none; }
-body.rcl-hub .rcl-panel-title, body.rcl-hub .rcl-panel-head-news .rcl-panel-title { font-size: 18px; letter-spacing: 0.04em; color: var(--rc-carbon); text-shadow: none; }
+body.rcl-hub .rcl-panel-head-banner::before { display: none; }
+body.rcl-hub .rcl-panel-title { font-size: 18px; letter-spacing: 0.04em; color: var(--rc-carbon); text-shadow: none; }
 body.rcl-hub .rcl-panel-title::before { content: none; }
 body.rcl-hub .rcl-panel-body { padding: 20px 24px 24px; }
 .rcl-panel-note { font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--rc-steel); }
 /* Steel Blue bars: the section header and every sub-header inside a container. Flat, white bold uppercase text, slate rule under. */
-body.rcl-hub .rcl-standings-class-header, body.rcl-hub .rcl-bar {
+body.rcl-hub .rcl-standings-class-header {
   display: block; background: #66849D; color: #fff; text-shadow: none; box-shadow: none; border: 0; border-bottom: 2px solid #596B7D;
   border-radius: 6px; font-family: var(--rc-font-heading); font-size: 13px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;
   text-align: left; padding: 9px 14px 8px; margin-bottom: 16px;

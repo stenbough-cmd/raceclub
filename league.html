@@ -16,10 +16,10 @@
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="assets/images/favicon-32.png">
 <link rel="apple-touch-icon" href="assets/images/apple-touch-icon.png">
-<link rel="stylesheet" href="css/style.css?v=0.9.89">
-<link rel="stylesheet" href="css/league.css?v=0.9.89">
-<link rel="stylesheet" href="css/driver-report.css?v=0.9.89">
-<link rel="stylesheet" href="css/league-light.css?v=0.9.89">
+<link rel="stylesheet" href="css/style.css?v=0.9.90">
+<link rel="stylesheet" href="css/league.css?v=0.9.90">
+<link rel="stylesheet" href="css/driver-report.css?v=0.9.90">
+<link rel="stylesheet" href="css/league-light.css?v=0.9.90">
 <!-- If a saved copy of the hub exists in this browser, js/league.js draws it immediately, so skip
      the loading overlay entirely (it only shows on a first-ever visit or after storage is cleared). -->
 <script>
@@ -28,18 +28,18 @@ document.documentElement.classList.add('rc-pending');
 window.rcRevealPage = function () { document.documentElement.classList.remove('rc-pending'); };
 setTimeout(window.rcRevealPage, 25000);
 </script>
-<script src="js/version.js?v=0.9.89"></script>
-<script src="js/img-loader.js?v=0.9.89"></script>
-<script src="js/api.js?v=0.9.89"></script>
-<script src="js/auth.js?v=0.9.89"></script>
-<script src="js/header.js?v=0.9.89"></script>
-<script src="js/reference-data.js?v=0.9.89"></script>
+<script src="js/version.js?v=0.9.90"></script>
+<script src="js/img-loader.js?v=0.9.90"></script>
+<script src="js/api.js?v=0.9.90"></script>
+<script src="js/auth.js?v=0.9.90"></script>
+<script src="js/header.js?v=0.9.90"></script>
+<script src="js/reference-data.js?v=0.9.90"></script>
 <!-- edit-profile.js -- lets the header's Edit Profile menu item open its popup in place on this
      page (dark-themed) instead of navigating to Account.html first. -->
-<script src="js/edit-profile.js?v=0.9.89"></script>
+<script src="js/edit-profile.js?v=0.9.90"></script>
 <!-- rulebook-content.js -- RULEBOOK_SECTIONS, the same source Account.html's own Rules and
      Regulations card reads from. -->
-<script src="js/rulebook-content.js?v=0.9.89"></script>
+<script src="js/rulebook-content.js?v=0.9.90"></script>
 </head>
 <body class="rc-league-page rcl-light rcl-hub">
 
@@ -100,7 +100,7 @@ setTimeout(window.rcRevealPage, 25000);
   <div class="rcl-row-full" id="rcl-standings-empty-row">
     <section class="rcl-panel">
       <div class="rcl-panel-head rcl-panel-head-banner rcl-panel-head-banner-champ">
-        <div class="rcl-panel-title" id="rcl-standings-title">Championship Standings</div>
+        <div class="rcl-panel-title">Championship Standings</div>
       </div>
       <div class="rcl-panel-body" id="rcl-standings-body"></div>
     </section>
@@ -111,10 +111,6 @@ setTimeout(window.rcRevealPage, 25000);
      plain podium. Deliberately NOT a .rcl-panel -- no card border/background, just the title +
      podium sitting directly on the page like the hero band above it. -->
   <div class="rcl-row-full rcl-mfr-standings" id="rcl-manufacturer-standings"></div>
-
-  <!-- Drivers section removed -- the Leaderboard panel above already lists every driver per class,
-     so a separate roster panel was redundant. _rclRenderDrivers/#rcl-drivers-body removed to
-     match (js/league.js, css/league.css). -->
 </main>
 
 <!-- Site footer -- on every page. -->
@@ -129,7 +125,7 @@ setTimeout(window.rcRevealPage, 25000);
 </div>
 <script>rcWireFooterLegalLink();</script>
 
-<script src="js/driver-report.js?v=0.9.89"></script>
-<script src="js/league.js?v=0.9.89"></script>
+<script src="js/driver-report.js?v=0.9.90"></script>
+<script src="js/league.js?v=0.9.90"></script>
 </body>
 </html>

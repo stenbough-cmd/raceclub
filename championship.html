@@ -16,23 +16,23 @@
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="assets/images/favicon-32.png">
 <link rel="apple-touch-icon" href="assets/images/apple-touch-icon.png">
-<link rel="stylesheet" href="css/style.css?v=0.9.89">
-<link rel="stylesheet" href="css/league.css?v=0.9.89">
-<link rel="stylesheet" href="css/driver-report.css?v=0.9.89">
-<link rel="stylesheet" href="css/championship.css?v=0.9.89">
+<link rel="stylesheet" href="css/style.css?v=0.9.90">
+<link rel="stylesheet" href="css/league.css?v=0.9.90">
+<link rel="stylesheet" href="css/driver-report.css?v=0.9.90">
+<link rel="stylesheet" href="css/championship.css?v=0.9.90">
 <script>
 /* Plain empty page until the data is ready (css/league.css, html.rc-pending). Always lifted after 25 s so a failure can never leave a blank page. */
 document.documentElement.classList.add('rc-pending');
 window.rcRevealPage = function () { document.documentElement.classList.remove('rc-pending'); };
 setTimeout(window.rcRevealPage, 25000);
 </script>
-<script src="js/version.js?v=0.9.89"></script>
-<script src="js/img-loader.js?v=0.9.89"></script>
-<script src="js/api.js?v=0.9.89"></script>
-<script src="js/auth.js?v=0.9.89"></script>
-<script src="js/header.js?v=0.9.89"></script>
-<script src="js/reference-data.js?v=0.9.89"></script>
-<script src="js/edit-profile.js?v=0.9.89"></script>
+<script src="js/version.js?v=0.9.90"></script>
+<script src="js/img-loader.js?v=0.9.90"></script>
+<script src="js/api.js?v=0.9.90"></script>
+<script src="js/auth.js?v=0.9.90"></script>
+<script src="js/header.js?v=0.9.90"></script>
+<script src="js/reference-data.js?v=0.9.90"></script>
+<script src="js/edit-profile.js?v=0.9.90"></script>
 </head>
 <!-- rc-league-page gives this page the League Hub's exact layout; rcc-page (css/championship.css)
      swaps its colors to the light member-page palette. -->
@@ -57,24 +57,6 @@ setTimeout(window.rcRevealPage, 25000);
 
 <!-- Link bar under the header (js/championship.js, rccRenderActionBar): page title and season picker, like the League Hub. -->
 <nav class="rcc-actionbar" id="rcc-actionbar" aria-label="Season"></nav>
-
-<!-- No banner or highlights ticker any more (same as the League Hub); the elements stay in the page, hidden, because the scripts still fill them. -->
-<div class="rcl-head-pin" hidden>
-<div class="rcl-ticker-wrap">
-  <div class="rcl-ticker-label">Highlights</div>
-  <div class="rcl-ticker-viewport">
-    <div class="rcl-ticker-track" id="rcl-ticker-track"></div>
-  </div>
-</div>
-<section class="rcl-hero">
-  <div class="rcl-hero-inner">
-    <div class="rcl-hero-eyebrow">Single Player Mode</div>
-    <h1 class="rcl-hero-title"><span class="rcl-hero-title-hub">Championship</span></h1>
-    <div class="rcl-hero-season" id="rcl-hero-season"></div>
-    <div class="rcc-hero-meta" id="rcc-hero-meta"></div>
-  </div>
-</section>
-</div>
 
 <div class="rcl-cover">
 
@@ -119,9 +101,9 @@ setTimeout(window.rcRevealPage, 25000);
 </div>
 <script>rcWireFooterLegalLink();</script>
 
-<script src="js/championship-help.js?v=0.9.89"></script>
-<script src="js/car-picker.js?v=0.9.89"></script>
-<script src="js/championship.js?v=0.9.89"></script>
-<script src="js/driver-report.js?v=0.9.89"></script>
+<script src="js/championship-help.js?v=0.9.90"></script>
+<script src="js/car-picker.js?v=0.9.90"></script>
+<script src="js/championship.js?v=0.9.90"></script>
+<script src="js/driver-report.js?v=0.9.90"></script>
 </body>
 </html>

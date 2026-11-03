@@ -20,8 +20,6 @@ body.rc-league-page.rcl-light {
 }
 
 /* Dark parts keep the hub's dark palette. */
-.rcl-light .rcl-hero,
-.rcl-light .rcl-ticker-wrap,
 .rcl-light .rcl-navbar,
 .rcl-light #rcl-race-carousel {
   --rcl-bg: #0a0a0b;
@@ -60,7 +58,6 @@ body.rc-league-page.rcl-light {
 }
 /* Footer + legal link read on the light page like Championship's. */
 .rcl-light .rc-footer-legal-link { color: #F21B0C; }
-.rcl-light .rcl-panel-head-news .rcl-panel-title { color: #ffffff; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55); }
 
 /* Calendar band (Matt, 2026-11-02): no longer black. A couple of shades darker than the page background, with the
    light palette's text colors so everything stays readable. Special events use a deeper gold that reads on light. */
