@@ -2666,19 +2666,28 @@ body.rcl-hub .rcl-numbers-classes .rcl-lr-footer { grid-column: 1 / -1; margin-t
 body.rcl-hub .rcl-lr-panel .rcl-lr-podium { margin-top: 4px; }
 @media (max-width: 640px) { body.rcl-hub .rcl-numbers-classes { grid-template-columns: minmax(0, 1fr); } }
 /* League News: the preview story, then the older stories stacked under it. */
-body.rcl-hub .rcl-news-layout { display: flex; flex-direction: column; gap: 24px; }
+body.rcl-hub .rcl-news-layout { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 28px; align-items: start; }
+body.rcl-hub .rcl-news-layout .rcl-news-current { grid-column: 2; grid-row: 1; }
+body.rcl-hub .rcl-news-layout .rcl-news-previous { grid-column: 1; grid-row: 1; }
+body.rcl-hub .rcl-news-layout:not(:has(.rcl-news-previous)) { grid-template-columns: minmax(0, 1fr); }
+body.rcl-hub .rcl-news-layout:not(:has(.rcl-news-previous)) .rcl-news-current { grid-column: 1; }
 body.rcl-hub .rcl-news-current { min-width: 0; }
 body.rcl-hub .rcl-news-current .rcl-news-title { font-size: 28px; line-height: 1.15; letter-spacing: 0.02em; }
 body.rcl-hub .rcl-news-current-body { font-size: 15px; line-height: 1.65; margin-top: 14px; }
 body.rcl-hub .rcl-news-continue { display: inline-block; margin-top: 14px; background: none; border: 0; padding: 0; cursor: pointer; font-family: var(--rc-font-heading); font-size: 13px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--rc-red); }
 body.rcl-hub .rcl-news-continue:hover { color: var(--rc-red-dark); text-decoration: underline; }
-body.rcl-hub .rcl-news-previous { margin: 0; padding: 18px 0 0; border-top: 1px solid var(--rc-silver); display: flex; flex-direction: column; gap: 12px; }
+body.rcl-hub .rcl-news-previous { margin: 0; padding: 0 24px 0 0; border-top: 0; border-right: 1px solid var(--rc-silver); display: flex; flex-direction: column; gap: 12px; }
 body.rcl-hub .rcl-news-previous-head { color: var(--rc-steel); font-size: 12px; margin-bottom: 0; }
 body.rcl-hub .rcl-news-previous-title { align-items: center; }
 body.rcl-hub .rcl-news-previous-text { display: flex; flex-direction: column; gap: 3px; }
 body.rcl-hub .rcl-news-previous-name { font-size: 15px; font-weight: 700; color: var(--rc-carbon); }
 body.rcl-hub .rcl-news-previous-sub { font-family: var(--rc-font-heading); font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--rc-steel); }
 body.rcl-hub .rcl-news-previous-title:hover .rcl-news-previous-name { text-decoration: underline; }
+@media (max-width: 860px) {
+  body.rcl-hub .rcl-news-layout { grid-template-columns: minmax(0, 1fr); }
+  body.rcl-hub .rcl-news-layout .rcl-news-current, body.rcl-hub .rcl-news-layout .rcl-news-previous { grid-column: 1; }
+  body.rcl-hub .rcl-news-layout .rcl-news-previous { grid-row: 2; padding: 18px 0 0; border-right: 0; border-top: 1px solid var(--rc-silver); }
+}
 @media (max-width: 640px) { body.rcl-hub .rcl-news-current .rcl-news-title { font-size: 22px; } }
 body.rcl-hub .rcl-main { padding-top: 24px; }
 /* Manufacturers' Standings and Team Endurance Standings: no container, straight on the page background, headings centered. */
