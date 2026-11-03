@@ -264,6 +264,8 @@
   // rcReloadAfterSave() so a popup save's reload can return to this same page instead of always
   // landing back on Dashboard (see rcReloadAfterSave for the full story).
   var rcActiveSectionId = 'dashboard';
+  var rcDashOpenLabel = '';      // name of the open Dashboard container, shown next to "Dashboard" in the title bar
+  var rcSyncDashLabel = null;
 
   // Tracks the currently-open popup's own close() function.
   var rcActiveModalCloseFn = null;
@@ -395,6 +397,7 @@
   // Shows exactly one .rc-content-section and marks the matching sidebar
   // item active.
   function showSection(id) {
+    document.body.style.paddingBottom = '';
     document.querySelectorAll('.rc-content-section').forEach(function (s) { s.style.display = 'none'; });
     var target = document.getElementById('rc-section-' + id);
     if (target) target.style.display = 'block';
@@ -407,12 +410,18 @@
     // instead of always Dashboard.
     if (target) rcActiveSectionId = id;
     // The title bar under the header names the open section.
+    rcApplyBarTitle();
+  }
+
+  // Title bar text: the section name, and on the Dashboard the open container's name beside it in normal weight.
+  function rcApplyBarTitle() {
     var barTitle = document.getElementById('rc-account-navbar-title');
-    if (barTitle) {
-      var navBtn = document.querySelector('.rc-nav-item[data-section="' + id + '"]');
-      var label = navBtn ? navBtn.textContent.replace(/\s+/g, ' ').trim() : '';
-      barTitle.textContent = label || (id.charAt(0).toUpperCase() + id.slice(1));
-    }
+    if (!barTitle) return;
+    var id = rcActiveSectionId;
+    var navBtn = document.querySelector('.rc-nav-item[data-section="' + id + '"]');
+    var label = navBtn ? navBtn.textContent.replace(/\s+/g, ' ').trim() : '';
+    barTitle.textContent = label || (id.charAt(0).toUpperCase() + id.slice(1));
+    if (id === 'dashboard' && rcDashOpenLabel) barTitle.appendChild(el('span', 'rc-account-navbar-sub', rcDashOpenLabel));
   }
 
   // ---------------------------------------------------------------------
@@ -706,7 +715,7 @@
     // No ON/OFF switch any more (Matt, 2026-11-02): every member has the championship, so its page is requested at once, alongside
     // the Apps Script call below, and shown as soon as it is here (or the "no season yet" panel when there is none).
     try { if (typeof rcPrefetchChampionshipPage === 'function') rcPrefetchChampionshipPage({ token: token, spinner: buildSpinner }, profile.profileId); } catch (preErr) { /* ignore */ }
-    var champHost = el('div', 'margin-top:20px;');
+    var champHost = el('div', 'margin-top:20px;'); champHost.id = 'rc-champ-host';
     var admHost = el('div', 'margin-top:20px;'); admHost.id = 'rc-adm-host';
     var stwHost = el('div', 'margin-top:20px;'); stwHost.id = 'rc-stw-host';
     var champBody = el('div', '');
@@ -747,6 +756,7 @@
       while (fresh.topRow.firstChild) rows.topRow.appendChild(fresh.topRow.firstChild);
       rows.resultsRow.innerHTML = '';
       while (fresh.resultsRow.firstChild) rows.resultsRow.appendChild(fresh.resultsRow.firstChild);
+      if (rcSyncDashLabel) rcSyncDashLabel();
     }
 
     function onRegisteredRebuild(info) {
@@ -782,6 +792,21 @@
     // ACCORDION (Matt, 2026-11-03): the Dashboard's containers are collapsed except one. Hovering a collapsed container lifts it; clicking it
     // opens it and closes the others, so only one is open at a time. Clicking the header of the open one closes it again.
     // Wired once per section: the Dashboard is redrawn in place after a save (e.g. dropping out), and a second listener would undo every click.
+    // Which container is open is named in the title bar next to "Dashboard" (rcSyncDashLabel), and a container that opens scrolls to
+    // 15px under the bar.
+    function accName(box) {
+      if (box.closest('#rc-stw-host')) return 'Protest Docket';
+      if (box.closest('#rc-adm-host')) return 'League Tools';
+      if (box.closest('#rc-champ-host')) return 'Single Player Championship';
+      return 'Online League';
+    }
+    function docTop(node) { var y = 0; while (node) { y += node.offsetTop || 0; node = node.offsetParent; } return y; }
+    function syncLabel() {
+      var open = section.querySelector('.rc-acc:not(.rc-collapsed)');
+      rcDashOpenLabel = open ? accName(open) : '';
+      rcApplyBarTitle();
+    }
+    rcSyncDashLabel = syncLabel;
     if (!section._rcAccWired) section.addEventListener('click', function (ev) {
       var box = ev.target.closest && ev.target.closest('.rc-acc');
       if (!box || !section.contains(box)) return;
@@ -790,8 +815,19 @@
         Array.prototype.forEach.call(section.querySelectorAll('.rc-acc'), function (o) { if (o !== box) o.classList.add('rc-collapsed'); });
         box.classList.remove('rc-collapsed');
         try { box.dispatchEvent(new CustomEvent('rcaccopen')); } catch (e) { /* older browsers: the container just stays as is */ }
+        syncLabel();
+        // Opened container sits 15px under the title bar.
+        var bar = document.getElementById('rc-account-navbar');
+        var barBottom = bar ? bar.getBoundingClientRect().bottom : 0;
+        var wantTop = Math.max(0, docTop(box) - barBottom - 15);
+        // A short page cannot scroll that far: add just enough space under it so the container can sit 15px under the bar.
+        document.body.style.paddingBottom = '';
+        var shortBy = wantTop + window.innerHeight - document.documentElement.scrollHeight;
+        if (shortBy > 0) document.body.style.paddingBottom = shortBy + 'px';
+        window.scrollTo({ top: wantTop, behavior: 'smooth' });
       } else if (ev.target.closest('.rc-ol-head, .rcd-head, .rc-adm-head')) {
         box.classList.add('rc-collapsed');
+        syncLabel();
       }
     });
     section._rcAccWired = true;
@@ -800,8 +836,9 @@
       spinner.remove();
       section.appendChild(champHost);
       if (profile.role === 'Admin' || profile.role === 'Organizer' || profile.role === 'Steward') { currentProfile = currentProfile || profile; section.appendChild(stwHost); renderStewardingSection(token); }
-      if (profile.role === 'Admin' || profile.role === 'Organizer') { section.appendChild(admHost); currentProfile = currentProfile || profile; renderLeagueManagementSection(token); }
+      if (profile.role === 'Admin') { section.appendChild(admHost); currentProfile = currentProfile || profile; renderLeagueManagementSection(token); }
       rows = paintRows(dashboardData, onRegisteredRebuild);
+      syncLabel();
     });
   }
 
@@ -3105,12 +3142,12 @@
     if (wasOpen) load();
   }
 
-  // ADMINISTRATION container on the Dashboard (Organizer and Admin only). It holds what used to be the League Tools page: the
+  // ADMINISTRATION container on the Dashboard (Admin only; Organizers no longer see it, Matt 2026-11-03). It holds what used to be the League Tools page: the
   // seasons (with their race calendars) and League News. Same container look as Online League / Single Player, graphite accent.
   function renderLeagueManagementSection(token) {
     var host = document.getElementById('rc-adm-host');
     if (!host) return;
-    if (!(currentProfile && (currentProfile.role === 'Admin' || currentProfile.role === 'Organizer'))) { host.innerHTML = ''; return; }
+    if (!(currentProfile && currentProfile.role === 'Admin')) { host.innerHTML = ''; return; }
     host.innerHTML = '';
     var box = el('div', 'rc-ol-section rc-adm rc-acc rc-collapsed');
     var head = el('div', 'rc-adm-head');

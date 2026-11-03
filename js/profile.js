@@ -33,7 +33,7 @@
     emptyCard.hidden = false;
     document.getElementById('rc-profile-empty-title').textContent = title;
     document.getElementById('rc-profile-empty-text').textContent = text;
-    document.title = 'Race Club: Driver Profile';
+    document.title = 'Race Club Online · Driver Profile';
     shownKey = null;
     // nothing to show: the empty containers on the page go away too
     Array.prototype.forEach.call(document.querySelectorAll('.rdp-panel, .rdp-row, .rdp-helmets'), function (n) { n.hidden = true; });
@@ -47,7 +47,7 @@
     emptyCard.hidden = true;
     card.hidden = false;
     nameEl.textContent = driver.n || 'Race Club Driver';
-    document.title = 'Race Club: ' + (driver.n || 'Driver');
+    document.title = 'Race Club Online · ' + (driver.n || 'Driver');
     sinceEl.textContent = formatSince(driver.j);
 
     // Show the "helmet unavailable" picture until the real helmet is drawn (and keep it if the helmet cannot be drawn)
