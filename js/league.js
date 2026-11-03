@@ -3482,7 +3482,7 @@ function _rclRenderNavbar_(hub) {
     _rclDefaultSeasonId_ = hub.seasonId || '';
   }
   // Page title, always shown in the bar (there is no banner above it any more).
-  var navTitle = _rclEl('div', 'rcl-navbar-title', 'League Hub');
+  var navTitle = _rclEl('div', 'rcl-navbar-title', '<span class="rcl-navbar-title-lite">Online</span> League Hub');
   navTitle.style.opacity = '1';
   inner.appendChild(navTitle);
   if (_rclSeasonList_.length) {

@@ -781,7 +781,8 @@
 
     // ACCORDION (Matt, 2026-11-03): the Dashboard's containers are collapsed except one. Hovering a collapsed container lifts it; clicking it
     // opens it and closes the others, so only one is open at a time. Clicking the header of the open one closes it again.
-    section.addEventListener('click', function (ev) {
+    // Wired once per section: the Dashboard is redrawn in place after a save (e.g. dropping out), and a second listener would undo every click.
+    if (!section._rcAccWired) section.addEventListener('click', function (ev) {
       var box = ev.target.closest && ev.target.closest('.rc-acc');
       if (!box || !section.contains(box)) return;
       var collapsed = box.classList.contains('rc-collapsed');
@@ -793,6 +794,7 @@
         box.classList.add('rc-collapsed');
       }
     });
+    section._rcAccWired = true;
 
     Promise.all([_rcDashboardAllSettled_(dashboardData), champReady.catch(function () {})]).then(function () {
       spinner.remove();

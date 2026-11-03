@@ -2721,3 +2721,4 @@ html:has(body.rc-league-page.rc-modal-scroll-locked) { overflow: hidden; scrollb
 .rcl-standings-row-p2 .rcl-standings-pos { background: #C4CAD0; color: var(--rc-carbon); }
 .rcl-standings-row-p3 .rcl-standings-pos { background: #B7793F; color: #fff; }
 .rcl-board-head > div:first-child, .rcc-board-head > div:first-child { margin-left: 0; }
+.rcl-navbar-title-lite { font-weight: 400; }

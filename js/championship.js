@@ -424,7 +424,7 @@ function rccRenderActionBar(page) {
   // Season picker (Matt, 2026-10-20, same as the League Hub's): every season, newest first, at the
   // right end of the bar, shown once any season exists. Labels are "Season N: Name" (no dates: rounds
   // have no calendar dates in championship mode). Picking one swaps the page in place.
-  var barTitle = _rccText('div', 'rcc-actionbar-title', 'Championship');
+  var barTitle = _rccEl('div', 'rcc-actionbar-title', '<span class="rcl-navbar-title-lite">Single Player</span> Championship');
   barTitle.style.opacity = '1';
   inner.appendChild(barTitle);
   if (page && page.seasons && page.seasons.length) {
