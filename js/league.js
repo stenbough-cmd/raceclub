@@ -72,6 +72,7 @@ function _rclFormatEventTime_(seconds) {
 var _rclCarouselCountdownTimers_ = [];
 
 var _rclScrollLockY = 0;
+function _rclScrollIsLocked_() { return document.body.classList.contains('rc-modal-scroll-locked') || document.documentElement.classList.contains('rcl-noscroll'); }
 function _rclLockBodyScroll() {
   // League Hub: pinning the body would pull the sticky navbar away from the header, so just stop the page from scrolling.
   if (document.body.classList.contains('rcl-hub')) { document.documentElement.classList.add('rcl-noscroll'); return; }
@@ -3519,7 +3520,7 @@ function _rclShowPageLoader_(text) {
   loader.appendChild(lights);
   loader.appendChild(_rclEl('div', 'rc-loading-text', _rclEscapeHtml(text || 'Loading...')));
   document.body.appendChild(loader);
-  if (!document.body.classList.contains('rc-modal-scroll-locked')) _rclLockBodyScroll();
+  if (!_rclScrollIsLocked_()) _rclLockBodyScroll();
 }
 
 // Lifts the "plain empty page" state (html.rc-pending, league.html) so every container appears together.
@@ -3559,7 +3560,7 @@ function _rclHidePageLoader() {
   var loader = document.getElementById('rcl-page-loader');
   if (!loader) return;
   loader.classList.add('rcl-page-loader-hidden');
-  if (document.body.classList.contains('rc-modal-scroll-locked')) _rclUnlockBodyScroll();
+  if (_rclScrollIsLocked_()) _rclUnlockBodyScroll();
   setTimeout(function () {
     if (loader.parentNode) loader.parentNode.removeChild(loader);
   }, 450); // matches the 0.4s CSS transition, plus a hair of slack
