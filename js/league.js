@@ -73,11 +73,14 @@ var _rclCarouselCountdownTimers_ = [];
 
 var _rclScrollLockY = 0;
 function _rclLockBodyScroll() {
+  // League Hub: pinning the body would pull the sticky navbar away from the header, so just stop the page from scrolling.
+  if (document.body.classList.contains('rcl-hub')) { document.documentElement.classList.add('rcl-noscroll'); return; }
   _rclScrollLockY = window.scrollY || window.pageYOffset || 0;
   document.body.style.top = '-' + _rclScrollLockY + 'px';
   document.body.classList.add('rc-modal-scroll-locked');
 }
 function _rclUnlockBodyScroll() {
+  if (document.body.classList.contains('rcl-hub')) { document.documentElement.classList.remove('rcl-noscroll'); return; }
   document.body.classList.remove('rc-modal-scroll-locked');
   document.body.style.top = '';
   window.scrollTo(0, _rclScrollLockY);

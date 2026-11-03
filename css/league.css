@@ -2689,3 +2689,13 @@ body.rcl-hub .rcl-mfr-title, body.rcl-hub .rcl-mfr-subtitle { text-align: center
   body.rcl-hub .rcl-navbar-title { display: block; }
   body.rcl-hub .rcl-navbar-inner { padding-top: 10px; gap: 8px; }
 }
+
+/* League Hub popups: the page behind stops scrolling without moving the body (so the sticky navbar stays attached to the header),
+   and the dimmed backdrop sits above the header so the header can't be clicked while a popup is open. */
+html.rcl-noscroll { overflow: hidden; }
+html:has(body.rc-league-page) { scrollbar-gutter: stable; }
+/* Every League Hub / Championship / Profile popup sits above the header, so the header is dimmed and can't be clicked. */
+.rcl-modal-overlay { z-index: 1001; }
+/* Those pages have a sticky navbar: pinning the body (the Account-page way) would pull it away from the header, so only the page scroll is stopped. */
+body.rc-league-page.rc-modal-scroll-locked { position: static; overflow: visible; width: auto; }
+html:has(body.rc-league-page.rc-modal-scroll-locked) { overflow: hidden; scrollbar-gutter: stable; }

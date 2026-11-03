@@ -125,6 +125,12 @@
 .rcr-who-name .rcr-who-team { font-weight: 400; color: var(--rc-steel); }
 a.rcr-who-driver { color: var(--rc-carbon); text-decoration: none; }
 .rcr-block .rcc-tip { margin: 14px 0 4px; }
+/* AI notes look like the notes in Help: lightbulb, blue-gray bar on the left, thin blue-gray border (defined here so every page that draws the report has it). */
+.rcr-report .rcc-tip { position: relative; background: #f4f4f2; border: 1px solid #b9c6d3; border-left: 4px solid #5f7d99; border-radius: 6px; padding: 12px 16px 12px 46px; color: #171717; font-size: 14px; line-height: 1.55; }
+.rcr-report .rcc-tip::before { content: ''; position: absolute; left: 14px; top: 12px; width: 20px; height: 20px; background: no-repeat center / contain url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235f7d99' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 18h6'/%3E%3Cpath d='M10 22h4'/%3E%3Cpath d='M12 2a7 7 0 0 0-4 12.74c.6.45 1 1.16 1 1.93V17h6v-.33c0-.77.4-1.48 1-1.93A7 7 0 0 0 12 2z'/%3E%3C/svg%3E"); }
+.rcr-report .rcc-tip-title { display: block; font-weight: 700; margin-bottom: 3px; color: #171717; }
+.rcr-report .rcc-tip p { margin: 0 0 6px; color: #171717; }
+.rcr-report .rcc-tip p:last-child { margin-bottom: 0; }
 
 /* Driver Report: tyre compound circles (Matt): S white, M yellow, H red, W blue. */
 .rcr-comp { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 50%; font-family: var(--rc-font-heading); font-size: 11px; font-weight: 800; line-height: 1; flex: 0 0 auto; box-sizing: border-box; }
@@ -256,3 +262,5 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible { text-decoration: underl
 .rcl-dr-light .rcr-comp-s { background: #f2f2f0; }
 .rcl-dr-light .rcc-laps-row { border-bottom-color: var(--rcl-line); }
 .rcl-dr-light .rcr-sets-row { border-bottom-color: var(--rcl-line); }
+.rcl-dr-light .rcc-tip { background: var(--rcl-bg); border-color: var(--rcl-line-bright); color: var(--rcl-ink); }
+.rcl-dr-light .rcc-tip-title, .rcl-dr-light .rcc-tip p { color: var(--rcl-ink); }

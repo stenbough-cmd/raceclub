@@ -3,7 +3,7 @@
 // apart (championship-report.js, league-report.js, profile-report.js). The helper functions just below are
 // fallbacks for pages that do not load championship.js (League Hub, Driver Profile).
 //   _rccDriverReport(dr)                       -> Championship and League Hub report (heading, switch, every section)
-//   _rccDriverReport(dr, {variant:'profile'})  -> Driver Profile report (whole class only, no AI notes,
+//   _rccDriverReport(dr, {variant:'profile'})  -> Driver Profile report (whole class only, with the AI notes,
 //                                                 two-column layouts, 4 stat tiles)
 // ---------------------------------------------------------------------------------------------
 if (typeof _rccEl !== 'function') {
@@ -550,7 +550,7 @@ function _rcrDraw(body, dr, mode, prof) {
     tb.appendChild(grid);
     // (The "Tread used per lap (front left)" bar graph was removed, Matt 2026-10-13.)
     // Between the tyre chart and the tyre sets table (Matt, 2026-10-11).
-    if (!prof) tb.appendChild(_rcrTipBox('Comparing tyre wear with the AI', [
+    tb.appendChild(_rcrTipBox('Comparing tyre wear with the AI', [
       'Le Mans Ultimate adjusts the AI\u2019s tyre wear and fuel use so the AI can match a player\u2019s pace over a whole session. Compare compounds, tyre sets and the pace on each set first, and treat the wear numbers against the AI as a rough guide.'
     ]));
     // Tyre sets (Matt): compounds each car used, how many tyres it went through, and the pace and
@@ -614,7 +614,7 @@ function _rcrDraw(body, dr, mode, prof) {
         .sort(function (a, b) { return a.value - b.value; });
       fb.appendChild(_rcrBars(frows, function (v) { return (v * 100).toFixed(1) + '%'; }));
     }
-    if (!prof) fb.appendChild(_rcrTipBox('Why the AI starts with more fuel', [
+    fb.appendChild(_rcrTipBox('Why the AI starts with more fuel', [
       'Your own fuel numbers are accurate, but comparing them with the AI tells you very little. The AI burns more fuel per lap than a player, so the game gives AI cars more fuel to start with. That is a workaround in the game\u2019s older engine and the way the AI is coded, not an advantage.',
       'AI cars in Le Mans Ultimate often start with different or larger fuel loads because of how the game\u2019s base car files, its practice and qualifying fuel calculations and the AI\u2019s fuel logic work together at each track. Compare your fuel use with your own earlier races instead.'
     ]));
