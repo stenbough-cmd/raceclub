@@ -2699,3 +2699,16 @@ html:has(body.rc-league-page) { scrollbar-gutter: stable; }
 /* Those pages have a sticky navbar: pinning the body (the Account-page way) would pull it away from the header, so only the page scroll is stopped. */
 body.rc-league-page.rc-modal-scroll-locked { position: static; overflow: visible; width: auto; }
 html:has(body.rc-league-page.rc-modal-scroll-locked) { overflow: hidden; scrollbar-gutter: stable; }
+
+/* Standings position chips (Modern Motorsport Editorial): a small flat square with a small radius, one flat color per podium place, no gradients,
+   no bleed into the row edge. Used by every standings and results table (Current Standings, Recent Results, Race Recap, Championship). */
+.rcl-standings-pos {
+  align-self: center; justify-self: center; margin: 0;
+  width: 30px; height: 30px; border-radius: 4px; border-top-left-radius: 4px;
+  background: #66849D; color: #fff;
+  font-size: 14px; font-weight: 800; letter-spacing: 0;
+}
+.rcl-standings-row-p1 .rcl-standings-pos { background: #C9A227; color: var(--rc-carbon); }
+.rcl-standings-row-p2 .rcl-standings-pos { background: #C4CAD0; color: var(--rc-carbon); }
+.rcl-standings-row-p3 .rcl-standings-pos { background: #B7793F; color: #fff; }
+.rcl-board-head > div:first-child, .rcc-board-head > div:first-child { margin-left: 0; }
