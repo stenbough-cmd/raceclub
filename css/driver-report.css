@@ -24,9 +24,10 @@
 .rcr-tile-hero .rcr-tile-value { color: #fff; }
 .rcr-tile-hero.rcr-up .rcr-tile-sub { color: #7ee2a4; font-weight: 700; }
 .rcr-tile-hero.rcr-down .rcr-tile-sub { color: #ffb4ab; font-weight: 700; }
-.rcr-block { margin: 0 0 22px; padding-top: 16px; border-top: 1px solid #e3e6ea; }
-.rcr-block-head { margin-bottom: 10px; }
-.rcr-block-title { font-family: var(--rc-font-heading); font-size: 14px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--rcc-navy); }
+.rcr-block { margin: 0 0 26px; padding-top: 0; border-top: 0; }
+.rcr-block-head { margin-bottom: 12px; }
+/* Steel Blue header bar, same as the Driver Profile page (no divider line above). */
+.rcr-block-title { display: block; background: #66849D; color: #fff; font-family: var(--rc-font-heading); font-size: 13px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; text-align: left; padding: 9px 14px 8px; border-radius: 6px; border-bottom: 2px solid #596B7D; margin-bottom: 6px; }
 .rcr-block-sub { font-size: 13px; color: #5b6573; margin-top: 2px; }
 .rcr-mini-title { font-family: var(--rc-font-heading); font-size: 11px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: #6b7280; margin: 14px 0 8px; }
 .rcr-chart { position: relative; }
