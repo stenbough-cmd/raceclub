@@ -2371,3 +2371,13 @@ html:has(body.rc-league-page.rc-modal-scroll-locked) { overflow: hidden; scrollb
 .rcl-standings-row-p3 .rcl-standings-pos { background: #B7793F; color: #fff; }
 .rcl-board-head > div:first-child, .rcc-board-head > div:first-child { margin-left: 0; }
 .rcl-navbar-title-lite { font-weight: 400; }
+
+/* Story track photo (League News and Season Stories): in the on-page preview it floats left at about a third of the width
+   with the text wrapping around it; in the popup it runs the full width. The caption is the track's long name and country. */
+.rcl-story-photo { margin: 0; }
+.rcl-story-photo img { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: cover; background: #E7E7E4; border-radius: 4px; }
+.rcl-story-photo figcaption { margin-top: 6px; font-size: 12px; line-height: 1.35; font-style: italic; color: var(--rc-steel); }
+.rcl-story-photo-side { float: left; width: 33%; margin: 4px 20px 8px 0; }
+.rcl-story-photo-full { width: 100%; margin: 14px 0 18px; }
+body.rcl-hub .rcl-news-current-body { display: flow-root; }
+@media (max-width: 640px) { .rcl-story-photo-side { float: none; width: 100%; margin: 0 0 14px; } }

@@ -3,3 +3,6 @@
 # Matt: "I feel like there's never anything to push other than image files"
 # -- .DS_Store churn was the noise showing up in GitHub Desktop's diff).
 .DS_Store
+
+# Full-size original track photos (kept only on this computer; the website uses the small copies in assets/tracks/)
+_originals/

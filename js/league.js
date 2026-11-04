@@ -2572,7 +2572,10 @@ function _rclRenderNews(hub) {
   }
   current.appendChild(_rclNewsHeadRow(cur));
   var pv = _rclStoryPreviewHtml(cur.body, 1000);
-  current.appendChild(_rclEl('div', 'rcl-news-current-body', pv.html));
+  var curBody = _rclEl('div', 'rcl-news-current-body', pv.html);
+  var curPhoto = _rclStoryPhotoEl(cur, 'side');
+  if (curPhoto) curBody.insertBefore(curPhoto, curBody.firstChild);
+  current.appendChild(curBody);
   var cont = _rclEl('button', 'rcl-news-continue', 'Continue Reading');
   cont.type = 'button';
   cont.addEventListener('click', function () { _rclOpenStoryModal(0, true); });
@@ -2595,6 +2598,28 @@ function _rclRenderNews(hub) {
   body.appendChild(layout);
 }
 
+// Track photo for a story (League News round stories): <figure> with the photo and an italic caption (long track name, country).
+// mode 'side' = floated left, about a third of the width, for the preview; 'full' = full width, for the popup.
+// No photo, or a photo that fails to load, and the figure is simply not there.
+function _rclStoryPhotoEl(item, mode) {
+  if (!item || !item.photoFile) return null;
+  var fig = document.createElement('figure');
+  fig.className = 'rcl-story-photo rcl-story-photo-' + mode;
+  var img = document.createElement('img');
+  img.alt = item.photoCaption || '';
+  img.decoding = 'async';
+  if (mode === 'side') img.loading = 'lazy';
+  img.addEventListener('error', function () { if (fig.parentNode) fig.parentNode.removeChild(fig); });
+  img.src = 'assets/tracks/' + String(item.photoFile).split('/').map(encodeURIComponent).join('/');
+  fig.appendChild(img);
+  if (item.photoCaption) {
+    var cap = document.createElement('figcaption');
+    cap.textContent = item.photoCaption;
+    fig.appendChild(cap);
+  }
+  return fig;
+}
+
 // A story drawn in full (no truncation): used by the page's League News container and by the story popup.
 function _rclBuildStoryEl_(item) {
   var wrap = _rclEl('div', 'rcl-news-item rcl-modal-story');
@@ -2607,6 +2632,8 @@ function _rclBuildStoryEl_(item) {
     wrap.appendChild(heroImg);
   }
   wrap.appendChild(_rclNewsHeadRow(item));
+  var fullPhoto = _rclStoryPhotoEl(item, 'full');
+  if (fullPhoto) wrap.appendChild(fullPhoto);
   var bodyEl = _rclEl('div', 'rcl-news-body');
   _rclRenderStoryBodyBlocks(bodyEl, item.body);
   wrap.appendChild(bodyEl);
@@ -2654,6 +2681,8 @@ function _rclOpenStoryModal(startIndex, single) {
       wrap.appendChild(heroImg);
     }
     wrap.appendChild(_rclNewsHeadRow(item));
+    var popPhoto = _rclStoryPhotoEl(item, 'full');
+    if (popPhoto) wrap.appendChild(popPhoto);
     var bodyEl = _rclEl('div', 'rcl-news-body');
     _rclRenderStoryBodyBlocks(bodyEl, item.body);
     wrap.appendChild(bodyEl);
