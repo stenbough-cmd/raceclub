@@ -3405,3 +3405,6 @@ button.rc-switch { display: inline-flex; align-items: center; gap: 12px; width: 
 body.rc-account-page { min-height: 100vh; display: flex; flex-direction: column; }
 body.rc-account-page .rc-shell { flex: 1 0 auto; min-height: 0; }
 body.rc-account-page .rc-site-footer { flex: none; margin-top: 0; }
+
+/* The step pills at the top of the Create/Edit Season popup are dimmed and ignore clicks while the season is saving (Matt, 2026-11-05). */
+.rc-wizard-steps-saving .rc-wizard-step { opacity: 0.35; pointer-events: none; cursor: not-allowed; }

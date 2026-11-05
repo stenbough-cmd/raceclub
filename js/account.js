@@ -5082,6 +5082,12 @@
 
     var lastStep = WIZARD_STEPS.length - 1;
     var currentRequiredEls = [];
+    // While a create/edit save is in flight the step pills at the top are dimmed and ignore clicks too (Matt, 2026-11-05).
+    var wizardSaving = false;
+    function setWizardSaving(on) {
+      wizardSaving = !!on;
+      stepsBar.classList.toggle('rc-wizard-steps-saving', wizardSaving);
+    }
     // Editing loads a complete, already-valid season -- every step starts unlocked. A fresh Create
     // starts locked past Step 1 same as always -- there's no draft-resume probe to run any more.
     var maxUnlockedStep = editState ? lastStep : 0;
@@ -5113,7 +5119,7 @@
         var bubble = el('div', cls, (i + 1) + '. ' + escapeHtml(label));
         if (!locked) {
           bubble.style.cursor = 'pointer';
-          bubble.addEventListener('click', function () { if (i !== stepIndex) goToStep(i); });
+          bubble.addEventListener('click', function () { if (!wizardSaving && i !== stepIndex) goToStep(i); });
         }
         stepsBar.appendChild(bubble);
       });
@@ -5301,8 +5307,10 @@
       // convention already used by Finalize/Un-Finalize and the other in-flight-request save flows;
       // .rc-modal-close:disabled (style.css) already gives it the dimmed, unclickable look.
       if (modal.closeBtn) modal.closeBtn.disabled = true;
+      setWizardSaving(true);
 
       function restoreButtons() {
+        setWizardSaving(false);
         footerButtons.forEach(function (b) { b.disabled = false; });
         triggerBtn.textContent = originalLabel;
         if (modal.closeBtn) modal.closeBtn.disabled = false;
@@ -5371,10 +5379,12 @@
       // Same X-disable treatment as finishWizard's "SAVING SEASON..." save above -- Edit Season's
       // save is the same kind of in-flight write and shouldn't be closeable mid-save either.
       if (modal.closeBtn) modal.closeBtn.disabled = true;
+      setWizardSaving(true);
 
       var payload = buildSeasonWizardPayload(true);
 
       function showResultPanel(ok, title, message) {
+        setWizardSaving(false);
         contentWrap.innerHTML = '';
         if (modal.closeBtn) modal.closeBtn.disabled = false;
         var note = el('div', 'rc-panel');
