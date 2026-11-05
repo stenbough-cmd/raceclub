@@ -1,3 +1,25 @@
+// Logged-out visitors see the same "Sign Up" message as the League Hub, centered under the link bar.
+(function () {
+  var tok = null;
+  try { tok = getToken(); } catch (e) { /* no auth helper: treat as logged out */ }
+  if (tok) return;
+  function show() {
+    var main = document.querySelector('.rc-profile-page');
+    if (!main) return;
+    Array.prototype.slice.call(main.children).forEach(function (c) { c.style.display = 'none'; });
+    main.classList.add('rcc-only-message');
+    var panel = document.createElement('section');
+    panel.className = 'rcl-panel rcl-row-full';
+    panel.id = 'rc-profile-signup-panel';
+    panel.innerHTML = '<div class="rcl-empty-state"><div class="rcl-empty-state-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><line x1="5.6" y1="5.6" x2="18.4" y2="18.4"></line></svg></div>' +
+      '<div class="rcl-empty-state-title">Sign Up To View Driver Profiles</div>' +
+      '<p class="rcl-empty-state-subtitle">Driver profiles are for Race Club members. Create a free account or log in to see driver stats, form and history.</p>' +
+      '<div class="rcc-off-actions"><a class="rc-btn-secondary rc-btn-sm" href="login.html">Log In</a>' +
+      '<a class="rc-btn-secondary rc-btn-sm" href="register.html">Create An Account</a></div></div>';
+    main.appendChild(panel);
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', show); else show();
+})();
 // Race Club -- js/profile-page.js. The lower rows of profile.html (League Stats, Form Guide,
 // Season Stats, Story Mentions, Rivalries, Team History). League racing only. Data comes from three
 // public Apps Script ops (DriverProfilePage.gs): getDriverProfilePage, getDriverProfileRivals and
