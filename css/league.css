@@ -2382,3 +2382,8 @@ body.rcl-hub .rcl-news-current-body, .rcl-modal-story .rcl-news-body { display: 
 /* In the story popups the photo takes half the width. */
 .rcl-modal-story .rcl-story-photo-side { width: 50%; }
 @media (max-width: 640px) { .rcl-story-photo-side { float: none; width: 100%; margin: 0 0 14px; } }
+
+/* League News popup: same size and text as the Season Stories popup. The headline on the page opens the story. */
+.rcl-story-dialog .rcl-news-body { font-size: 15px; line-height: 1.7; }
+.rcl-news-title-link { cursor: pointer; }
+.rcl-news-title-link:hover, .rcl-news-title-link:focus-visible { text-decoration: underline; text-underline-offset: 3px; }

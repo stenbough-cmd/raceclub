@@ -2570,7 +2570,15 @@ function _rclRenderNews(hub) {
     heroImg.loading = 'lazy';
     current.appendChild(heroImg);
   }
-  current.appendChild(_rclNewsHeadRow(cur));
+  var curHead = _rclNewsHeadRow(cur);
+  // The headline opens the full story, like Continue Reading.
+  var curTitle = curHead.querySelector('.rcl-news-title');
+  curTitle.classList.add('rcl-news-title-link');
+  curTitle.setAttribute('role', 'button');
+  curTitle.tabIndex = 0;
+  curTitle.addEventListener('click', function () { _rclOpenStoryModal(0, true); });
+  curTitle.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); _rclOpenStoryModal(0, true); } });
+  current.appendChild(curHead);
   var pv = _rclStoryPreviewHtml(cur.body, 1000);
   var curBody = _rclEl('div', 'rcl-news-current-body', pv.html);
   var curPhoto = _rclStoryPhotoEl(cur, 'side');
@@ -2653,7 +2661,7 @@ function _rclOpenStoryModal(startIndex, single) {
   var shownUpTo = startIndex;
 
   var overlay = _rclEl('div', 'rcl-modal-overlay');
-  var dialog = _rclEl('div', 'rcl-modal-dialog');
+  var dialog = _rclEl('div', 'rcl-modal-dialog rcl-modal-dialog-wide rcl-story-dialog');   // same width as the Season Stories popup
   var head = _rclEl('div', 'rcl-modal-head');
   head.appendChild(_rclEl('div', 'rcl-modal-title', 'League News'));
   var closeBtn = _rclEl('button', 'rcl-modal-close', '&times;');
