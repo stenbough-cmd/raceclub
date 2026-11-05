@@ -293,7 +293,7 @@
         }).catch(function () { failed('Could not confirm this registration -- reloading to check.'); });
       }
 
-      openSigningSequence(team, cls, cfg.carImage, function () {
+      openSigningSequence(team, cls, function () {
         modal.close(true);
         if (quick) {
           continued = true;
@@ -332,6 +332,18 @@
       var rule = mk('p', null, W.noticeRule);
       rule.style.cssText = 'color:var(--rc-carbon);font-size:14px;margin-top:0;';
       body.appendChild(rule);
+      // The car they registered, above the team / car name line (hidden when there is no picture for it).
+      var noticeImg = cfg.carImage ? cfg.carImage(team) : { year: team.carYear, series: team.series };
+      var noticeSrc = noticeImg && typeof rcCarImageSrc === 'function' ? rcCarImageSrc(noticeImg.year, team.carNumber, noticeImg.series) : '';
+      if (noticeSrc) {
+        var noticePic = mk('div', 'rc-notice-car-pic');
+        var noticePicImg = document.createElement('img');
+        noticePicImg.alt = '';
+        noticePicImg.onerror = function () { noticePic.style.display = 'none'; };
+        noticePicImg.src = noticeSrc;
+        noticePic.appendChild(noticePicImg);
+        body.appendChild(noticePic);
+      }
       var reg = mk('div', 'rc-notice-car');
       if (mfr) reg.appendChild(logoImg(mfr, 'rc-notice-logo'));
       var carLabel = [carText, team.carNumber ? '#' + team.carNumber : ''].filter(Boolean).join(' ');
@@ -398,7 +410,7 @@
     return 'assets/images/prototype_welcome.jpg';
   }
 
-  function openSigningSequence(team, carClass, carImageFn, onFinish) {
+  function openSigningSequence(team, carClass, onFinish) {
     var overlay = mk('div', 'rc-signing-overlay');
     var stage = mk('div', 'rc-signing-stage rc-signing-stage-suspense');
     overlay.appendChild(stage);
@@ -472,22 +484,8 @@
       content.appendChild(hypeWrap);
 
       var identity = mk('div', 'rc-signing-reveal-identity');
-      // The car's own picture above the name and number (hidden if there is none).
-      var carPic = carImageFn ? carImageFn(team) : { year: team.carYear, series: team.series };
-      var carSrc = carPic && typeof rcCarImageSrc === 'function' ? rcCarImageSrc(carPic.year, team.carNumber, carPic.series) : '';
-      if (carSrc) {
-        var picWrap = mk('div', 'rc-signing-reveal-car');
-        var picImg = document.createElement('img');
-        picImg.alt = '';
-        picImg.onerror = function () { picWrap.style.display = 'none'; };
-        picImg.src = carSrc;
-        picWrap.appendChild(picImg);
-        identity.appendChild(picWrap);
-      }
-      var idRow = mk('div', 'rc-signing-reveal-idrow');
-      if (team.manufacturer) idRow.appendChild(logoImg(team.manufacturer, 'rc-signing-reveal-logo'));
-      idRow.appendChild(mk('div', 'rc-signing-reveal-team', esc(teamTitle(team))));
-      identity.appendChild(idRow);
+      if (team.manufacturer) identity.appendChild(logoImg(team.manufacturer, 'rc-signing-reveal-logo'));
+      identity.appendChild(mk('div', 'rc-signing-reveal-team', esc(teamTitle(team))));
       content.appendChild(identity);
 
       var btnRow = mk('div', 'rc-signing-reveal-btn-row');
