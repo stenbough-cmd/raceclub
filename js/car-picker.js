@@ -356,9 +356,10 @@
         body.appendChild(pen);
       }
       var row = mk('div');
-      row.style.cssText = 'display:flex;justify-content:flex-end;margin-top:18px;';
+      row.style.cssText = 'display:flex;justify-content:center;margin-top:18px;';
       var ok = mk('button', 'rc-btn-dark', '5...');
       ok.type = 'button';
+      ok.style.minWidth = '140px';
       ok.disabled = true;   // 5...4...3...2...1... gives time to read the notice (and the dashboard time to refresh) before it can be dismissed
       var left = 5;
       var tick = setInterval(function () {
