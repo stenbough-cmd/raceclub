@@ -115,7 +115,7 @@
       body.appendChild(mk('p', 'rch-hint', 'No helmet designs are available yet. Ask an admin to check the design files and the HelmetAssets sheet tab.'));
       body.appendChild(mk('p', 'rch-hint', t.length
         ? 'Admin details: the sheet listed ' + t.length + ' design(s), but these picture files could not be loaded: ' + t.map(function (d) { return 'assets/helmets/images/' + d.file; }).join(', ')
-        : 'Admin details: the server sent no designs. Each design row in HelmetAssets needs Type = Design, a Slot from 1 to 10, and Active = Active (or blank).'));
+        : 'Admin details: the server sent no designs. Each design row in HelmetAssets needs Type = Design, a Name, and Active = Active (or blank); the design number is filled in for you.'));
       return;
     }
     var grid = mk('div', 'rch-grid');

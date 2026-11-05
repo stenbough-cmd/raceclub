@@ -544,7 +544,8 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
   function configure(o) {
     o = o || {};
     if (o.assetBase) ASSET_BASE = o.assetBase;
-    if (o.designs) cfg.designs = o.designs.slice();
+    // Alphabetical by name: a design's number is internal, and only its Locked flag decides who is offered it.
+    if (o.designs) cfg.designs = o.designs.slice().sort(function (a, b) { return String(a.name).toLowerCase().localeCompare(String(b.name).toLowerCase()) || a.slot - b.slot; });
     if (o.manufacturers) cfg.manufacturers = o.manufacturers.slice();
     if (o.logos) cfg.logos = o.logos.slice();
     if (o.mfrBase) MFR_BASE = o.mfrBase;
