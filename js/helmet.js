@@ -676,10 +676,13 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
     var sg = slug(l.m), names = [];
     // RC_MFR_VARIANTS (js/reference-data.js) lists the manufacturers that really have -black / -white files;
     // when the list is not loaded on this page, every variant is tried as before.
-    var hasPair = (typeof RC_MFR_VARIANTS !== 'object') || !!RC_MFR_VARIANTS[sg];
-    if (hasPair && (l.v === 'white' || l.v === 'black')) names.push(sg + '-' + l.v);
+    // A value of 'white' means only the -white file exists (Oreca), so a -black file is never asked for.
+    var mv = (typeof RC_MFR_VARIANTS === 'object') ? RC_MFR_VARIANTS[sg] : true;
+    var hasWhite = !!mv, hasBlack = !!mv && mv !== 'white';
+    if (l.v === 'white' && hasWhite) names.push(sg + '-white');
+    if (l.v === 'black' && hasBlack) names.push(sg + '-black');
     names.push(sg);
-    if (hasPair && l.v === 'std') { names.push(sg + '-black'); names.push(sg + '-white'); }
+    if (l.v === 'std') { if (hasBlack) names.push(sg + '-black'); if (hasWhite) names.push(sg + '-white'); }
     var urls = [];
     names.forEach(function (n) { ['webp', 'png', 'svg'].forEach(function (e) { urls.push(MFR_BASE + n + '.' + e); }); });
     return urls;

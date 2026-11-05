@@ -44,7 +44,13 @@
   function build(parts, ext) { return parts.base + '.' + ext + parts.tail; }
 
   // Which extension to ask for first for this path.
-  function firstExt(parts) { return known[parts.base] || 'webp'; }
+  // Track pictures (assets/tracks/...) are all stored as .jpg, so they start with .jpg instead of probing a
+  // .webp that never exists (that probe showed up as a 404 in the console for every track picture).
+  function firstExt(parts) {
+    if (known[parts.base]) return known[parts.base];
+    if (/(^|\/)assets\/tracks\//i.test(parts.base)) return 'jpg';
+    return 'webp';
+  }
 
   function setSrc(img, value) { origSrc.set.call(img, value); }
 

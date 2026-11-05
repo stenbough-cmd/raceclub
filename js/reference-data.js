@@ -296,13 +296,15 @@ function _rcMfrLogoSlug_(manufacturerName) {
 // Manufacturers that really have a two-color pair of files in assets/manufacturers/ ({slug}-black and
 // {slug}-white). Every other manufacturer has one plain {slug} file. Asking for a pair that does not
 // exist cost 4 missing-file requests per logo (.webp, .jpg, .jpeg, .png) before the plain file was tried.
+// 'white' means only the -white file exists (the plain file serves the light-background case).
 // ADD A SLUG HERE whenever a new -black / -white pair is uploaded.
-var RC_MFR_VARIANTS = { 'genesis': true, 'mclaren': true, 'oreca': true, 'toyota': true };
+var RC_MFR_VARIANTS = { 'genesis': true, 'mclaren': true, 'oreca': 'white', 'toyota': true };
 
 function manufacturerLogoSrc(manufacturerName, variant) {
   var v = (variant === 'white') ? 'white' : 'black';
   var slug = _rcMfrLogoSlug_(manufacturerName);
   if (!RC_MFR_VARIANTS[slug]) return 'assets/manufacturers/' + slug + '.png';   // no pair: go straight to the plain file
+  if (RC_MFR_VARIANTS[slug] === 'white' && v === 'black') return 'assets/manufacturers/' + slug + '.png';   // only a white file exists (Oreca): the plain file is the dark-on-light one
   return 'assets/manufacturers/' + slug + '-' + v + '.png';
 }
 
