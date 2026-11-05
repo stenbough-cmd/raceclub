@@ -3342,7 +3342,9 @@ button.rc-switch { display: inline-flex; align-items: center; gap: 12px; width: 
 .rc-adm-icon { flex: none; width: 56px; height: 56px; border-radius: 14px; display: flex; align-items: center; justify-content: center; background: color-mix(in srgb, var(--rc-adm-accent) 12%, var(--rc-white)); color: var(--rc-adm-accent); }
 .rc-adm-sec-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-bottom: 12px; border-bottom: 2px solid var(--rc-adm-accent); }
 .rc-adm-sec-title { font-family: var(--rc-font-heading); font-size: 18px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: var(--rc-carbon); }
-.rc-adm-news { margin-top: 28px; }
+/* Every gold-line subheading after the first in a container sits the same 32px below what comes before it (16px flex gap + 16px). */
+.rc-adm-news { margin-top: 16px; }
+.rc-coll-body > .rc-adm-sec-head:not(:first-child) { margin-top: 16px; }
 /* The old cards/panels lose their own frames; the grey season boxes and white rows below carry the look. */
 .rc-adm .rc-dash-card, .rc-adm .rc-panel { background: transparent; border: 0; box-shadow: none; padding: 0; margin: 0; border-radius: 0; }
 .rc-adm .rc-dash-card-title { display: none; }
