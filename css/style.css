@@ -1013,14 +1013,18 @@ canvas.rc-helmet { display: block; max-width: 100%; height: auto; filter: drop-s
    of the dimmed image showing through instead of a flat opaque card. */
 .rc-signing-reveal-identity {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 14px;
+  gap: 10px;
   background: rgba(255, 255, 255, 0.9);
   border: 1px solid rgba(0, 0, 0, 0.08);
   border-radius: 10px;
   padding: 14px 20px;
   animation: rc-signing-pop 0.6s 0.25s cubic-bezier(0.2, 0.9, 0.3, 1.3) both;
 }
+.rc-signing-reveal-car { display: flex; justify-content: center; max-width: 100%; }
+.rc-signing-reveal-car img { display: block; max-width: 100%; max-height: 120px; width: auto; height: auto; object-fit: contain; }
+.rc-signing-reveal-idrow { display: flex; align-items: center; gap: 14px; }
 .rc-signing-reveal-logo { width: 56px; height: 40px; object-fit: contain; }
 /* Bumped from 18px -- this element already includes the car number appended to the team name (see
    openSigningSequence's dimAndReveal), so enlarging it covers both at once. */

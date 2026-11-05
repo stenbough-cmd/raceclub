@@ -293,7 +293,7 @@
         }).catch(function () { failed('Could not confirm this registration -- reloading to check.'); });
       }
 
-      openSigningSequence(team, cls, function () {
+      openSigningSequence(team, cls, cfg.carImage, function () {
         modal.close(true);
         if (quick) {
           continued = true;
@@ -388,7 +388,7 @@
     return 'assets/images/prototype_welcome.jpg';
   }
 
-  function openSigningSequence(team, carClass, onFinish) {
+  function openSigningSequence(team, carClass, carImageFn, onFinish) {
     var overlay = mk('div', 'rc-signing-overlay');
     var stage = mk('div', 'rc-signing-stage rc-signing-stage-suspense');
     overlay.appendChild(stage);
@@ -462,8 +462,22 @@
       content.appendChild(hypeWrap);
 
       var identity = mk('div', 'rc-signing-reveal-identity');
-      if (team.manufacturer) identity.appendChild(logoImg(team.manufacturer, 'rc-signing-reveal-logo'));
-      identity.appendChild(mk('div', 'rc-signing-reveal-team', esc(teamTitle(team))));
+      // The car's own picture above the name and number (hidden if there is none).
+      var carPic = carImageFn ? carImageFn(team) : { year: team.carYear, series: team.series };
+      var carSrc = carPic && typeof rcCarImageSrc === 'function' ? rcCarImageSrc(carPic.year, team.carNumber, carPic.series) : '';
+      if (carSrc) {
+        var picWrap = mk('div', 'rc-signing-reveal-car');
+        var picImg = document.createElement('img');
+        picImg.alt = '';
+        picImg.onerror = function () { picWrap.style.display = 'none'; };
+        picImg.src = carSrc;
+        picWrap.appendChild(picImg);
+        identity.appendChild(picWrap);
+      }
+      var idRow = mk('div', 'rc-signing-reveal-idrow');
+      if (team.manufacturer) idRow.appendChild(logoImg(team.manufacturer, 'rc-signing-reveal-logo'));
+      idRow.appendChild(mk('div', 'rc-signing-reveal-team', esc(teamTitle(team))));
+      identity.appendChild(idRow);
       content.appendChild(identity);
 
       var btnRow = mk('div', 'rc-signing-reveal-btn-row');
