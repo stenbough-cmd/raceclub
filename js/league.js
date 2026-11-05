@@ -2629,23 +2629,128 @@ function _rclStoryPhotoEl(item, i, right) {
   }
   return fig;
 }
-// Puts the story's photos into a story body: the first at the top left, the second (Season Previews) midway through the text, to the right.
-function _rclPlaceStoryPhotos(bodyEl, item, firstOnly) {   // firstOnly: the on-page preview shows one photo, the popup shows all (up to 3)
-  var first = _rclStoryPhotoEl(item, 0, false);
-  var second = firstOnly ? null : _rclStoryPhotoEl(item, 1, true);
-  var third = firstOnly ? null : _rclStoryPhotoEl(item, 2, false);
+// ---- Placing a story's photos --------------------------------------------------------------------------------
+// A round story with pictures the organizer chose (item.photoTags, one { cls, driver } per picture, either may be empty) puts each picture next
+// to the paragraph that fits it: one that talks about the picture's class and/or driver. A paragraph that talks about a DIFFERENT class (and not
+// this one) is avoided, so a Hypercar picture never sits beside a GT3 paragraph. A picture with no tags (or no matching paragraph) goes in a
+// random paragraph, the same one every time the story is drawn. Every other story keeps the fixed places: first picture top left, second midway on
+// the right, third about three quarters down on the left.
+var _RCL_CLASS_DEFS_ = [
+  { key: 'hypercar', re: /hypercar|\bhyper\b/gi },
+  { key: 'gt3', re: /lmgt3|\bgt3\b|\bgt\b/gi },
+  { key: 'gte', re: /lmgte|\bgte\b/gi },
+  { key: 'lmp2', re: /\blmp2\b|\bp2\b/gi },
+  { key: 'lmp3', re: /\blmp3\b|\bp3\b/gi }
+];
+function _rclClassKey(name) {
+  var n = String(name || '').toLowerCase();
+  if (!n) return '';
+  if (/hyper/.test(n)) return 'hypercar';
+  if (/gt3/.test(n)) return 'gt3';
+  if (/gte/.test(n)) return 'gte';
+  if (/lmp3/.test(n)) return 'lmp3';
+  if (/lmp2|proto/.test(n)) return 'lmp2';
+  if (/\bgt\b/.test(n)) return 'gt3';
+  return '';
+}
+function _rclEscapeRe(t) { return String(t).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+// How well a paragraph fits a picture's tags: positive = it talks about the class / driver, negative = it talks about other classes only.
+function _rclPhotoScore(tag, text) {
+  tag = tag || {};
+  var t = String(text || '').toLowerCase(), score = 0;
+  var key = _rclClassKey(tag.cls);
+  if (tag.cls) {
+    var mentioned = {}, any = false;
+    _RCL_CLASS_DEFS_.forEach(function (d) { var m = t.match(d.re); if (m) { mentioned[d.key] = m.length; any = true; } });
+    if (key) {
+      if (mentioned[key]) score += 2 * Math.min(mentioned[key], 3);
+      else if (any) score -= 3;
+    } else if (t.indexOf(String(tag.cls).toLowerCase()) !== -1) score += 2;
+  }
+  if (tag.driver) {
+    var full = String(tag.driver).toLowerCase();
+    if (t.indexOf(full) !== -1) score += 5;
+    else {
+      var hit = full.split(/\s+/).some(function (tok) { return tok.length >= 4 && new RegExp('\\b' + _rclEscapeRe(tok) + '\\b').test(t); });
+      if (hit) score += 2;
+    }
+  }
+  return score;
+}
+// A steady "random": the same story always gives the same numbers.
+function _rclSeededRandom(str) {
+  var h = 1779033703 ^ String(str).length;
+  for (var i = 0; i < str.length; i++) { h = Math.imul(h ^ str.charCodeAt(i), 3432918353); h = (h << 13) | (h >>> 19); }
+  var a = h >>> 0;
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    var t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+// Puts the story's photos into a story body. firstOnly: the on-page preview shows ONE photo (the one that fits the shown text best); the popup shows all.
+function _rclPlaceStoryPhotos(bodyEl, item, firstOnly) {
+  var count = item && item.photoFile ? String(item.photoFile).split('|').filter(Boolean).length : 0;
+  if (!count) return;
+  var tags = (item.photoTags && item.photoTags.length) ? item.photoTags : null;
   var blocks = [].slice.call(bodyEl.children);
-  // Second: midway, on the right. Third: about three quarters of the way, on the left. Both are put in from the later one first so the
-  // positions counted from the original blocks stay right.
-  if (third) {
-    var at3 = Math.ceil(blocks.length * 3 / 4);
-    if (blocks[at3]) bodyEl.insertBefore(third, blocks[at3]); else bodyEl.appendChild(third);
+
+  if (!tags) {   // fixed places (season previews, random track photos)
+    var first = _rclStoryPhotoEl(item, 0, false);
+    var second = firstOnly ? null : _rclStoryPhotoEl(item, 1, true);
+    var third = firstOnly ? null : _rclStoryPhotoEl(item, 2, false);
+    if (third) {
+      var at3 = Math.ceil(blocks.length * 3 / 4);
+      if (blocks[at3]) bodyEl.insertBefore(third, blocks[at3]); else bodyEl.appendChild(third);
+    }
+    if (second) {
+      var at = Math.ceil(blocks.length / 2);
+      if (blocks[at]) bodyEl.insertBefore(second, blocks[at]); else bodyEl.appendChild(second);
+    }
+    if (first) bodyEl.insertBefore(first, bodyEl.firstChild);
+    return;
   }
-  if (second) {
-    var at = Math.ceil(blocks.length / 2);
-    if (blocks[at]) bodyEl.insertBefore(second, blocks[at]); else bodyEl.appendChild(second);
+
+  var texts = blocks.map(function (b) { return b.textContent || ''; });
+  if (firstOnly) {   // the picture that fits the shown text best (the first one when nothing stands out), at the top left
+    var best = 0, bestScore = -Infinity;
+    for (var p = 0; p < count; p++) {
+      var s = Math.max.apply(null, [0].concat(texts.map(function (t) { return _rclPhotoScore(tags[p], t); })));
+      if (s > bestScore) { bestScore = s; best = p; }
+    }
+    var only = _rclStoryPhotoEl(item, best, false);
+    if (only) bodyEl.insertBefore(only, bodyEl.firstChild);
+    return;
   }
-  if (first) bodyEl.insertBefore(first, bodyEl.firstChild);
+  if (!blocks.length) { for (var q = 0; q < count; q++) { var f0 = _rclStoryPhotoEl(item, q, q % 2 === 1); if (f0) bodyEl.appendChild(f0); } return; }
+
+  var rnd = _rclSeededRandom(String(item.title || '') + '|' + String(item.photoFile));
+  var jitter = texts.map(function () { return rnd(); });
+  var used = {}, placed = [];
+  // Photos with tags choose first, so an untagged one never takes the paragraph a tagged one needs.
+  var order = [];
+  for (var i = 0; i < count; i++) order.push(i);
+  order.sort(function (a, b) { var ta = tags[a] || {}, tb = tags[b] || {}; return ((tb.cls || tb.driver) ? 1 : 0) - ((ta.cls || ta.driver) ? 1 : 0) || a - b; });
+  order.forEach(function (pi) {
+    var tag = tags[pi] || {};
+    var idxs = texts.map(function (t, k) { return k; });
+    var sc = texts.map(function (t) { return (tag.cls || tag.driver) ? _rclPhotoScore(tag, t) : 0; });
+    idxs.sort(function (a, b) { return (sc[b] - sc[a]) || (jitter[a] - jitter[b]); });
+    var pick = -1;
+    for (var k0 = 0; k0 < idxs.length && pick < 0; k0++) { if (sc[idxs[k0]] > 0 && !used[idxs[k0]]) pick = idxs[k0]; }   // a paragraph that fits the picture
+    for (var k = 0; k < idxs.length && pick < 0; k++) { var ix = idxs[k]; if (!used[ix] && !used[ix - 1] && !used[ix + 1]) pick = ix; }   // otherwise not next to another picture
+    for (var k2 = 0; k2 < idxs.length && pick < 0; k2++) { if (!used[idxs[k2]]) pick = idxs[k2]; }
+    if (pick < 0) pick = idxs[0];
+    used[pick] = true;
+    placed.push({ photo: pi, at: pick });
+  });
+  placed.sort(function (a, b) { return a.at - b.at; });
+  placed.forEach(function (pl, n) {   // top to bottom: left, right, left
+    var fig = _rclStoryPhotoEl(item, pl.photo, n % 2 === 1);
+    if (fig) bodyEl.insertBefore(fig, blocks[pl.at]);
+  });
 }
 
 // A story drawn in full (no truncation): used by the page's League News container and by the story popup.

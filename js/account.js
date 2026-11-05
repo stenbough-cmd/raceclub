@@ -5694,7 +5694,7 @@
     var body = modal.body;
     var roundNo = opts.roundNumber ? 'Round ' + opts.roundNumber : (opts.roundLabel || roundId);
     body.appendChild(wizField(roundNo, el('div', 'font-size:14px;font-weight:700;color:var(--rc-carbon);padding:2px 0 2px;', escapeHtml(opts.eventLabel || ''))));
-    body.appendChild(el('div', 'rc-hint', 'Add up to ' + MAX_PHOTOS + ' pictures to this round\'s League News story instead of a random track photo. Picture 1 is at the top left, picture 2 is midway on the right and picture 3 is near the end on the left. If the story is already written, it changes right away.'));
+    body.appendChild(el('div', 'rc-hint', 'Add up to ' + MAX_PHOTOS + ' pictures to this round\'s League News story instead of a random track photo. For each one you can pick a class and/or a driver: the story then shows the picture beside the part that talks about them (a Hypercar picture is never put beside a GT3 paragraph). Choose None to let the website pick the spot. If the story is already written, it changes right away.'));
     var slotsWrap = el('div');
     body.appendChild(slotsWrap);
     slotsWrap.appendChild(buildSpinner('Loading pictures...'));
@@ -5724,9 +5724,11 @@
     fetchApi('adminRoundPhotos', { token: token, roundId: roundId }).then(function (res) {
       slotsWrap.innerHTML = '';
       var current = (res && res.success && res.photos) ? res.photos : [];
+      var classOptions = (res && res.classes) || [];
+      var driverOptions = (res && res.drivers) || [];
       // One slot per picture: { keep: "user/..." } an existing one, { file: File } a new one, or empty. caption is always its own text.
       var slots = [];
-      for (var n = 0; n < MAX_PHOTOS; n++) slots.push({ keep: current[n] ? current[n].file : '', file: null, caption: current[n] ? current[n].caption : '', changed: false });
+      for (var n = 0; n < MAX_PHOTOS; n++) slots.push({ keep: current[n] ? current[n].file : '', file: null, caption: current[n] ? current[n].caption : '', cls: current[n] ? (current[n].cls || '') : '', driverId: current[n] ? (current[n].driverId || '') : '', driverName: current[n] ? (current[n].driverName || '') : '', changed: false });
       var originalCount = current.length;
       var saveBtn, randomBtn;
       var rows = [];
@@ -5772,11 +5774,46 @@
         capBox.addEventListener('input', function () { sl.caption = capBox.value; sl.changed = true; capCount.textContent = capBox.value.length + ' / 30'; refreshButtons(); });
         right.appendChild(capBox);
         right.appendChild(capCount);
+        // Class and driver: what the picture is about, so the story can put it beside the matching part. None = the website picks the spot.
+        var tagRow = el('div', 'display:flex;gap:10px;flex-wrap:wrap;');
+        function tagField(label, sel) {
+          var f = el('div', 'flex:1 1 150px;min-width:0;display:flex;flex-direction:column;gap:3px;');
+          f.appendChild(el('div', 'font-size:11px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:var(--rc-steel);', label));
+          sel.style.maxWidth = '100%';
+          sel.disabled = !hasPhoto(sl);
+          f.appendChild(sel);
+          return f;
+        }
+        var clsSel = document.createElement('select');
+        [''].concat(classOptions).forEach(function (c) { var o = document.createElement('option'); o.value = c; o.textContent = c || 'None'; if (c === sl.cls) o.selected = true; clsSel.appendChild(o); });
+        if (sl.cls && classOptions.indexOf(sl.cls) === -1) { var oc = document.createElement('option'); oc.value = sl.cls; oc.textContent = sl.cls; oc.selected = true; clsSel.appendChild(oc); }
+        var drvSel = document.createElement('select');
+        function fillDrivers() {
+          drvSel.innerHTML = '';
+          var none = document.createElement('option'); none.value = ''; none.textContent = 'None'; drvSel.appendChild(none);
+          var shown = driverOptions.filter(function (d) { return !sl.cls || !d.cls || d.cls === sl.cls || d.id === sl.driverId; });
+          shown.forEach(function (d) {
+            var o = document.createElement('option'); o.value = d.id; o.textContent = d.name + (d.cls && !sl.cls ? ' (' + d.cls + ')' : '');
+            if (d.id === sl.driverId) o.selected = true; drvSel.appendChild(o);
+          });
+          if (sl.driverId && !shown.some(function (d) { return d.id === sl.driverId; })) { var od = document.createElement('option'); od.value = sl.driverId; od.textContent = sl.driverName || sl.driverId; od.selected = true; drvSel.appendChild(od); }
+        }
+        fillDrivers();
+        clsSel.addEventListener('change', function () { sl.cls = clsSel.value; sl.changed = true; fillDrivers(); refreshButtons(); });
+        drvSel.addEventListener('change', function () {
+          sl.driverId = drvSel.value;
+          var d = driverOptions.filter(function (x) { return x.id === drvSel.value; })[0];
+          sl.driverName = d ? d.name : '';
+          sl.changed = true; refreshButtons();
+        });
+        tagRow.appendChild(tagField('Class', clsSel));
+        tagRow.appendChild(tagField('Driver', drvSel));
+        right.appendChild(tagRow);
         if (hasPhoto(sl)) {
           var rm = el('button', 'rc-btn-secondary rc-btn-row', 'Remove');
           rm.type = 'button';
           rm.style.alignSelf = 'flex-start';
-          rm.addEventListener('click', function () { sl.keep = ''; sl.file = null; sl.caption = ''; sl.changed = true; drawSlot(i); refreshButtons(); });
+          rm.addEventListener('click', function () { sl.keep = ''; sl.file = null; sl.caption = ''; sl.cls = ''; sl.driverId = ''; sl.driverName = ''; sl.changed = true; drawSlot(i); refreshButtons(); });
           right.appendChild(rm);
         }
         line.appendChild(right);
@@ -5826,8 +5863,9 @@
         var used = slots.filter(hasPhoto);
         setBusy(true, 'Preparing...');
         Promise.all(used.map(function (sl) {
-          if (sl.keep) return Promise.resolve({ keep: sl.keep, caption: String(sl.caption || '').trim() });
-          return toJpegBase64(sl.file).then(function (b64) { return { imageBase64: b64, caption: String(sl.caption || '').trim() }; });
+          var tagsOut = { caption: String(sl.caption || '').trim(), cls: sl.cls || '', driverId: sl.driverId || '', driverName: sl.driverName || '' };
+          if (sl.keep) return Promise.resolve(Object.assign({ keep: sl.keep }, tagsOut));
+          return toJpegBase64(sl.file).then(function (b64) { return Object.assign({ imageBase64: b64 }, tagsOut); });
         })).then(function (photos) {
           if (!photos.length) return send({ roundId: roundId, clear: 'true' }, 'This round\'s story uses a random track photo again.');
           return send({ roundId: roundId, photos: JSON.stringify(photos) }, 'Race photos saved for ' + roundNo + '.');
