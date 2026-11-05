@@ -2397,6 +2397,5 @@ body.rcl-hub .rcl-news-current-body, .rcl-modal-story .rcl-news-body { display: 
 .rcl-main.rcc-only-message { min-height: calc(100vh - var(--rc-band-top, 114px) - var(--rc-footer-h, 70px)); display: flex; flex-direction: column; justify-content: center; padding-top: 0; padding-bottom: 0; box-sizing: border-box; }
 
 /* End of a Season Preview story: divider line, "Season Details" subheading, then the details. */
-.rcl-story-details { margin-top: 28px; padding-top: 22px; border-top: 1px solid var(--rcl-line-bright); }
-.rcl-story-details-title { font-family: var(--rc-font-heading); font-size: 18px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 14px; }
+.rcl-story-details { margin-top: 32px; }
 .rcl-story-details-body { padding: 0; }

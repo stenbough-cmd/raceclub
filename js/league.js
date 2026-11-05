@@ -2759,9 +2759,8 @@ function _rclAppendStoryDetails_(wrap, item) {
   var hub = _rclNavHub_;
   if (!hub || !hub.hasSeason) return;
   var box = _rclEl('div', 'rcl-story-details');
-  box.appendChild(_rclEl('div', 'rcl-story-details-title', 'Season Details'));
   var inner = _rclEl('div', 'rcl-seasonfmt-modal-body rcl-story-details-body');
-  _rclAppendSeasonFormatSections_(hub, inner, { skipDetailsPill: true });
+  _rclAppendSeasonFormatSections_(hub, inner);
   box.appendChild(inner);
   wrap.appendChild(box);
 }
@@ -3033,7 +3032,7 @@ function _rclAppendSeasonFormatSections_(hub, body, opts) {
     sections.forEach(function (section) {
       var group = _rclEl('div', 'rcl-hero-stats-group');
       var pillText_ = pillDisplayLabel_[section.pill] || section.pill;
-      if (!(opts.skipDetailsPill && pillText_ === 'Season Details')) group.appendChild(_rclEl('div', 'rcl-hero-stats-label', pillText_));
+      group.appendChild(_rclEl('div', 'rcl-hero-stats-label', pillText_));
       var list = _rclEl('div', 'rcl-seasonfmt-list');
       if (section.blocks) {
         section.blocks.forEach(function (rows) {

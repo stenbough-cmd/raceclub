@@ -621,18 +621,16 @@ function rccRenderLastRace(page) {
   // An ended season keeps showing the last round's highlights; no Season Recap or Champions view
   // (Matt, 2026-10-13: titles never change at season end).
   if (!page.lastRace) {
+    // The season's details now close the Season Preview story, so this container only shows the call to action.
+    if (page.registration) return;
     if (panel) panel.hidden = false;
     titleEl.textContent = 'Season Preview';
-    body.classList.add('rcl-seasonfmt-modal-body');
-    if (!page.registration) {
-      var cta = _rccEl('div', 'rcc-cta');
-      cta.appendChild(_rccText('div', 'rcc-cta-text', 'Your season is set up. Choose the team you will drive for in the Single Player Championship section of your Dashboard to start racing.'));
-      var btn = _rccText('a', 'rc-btn-secondary', 'Go To Dashboard');
-      btn.href = 'Account.html';
-      cta.appendChild(btn);
-      body.appendChild(cta);
-    }
-    _rccSeasonFormat(page, body);
+    var cta = _rccEl('div', 'rcc-cta');
+    cta.appendChild(_rccText('div', 'rcc-cta-text', 'Your season is set up. Choose the team you will drive for in the Single Player Championship section of your Dashboard to start racing.'));
+    var btn = _rccText('a', 'rc-btn-secondary', 'Go To Dashboard');
+    btn.href = 'Account.html';
+    cta.appendChild(btn);
+    body.appendChild(cta);
     return;
   }
   // One highlights container per class, like the League Hub's By The Numbers.
@@ -2961,6 +2959,14 @@ function rccOpenStory(startIndex) {
     _rccStoryBlocks(b, s.body);
     _rccPlaceStoryPhotos(b, s);
     w.appendChild(b);
+    if (s.kind === 'preview' && RCC.page && RCC.page.hasSeason) {
+      // Season Details / Championship Points / Race Rules always close the Season Preview story, drawn from the live season data.
+      var det = _rccEl('div', 'rcl-story-details');
+      var detIn = _rccEl('div', 'rcl-seasonfmt-modal-body rcl-story-details-body');
+      _rccSeasonFormat(RCC.page, detIn);
+      det.appendChild(detIn);
+      w.appendChild(det);
+    }
     w.appendChild(_rccStoryVote(s));
     m.body.appendChild(w);
   }
