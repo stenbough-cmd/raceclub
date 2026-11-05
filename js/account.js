@@ -220,6 +220,8 @@
   var ICON_FLAG = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="22" x2="4" y2="3"></line><path d="M4 4h14l-3 4 3 4H4"></path></svg>';
   var ICON_CLOUD_PARTLY = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="17" cy="7" r="3"></circle><path d="M4 17h9a3.5 3.5 0 0 0 0-7 4.8 4.8 0 0 0-8.6 2.1A3.2 3.2 0 0 0 4 17z"></path></svg>';
   var ICON_RAIN_HEAVY = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 13h9a4 4 0 0 0 0-8 5.5 5.5 0 0 0-10.4-1.2A4 4 0 0 0 6 13z"></path><line x1="6" y1="16" x2="5" y2="19"></line><line x1="9.5" y1="16" x2="8.5" y2="19"></line><line x1="13" y1="16" x2="12" y2="19"></line><line x1="16.5" y1="16" x2="15.5" y2="19"></line><line x1="7.5" y1="19" x2="6.5" y2="22"></line><line x1="14.5" y1="19" x2="13.5" y2="22"></line></svg>';
+  // Paint brush (Helmet Designer container).
+  var ICON_BRUSH = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18.4 2.6a2 2 0 0 1 2.8 2.8L12 14.6 9.4 12z"></path><path d="M9.4 12l2.6 2.6c0 3-2.2 5-6 5.4-1 .1-2-.2-2-.2s.8-1.2.8-2.4c0-2 1.4-3.6 3.6-3.6.4 0 .8 0 1.2.2z"></path></svg>';
   // Stewarding -- a shield with a checkmark, reading as "official ruling/oversight" rather than
   // reusing the Protests caution triangle.
   var ICON_STEWARDING = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z"></path><path d="M9 12l2 2 4-4"></path></svg>';
@@ -708,6 +710,7 @@
     var champHost = el('div', 'margin-top:20px;'); champHost.id = 'rc-champ-host';
     var admHost = el('div', 'margin-top:20px;'); admHost.id = 'rc-adm-host';
     var stwHost = el('div', 'margin-top:20px;'); stwHost.id = 'rc-stw-host';
+    var hlmHost = el('div', 'margin-top:20px;'); hlmHost.id = 'rc-hlm-host';
     var champBody = el('div', '');
     champHost.appendChild(champBody);
     function buildChampPanel(page) {
@@ -787,6 +790,7 @@
     function accName(box) {
       if (box.closest('#rc-stw-host')) return 'Protest Docket';
       if (box.closest('#rc-adm-host')) return 'League Tools';
+      if (box.closest('#rc-hlm-host')) return 'Helmet Designer';
       if (box.closest('#rc-champ-host')) return 'Single Player Championship';
       return 'Online League';
     }
@@ -826,6 +830,7 @@
       section.appendChild(champHost);
       if (profile.role === 'Admin' || profile.role === 'Organizer' || profile.role === 'Steward') { currentProfile = currentProfile || profile; section.appendChild(stwHost); renderStewardingSection(token); }
       if (profile.role === 'Admin') { section.appendChild(admHost); currentProfile = currentProfile || profile; renderLeagueManagementSection(token); }
+      if (profile.role === 'Admin') { section.appendChild(hlmHost); currentProfile = currentProfile || profile; renderHelmetDesignerSection(token); }
       rows = paintRows(dashboardData, onRegisteredRebuild);
       syncLabel();
     });
@@ -2130,7 +2135,7 @@
   // button on the right" shape the Data Management Cars/Tracks lists already use, just under its
   // own .rc-group-row class since it's indented one level deeper (year -> season) than those lists
   // ever go.
-  function buildSeasonRow(s, races, token, reload, isCurrent) {
+  function buildSeasonRow(s, races, token, reload, isCurrent, seasonNews, seasonStories) {
     // Same look as a season in the Single Player Championship container (.rcd-season-box): year pill and status pill, name, one
     // meta line, a button row, then the round list. The newest season shows its rounds; older ones open them with the arrow.
     var container = el('div', 'rcd-season-box rc-adm-season');
@@ -2169,6 +2174,17 @@
       withTooltip(editBtn, 'Only Admins and Organizers can edit season details.');
     }
     btnGroup.appendChild(editBtn);
+    // NEW LEAGUE POST -- between Edit Season and Season Preview. A post is filed under the season that is running when it is published,
+    // so it is only offered on a season that has not ended.
+    var newPostBtn = el('button', 'rc-btn-secondary rc-btn-row', 'New League Post');
+    newPostBtn.type = 'button';
+    if (isEnded) {
+      newPostBtn.disabled = true;
+      withTooltip(newPostBtn, 'This season has ended. New posts are filed under the season that is running.');
+    } else {
+      newPostBtn.addEventListener('click', function () { openNewsPostModal(token, reload); });
+    }
+    btnGroup.appendChild(newPostBtn);
     // SEASON PREVIEW -- the same Season Details popup drivers see (season format and race calendar; no Current Seat).
     var previewBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Season Preview');
     previewBtn.type = 'button';
@@ -2212,6 +2228,8 @@
 
     var racesBox = el('div', 'rcd-past-rounds' + '');
     racesBox.appendChild(buildSeasonRacesList(races || [], token, reload, isEnded));
+    // LEAGUE NEWS container for this season, below the calendar: same heading and count look as the calendar's.
+    racesBox.appendChild(buildSeasonNewsBox(seasonNews || [], seasonStories || [], token, reload));
     if (!isCurrent) {
       racesBox.style.display = 'none';
       var racesToggleBtn = el('button', 'rc-disclosure-btn rcd-past-toggle', ICON_CHEVRON_DOWN);
@@ -2230,6 +2248,19 @@
     container.appendChild(btnGroup);
     container.appendChild(racesBox);
     return container;
+  }
+
+  // The League News container inside a season: "League news" heading with the post count (same classes as the calendar's
+  // "Championship calendar" heading and round count), then that season's posts and AI stories, newest first.
+  function buildSeasonNewsBox(newsRows, stories, token, reload) {
+    var wrap = el('div', 'rcd-cal');
+    var nh = el('div', 'rcd-cal-head');
+    nh.appendChild(el('div', 'rcd-cal-title', 'League news'));
+    var total = (newsRows || []).length + (stories || []).length;
+    nh.appendChild(el('div', 'rcd-cal-count', total + (total === 1 ? ' post' : ' posts')));
+    wrap.appendChild(nh);
+    wrap.appendChild(buildLeagueNewsListFragment(newsRows, token, reload, stories));
+    return wrap;
   }
 
   // One row per race/special event within a season's expanded Races box (buildSeasonRow above) --
@@ -2323,30 +2354,19 @@
 
   // Every season, grouped by the year it was CREATED (not the season's own in-game year/number) --
   // same black-pill-plus-indented-children shape the Cars list uses for Class -> Season.
-  function buildSeasonsListFragment(seasons, racesBySeasonId, token, reload) {
+  function buildSeasonsListFragment(seasons, racesBySeasonId, token, reload, newsBySeason, storiesBySeason) {
     var wrap = el('div', 'rcd-list');
     if (!seasons.length) {
       wrap.appendChild(el('div', 'rc-dm-empty', 'No seasons yet.'));
       return wrap;
     }
 
-    var byYear = {};
-    var years = [];
-    seasons.forEach(function (s) {
-      var year = s.createdAt ? String(s.createdAt).slice(0, 4) : 'Unknown Year';
-      if (!byYear[year]) { byYear[year] = []; years.push(year); }
-      byYear[year].push(s);
-    });
-    // Seasons already arrive most-recently-created first (handleAdminListSeasons) -- sorting years
-    // the same way keeps this year first without a second pass over createdAt strings.
-    years.sort(function (a, b) { return b.localeCompare(a); });
-
     // Seasons arrive most-recently-created first (handleAdminListSeasons), so seasons[0] IS the
     // most current one -- that's the row that starts with its races already shown on page load.
     var mostCurrentSeasonId = seasons[0] && seasons[0].seasonId;
 
     seasons.forEach(function (s) {
-      wrap.appendChild(buildSeasonRow(s, racesBySeasonId[s.seasonId] || [], token, reload, s.seasonId === mostCurrentSeasonId));
+      wrap.appendChild(buildSeasonRow(s, racesBySeasonId[s.seasonId] || [], token, reload, s.seasonId === mostCurrentSeasonId, (newsBySeason || {})[s.seasonId], (storiesBySeason || {})[s.seasonId]));
     });
 
     return wrap;
@@ -2357,7 +2377,7 @@
   // Resume/Clear Season Draft removed entirely -- the wizard no longer persists a localStorage
   // draft (see openSeasonWizard), so Create a Season always shows the same label and there's never
   // a second button to clear.
-  function buildSeasonsPanel(seasons, racesBySeasonId, token, reload, isAdmin) {
+  function buildSeasonsPanel(seasons, racesBySeasonId, token, reload, isAdmin, newsBySeason, storiesBySeason) {
     var panel = el('div', 'rc-panel rc-dash-card');
     panel.appendChild(el('h3', 'rc-dash-card-title', 'Seasons'));
 
@@ -2426,7 +2446,7 @@
     // shape as Members/Tracks/Cars/Sponsors, where each one's own Add button sits in the modal
     // above a bordered .rc-panel holding just the list.
     var listBox = el('div', 'rc-panel');
-    listBox.appendChild(buildSeasonsListFragment(seasons, racesBySeasonId, token, reload));
+    listBox.appendChild(buildSeasonsListFragment(seasons, racesBySeasonId, token, reload, newsBySeason, storiesBySeason));
     panel.appendChild(listBox);
 
     return panel;
@@ -2520,6 +2540,113 @@
     if (wasOpen) load();
   }
 
+  // HELMET DESIGNER container on the Dashboard (Admin only for now). Its own container like the others: collapsed until clicked, steel blue accent.
+  function renderHelmetDesignerSection(token) {
+    var host = document.getElementById('rc-hlm-host');
+    if (!host) return;
+    if (!(currentProfile && currentProfile.role === 'Admin')) { host.innerHTML = ''; return; }
+    var wasOpen = !!host.querySelector('.rc-hlm:not(.rc-collapsed)');
+    host.innerHTML = '';
+    var box = el('div', 'rc-ol-section rc-adm rc-acc rc-hlm' + (wasOpen ? '' : ' rc-collapsed'));
+    var head = el('div', 'rc-adm-head');
+    var ht = el('div', '');
+    ht.appendChild(el('div', 'rc-adm-eyebrow', 'Helmet Designer'));
+    ht.appendChild(el('div', 'rc-adm-title', 'Helmet studio.'));
+    var subRow = el('div', 'rc-coll-sub');
+    subRow.appendChild(el('p', 'rc-adm-sub', 'Create helmets, and manage the design and logo libraries.'));
+    ht.appendChild(subRow);
+    head.appendChild(ht);
+    head.appendChild(el('div', 'rc-adm-icon', ICON_BRUSH.replace('width="16" height="16"', 'width="26" height="26"')));
+    box.appendChild(head);
+    var body = el('div', 'rc-coll-body');
+    box.appendChild(body);
+    host.appendChild(box);
+    function openDesigner(opts) {
+      if (!window.RCHelmetEditor) { showToast('The helmet designer did not load. Refresh the page and try again.', 'error'); return; }
+      window.RCHelmetEditor.openDesigner({ token: token, fetchApi: fetchApi, showModal: showModal, showToast: showToast }, opts);
+    }
+    body.appendChild(rcToolTiles_(token, 'Helmet designer', [
+      ['Design', 'Helmet Designer', 'Create and edit helmets.', function () { openDesigner(); }],
+      ['Library', 'Manage Designs', 'Edit, archive and share.', function () { openDesigner({ only: 'manage' }); }],
+      ['Library', 'Manage Logos', 'Upload and organize logos.', function () { openDesigner({ only: 'logos' }); }]
+    ]));
+  }
+
+  function rcAdmSectionHead_(title, count) {
+    var h = el('div', 'rc-adm-sec-head');
+    h.appendChild(el('div', 'rc-adm-sec-title', title));
+    if (count) h.appendChild(el('div', 'rcd-count-pill', count));
+    return h;
+  }
+  // Tile grid used by the Administration and Helmet Designer containers.
+  function rcToolTiles_(token, title, tiles) {
+    var wrap = el('div', 'rc-adm-news');
+    wrap.appendChild(rcAdmSectionHead_(title, tiles.length + ' tools'));
+    var grid = el('div', 'rc-adm-tiles');
+    var stampEls = [], pillEls = [];
+    tiles.forEach(function (t) {
+      var b = el('button', 'rc-ol-tile rc-ol-tile-click');
+      b.type = 'button';
+      var top = el('div', 'rc-ol-tile-top');
+      top.appendChild(el('div', 'rc-ol-tile-label', escapeHtml(t[0])));
+      var opts = t[4] || {};
+      // opts.pill = an ON/OFF switch tile: the corner shows a green ON or red OFF pill. opts.pill is 'on'/'off' (known now) or 'status'
+      // (the state comes from adminWebsiteStatus; opts.statusKey names the field).
+      var cornerEl = el('div', 'rc-ol-tile-corner', escapeHtml(opts.corner || 'Open →'));
+      var pillState = null;
+      function paintPill(on) {
+        pillState = on;
+        cornerEl.className = 'rc-ol-tile-corner rc-ol-switch ' + (on === null ? 'rc-ol-switch-wait' : (on ? 'rc-ol-switch-on' : 'rc-ol-switch-off'));
+        cornerEl.textContent = on === null ? '...' : (on ? 'ON' : 'OFF');
+      }
+      if (opts.pill) {
+        paintPill(opts.pill === 'on' ? true : (opts.pill === 'off' ? false : null));
+        if (opts.pill === 'status') pillEls.push({ key: opts.statusKey, paint: paintPill });
+      }
+      top.appendChild(cornerEl);
+      b.appendChild(top);
+      var valueEl = el('div', 'rc-ol-tile-value', escapeHtml(t[1]));
+      b.appendChild(valueEl);
+      b.appendChild(el('div', 'rc-ol-tile-sub', escapeHtml(t[2])));
+      // Italic "Last update: mm/dd/yyyy" line at the bottom of the Update and Safety tiles (filled in from adminWebsiteStatus).
+      if (opts.stamp) {
+        var stampEl = el('div', 'rc-ol-tile-stamp', 'Last update: ...');
+        b.appendChild(stampEl);
+        stampEls.push({ key: opts.stamp, node: stampEl });
+      }
+      // The old Admin buttons changed their own label and disabled state while working; this stand-in maps that onto the tile.
+      var proxy = {
+        get textContent() { return valueEl.textContent; },
+        set textContent(v) { valueEl.textContent = v; },
+        get disabled() { return b.disabled; },
+        set disabled(v) { b.disabled = v; },
+        querySelector: function (q) { return b.querySelector(q); },
+        getState: function () { return pillState; },
+        setState: function (on) { paintPill(on); }
+      };
+      b.addEventListener('click', function (ev) { t[3].call(proxy, ev); });
+      grid.appendChild(b);
+    });
+    wrap.appendChild(grid);
+    if (stampEls.length || pillEls.length) {
+      var fmt = function (iso) {
+        var d = iso ? new Date(iso) : null;
+        if (!d || isNaN(d.getTime())) return 'Last update: never';
+        return 'Last update: ' + ('0' + (d.getMonth() + 1)).slice(-2) + '/' + ('0' + d.getDate()).slice(-2) + '/' + d.getFullYear();
+      };
+      var loadStamps = function () {
+        fetchApi('adminWebsiteStatus', { token: token }).then(function (res) {
+          stampEls.forEach(function (x) { x.node.textContent = (res && res.success) ? fmt(res[x.key]) : ''; });
+          pillEls.forEach(function (x) { if (res && res.success) x.paint(!!res[x.key]); });
+        }).catch(function () { stampEls.forEach(function (x) { x.node.textContent = ''; }); });
+      };
+      loadStamps();
+      // The Update and Backup actions fire this after they save, so the date changes without a page reload.
+      document.addEventListener('rc-website-status', loadStamps);
+    }
+    return wrap;
+  }
+
   // ADMINISTRATION container on the Dashboard (Admin only; Organizers no longer see it, Matt 2026-11-03). It holds what used to be the League Tools page: the
   // seasons (with their race calendars) and League News. Same container look as Online League / Single Player, graphite accent.
   function renderLeagueManagementSection(token) {
@@ -2558,92 +2685,24 @@
       var newsRows = data.news || [];
       var stories = data.stories || [];
       body.appendChild(sectionHead('Online seasons', seasons.length + (seasons.length === 1 ? ' season' : ' seasons')));
-      body.appendChild(buildSeasonsPanel(seasons, data.racesBySeasonId || {}, token, reload, currentProfile.role === 'Admin'));
-      var items = newsRows.length + stories.length;
-      var newsWrap = el('div', 'rc-adm-news');
-      newsWrap.appendChild(sectionHead('League news', items + (items === 1 ? ' post' : ' posts')));
-      newsWrap.appendChild(buildLeagueNewsPanel(newsRows, token, reload, stories));
-      body.appendChild(newsWrap);
+      // League news lives with its season. An AI story carries its season; a post belongs to the newest season created on or before the
+      // day it was published (a post older than every season goes to the oldest one).
+      var newsBySeason = {}, storiesBySeason = {};
+      (stories || []).forEach(function (st) { if (st.seasonId) (storiesBySeason[st.seasonId] = storiesBySeason[st.seasonId] || []).push(st); });
+      var seasonsByCreated = seasons.slice().sort(function (a, b) { return String(b.createdAt || '').localeCompare(String(a.createdAt || '')); });
+      (newsRows || []).forEach(function (n) {
+        var when = String(n.PublishedAt || '');
+        var home = null;
+        seasonsByCreated.some(function (sx) { if (String(sx.createdAt || '') <= when) { home = sx; return true; } return false; });
+        if (!home) home = seasonsByCreated[seasonsByCreated.length - 1];
+        if (home) (newsBySeason[home.seasonId] = newsBySeason[home.seasonId] || []).push(n);
+      });
+      body.appendChild(buildSeasonsPanel(seasons, data.racesBySeasonId || {}, token, reload, currentProfile.role === 'Admin', newsBySeason, storiesBySeason));
 
-      // HELMET DESIGNER and DATA MANAGEMENT (Admin only): short tiles that open the same popups the Admin page uses. No descriptions here,
+      // DATA MANAGEMENT and WEBSITE (Admin only): short tiles that open the same popups the Admin page uses. No descriptions here,
       // just a title and one short line; the full explanations stay on the Admin page.
       if (currentProfile.role === 'Admin') {
-        function toolTiles(title, tiles) {
-          var wrap = el('div', 'rc-adm-news');
-          wrap.appendChild(sectionHead(title, tiles.length + ' tools'));
-          var grid = el('div', 'rc-adm-tiles');
-          var stampEls = [], pillEls = [];
-          tiles.forEach(function (t) {
-            var b = el('button', 'rc-ol-tile rc-ol-tile-click');
-            b.type = 'button';
-            var top = el('div', 'rc-ol-tile-top');
-            top.appendChild(el('div', 'rc-ol-tile-label', escapeHtml(t[0])));
-            var opts = t[4] || {};
-            // opts.pill = an ON/OFF switch tile: the corner shows a green ON or red OFF pill. opts.pill is 'on'/'off' (known now) or 'status'
-            // (the state comes from adminWebsiteStatus; opts.statusKey names the field).
-            var cornerEl = el('div', 'rc-ol-tile-corner', escapeHtml(opts.corner || 'Open →'));
-            var pillState = null;
-            function paintPill(on) {
-              pillState = on;
-              cornerEl.className = 'rc-ol-tile-corner rc-ol-switch ' + (on === null ? 'rc-ol-switch-wait' : (on ? 'rc-ol-switch-on' : 'rc-ol-switch-off'));
-              cornerEl.textContent = on === null ? '...' : (on ? 'ON' : 'OFF');
-            }
-            if (opts.pill) {
-              paintPill(opts.pill === 'on' ? true : (opts.pill === 'off' ? false : null));
-              if (opts.pill === 'status') pillEls.push({ key: opts.statusKey, paint: paintPill });
-            }
-            top.appendChild(cornerEl);
-            b.appendChild(top);
-            var valueEl = el('div', 'rc-ol-tile-value', escapeHtml(t[1]));
-            b.appendChild(valueEl);
-            b.appendChild(el('div', 'rc-ol-tile-sub', escapeHtml(t[2])));
-            // Italic "Last update: mm/dd/yyyy" line at the bottom of the Update and Safety tiles (filled in from adminWebsiteStatus).
-            if (opts.stamp) {
-              var stampEl = el('div', 'rc-ol-tile-stamp', 'Last update: ...');
-              b.appendChild(stampEl);
-              stampEls.push({ key: opts.stamp, node: stampEl });
-            }
-            // The old Admin buttons changed their own label and disabled state while working; this stand-in maps that onto the tile.
-            var proxy = {
-              get textContent() { return valueEl.textContent; },
-              set textContent(v) { valueEl.textContent = v; },
-              get disabled() { return b.disabled; },
-              set disabled(v) { b.disabled = v; },
-              querySelector: function (q) { return b.querySelector(q); },
-              getState: function () { return pillState; },
-              setState: function (on) { paintPill(on); }
-            };
-            b.addEventListener('click', function (ev) { t[3].call(proxy, ev); });
-            grid.appendChild(b);
-          });
-          wrap.appendChild(grid);
-          if (stampEls.length || pillEls.length) {
-            var fmt = function (iso) {
-              var d = iso ? new Date(iso) : null;
-              if (!d || isNaN(d.getTime())) return 'Last update: never';
-              return 'Last update: ' + ('0' + (d.getMonth() + 1)).slice(-2) + '/' + ('0' + d.getDate()).slice(-2) + '/' + d.getFullYear();
-            };
-            var loadStamps = function () {
-              fetchApi('adminWebsiteStatus', { token: token }).then(function (res) {
-                stampEls.forEach(function (x) { x.node.textContent = (res && res.success) ? fmt(res[x.key]) : ''; });
-                pillEls.forEach(function (x) { if (res && res.success) x.paint(!!res[x.key]); });
-              }).catch(function () { stampEls.forEach(function (x) { x.node.textContent = ''; }); });
-            };
-            loadStamps();
-            // The Update and Backup actions fire this after they save, so the date changes without a page reload.
-            document.addEventListener('rc-website-status', loadStamps);
-          }
-          return wrap;
-        }
-        function openDesigner(opts) {
-          if (!window.RCHelmetEditor) { showToast('The helmet designer did not load. Refresh the page and try again.', 'error'); return; }
-          window.RCHelmetEditor.openDesigner({ token: token, fetchApi: fetchApi, showModal: showModal, showToast: showToast }, opts);
-        }
-        body.appendChild(toolTiles('Helmet designer', [
-          ['Design', 'Helmet Designer', 'Create and edit helmets.', function () { openDesigner(); }],
-          ['Library', 'Manage Designs', 'Edit, archive and share.', function () { openDesigner({ only: 'manage' }); }],
-          ['Library', 'Manage Logos', 'Upload and organize logos.', function () { openDesigner({ only: 'logos' }); }]
-        ]));
+        function toolTiles(title, tiles) { return rcToolTiles_(token, title, tiles); }
         body.appendChild(toolTiles('Data management', [
           ['People', 'Members', 'Accounts and roles.', function () { openMembersModal(token); }],
           ['Circuits', 'Tracks', 'Tracks and layouts.', function () { openTracksModal(token); }],
@@ -6261,7 +6320,7 @@
   }
 
   // LEAGUE NEWS -- backs league.html's public news/narrative feed and lives directly on the League
-  // Tools page now, not in a Data Management popup. buildLeagueNewsPanel is the panel itself
+  // Tools page now, not in a Data Management popup. buildSeasonNewsBox is each season's news container
   // (header + New Post button + chronological list); openNewsPostModal/openEditNewsPostModal are
   // the two popups.
   var RC_NEWS_EDIT_REASONS = [
@@ -6353,24 +6412,6 @@
     return counter;
   }
 
-  function buildLeagueNewsPanel(newsRows, token, reload, stories) {
-    var panel = el('div', 'rc-panel rc-dash-card');
-    panel.appendChild(el('h3', 'rc-dash-card-title', 'League News'));
-
-    var row = el('div', 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:flex-end;margin-bottom:14px;');
-    var newPostBtn = el('button', 'rc-btn-primary rc-btn-sm', 'New Post');
-    newPostBtn.type = 'button';
-    newPostBtn.addEventListener('click', function () { openNewsPostModal(token, reload); });
-    row.appendChild(newPostBtn);
-    panel.appendChild(row);
-
-    var listBox = el('div', 'rc-panel');
-    listBox.appendChild(buildLeagueNewsListFragment(newsRows, token, reload, stories));
-    panel.appendChild(listBox);
-
-    return panel;
-  }
-
   // The two-line box beside each item: RD over the round number (01, 02...; the season preview is 00)
   // for an AI Season Story, NE over WS in a different color for a regular news post. Same look as
   // league.html's League News boxes.
@@ -6411,22 +6452,9 @@
       return wrap;
     }
 
-    var byYear = {};
-    var years = [];
-    sorted.forEach(function (it) {
-      var year = it.date ? String(it.date).slice(0, 4) : 'Undated';
-      if (!byYear[year]) { byYear[year] = []; years.push(year); }
-      byYear[year].push(it);
-    });
-    // sorted is already most-recent-first, so years is naturally already in that order too (first
-    // post's year appended first) -- "Undated" (a post somehow missing PublishedAt) would only ever
-    // land last anyway since it sorts to the bottom of the string comparison above.
-
-    years.forEach(function (year) {
-      var yearHead = el('div', 'rc-group-head');
-      yearHead.appendChild(el('span', 'rc-badge-chip rc-badge-graphite', escapeHtml(year)));
-      wrap.appendChild(yearHead);
-      byYear[year].forEach(function (it) {
+    // Newest first, no year bubbles: each season's list holds only that season's posts and stories.
+    {
+      sorted.forEach(function (it) {
         var postRow = el('div', 'rc-group-row');
         postRow.style.cssText = 'display:flex;align-items:flex-start;gap:12px;';
         if (it.story) {
@@ -6484,7 +6512,7 @@
         }
         wrap.appendChild(postRow);
       });
-    });
+    }
     return wrap;
   }
 

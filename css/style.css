@@ -3339,7 +3339,7 @@ button.rc-switch { display: inline-flex; align-items: center; gap: 12px; width: 
 .rc-collapsed > .rc-coll-body { display: none; }
 .rc-collapsed { gap: 0; }
 .rc-collapsed .rc-adm-head { margin-bottom: 0; }
-.rc-adm.rc-stw { --rc-adm-accent: #66849D; }
+.rc-adm.rc-stw, .rc-adm.rc-hlm { --rc-adm-accent: #66849D; }
 
 /* Accordion look: a collapsed container is a clickable rounded rectangle that lifts on hover. */
 .rc-acc { transition: transform 0.15s ease, box-shadow 0.15s ease; }
