@@ -3287,6 +3287,15 @@ button.rc-switch { display: inline-flex; align-items: center; gap: 12px; width: 
 .rcd-season-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; padding-top: 14px; margin-top: 4px; border-top: 1px solid var(--rc-silver); }
 .rcd-season-actions .rc-btn-row, .rcd-season-actions .rcd-view-btn { box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; height: 34px; min-width: 0; width: auto; flex: 0 0 auto; padding: 0 14px; margin: 0; font-size: 12px; line-height: 1; text-decoration: none; }
 .rcd-past-toggle { margin-left: auto; }
+.rcd-year-group { display: flex; flex-direction: column; gap: 10px; }
+.rcd-year-group-head { display: flex; align-items: center; }
+.rcd-year-group-list { display: flex; flex-direction: column; gap: 16px; }
+/* Equal gaps around a button row: line above -> buttons is 14px (padding-top); buttons -> the next line is also 14px.
+   Inside a season box (flex, 10px gap) the next block needs 4px more; inside a plain block it needs the full 14px. */
+.rcd-season-actions + .rcd-cal { margin-top: 15px; }
+.rcd-season-box > .rcd-season-actions + .rcd-cal, .rcd-season-box > .rcd-season-actions + .rcd-past-rounds { margin-top: 5px; }
+.rcd-past-rounds > .rcd-cal:first-child { margin-top: 0; }
+.rc-adm-news-actions { margin-top: 8px; }
 .rcd-cal { margin-top: 8px; padding-top: 14px; border-top: 1px solid var(--rc-silver); display: flex; flex-direction: column; gap: 10px; }
 .rcd-cal-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
 .rcd-cal-title { font-family: var(--rc-font-heading); font-size: 16px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: var(--rc-carbon); }
@@ -3340,6 +3349,8 @@ button.rc-switch { display: inline-flex; align-items: center; gap: 12px; width: 
 .rc-collapsed { gap: 0; }
 .rc-collapsed .rc-adm-head { margin-bottom: 0; }
 .rc-adm.rc-stw, .rc-adm.rc-hlm { --rc-adm-accent: #66849D; }
+/* Helmet Designer: its first heading sits the same 18px under the description as Online seasons does in Administration. */
+.rc-hlm .rc-coll-body > .rc-adm-news:first-child { margin-top: 0; }
 
 /* Accordion look: a collapsed container is a clickable rounded rectangle that lifts on hover. */
 .rc-acc { transition: transform 0.15s ease, box-shadow 0.15s ease; }

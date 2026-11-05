@@ -829,8 +829,8 @@
       spinner.remove();
       section.appendChild(champHost);
       if (profile.role === 'Admin' || profile.role === 'Organizer' || profile.role === 'Steward') { currentProfile = currentProfile || profile; section.appendChild(stwHost); renderStewardingSection(token); }
-      if (profile.role === 'Admin') { section.appendChild(admHost); currentProfile = currentProfile || profile; renderLeagueManagementSection(token); }
       if (profile.role === 'Admin') { section.appendChild(hlmHost); currentProfile = currentProfile || profile; renderHelmetDesignerSection(token); }
+      if (profile.role === 'Admin') { section.appendChild(admHost); currentProfile = currentProfile || profile; renderLeagueManagementSection(token); }
       rows = paintRows(dashboardData, onRegisteredRebuild);
       syncLabel();
     });
@@ -2148,7 +2148,7 @@
     });
     var stage = isEnded ? 'Finished' : ((firstStart !== null && firstStart <= Date.now()) ? 'In progress' : 'Registration');
     var top = el('div', 'rcd-season-top');
-    top.appendChild(el('span', 'rc-badge-chip rc-badge-graphite', escapeHtml(s.createdAt ? String(s.createdAt).slice(0, 4) : 'Unknown Year')));
+    if (isCurrent) top.appendChild(el('span', 'rc-badge-chip rc-badge-graphite', escapeHtml(s.createdAt ? String(s.createdAt).slice(0, 4) : 'Unknown Year')));
     top.appendChild(el('span', 'rcd-status-pill ' + ((stage === 'In progress' || stage === 'Finished') ? 'rcd-status-ok' : 'rcd-status-neutral'), stage));
     container.appendChild(top);
     var seasonRowNum = seasonNumberLabel(s.seasonId);
@@ -2174,17 +2174,6 @@
       withTooltip(editBtn, 'Only Admins and Organizers can edit season details.');
     }
     btnGroup.appendChild(editBtn);
-    // NEW LEAGUE POST -- between Edit Season and Season Preview. A post is filed under the season that is running when it is published,
-    // so it is only offered on a season that has not ended.
-    var newPostBtn = el('button', 'rc-btn-secondary rc-btn-row', 'New League Post');
-    newPostBtn.type = 'button';
-    if (isEnded) {
-      newPostBtn.disabled = true;
-      withTooltip(newPostBtn, 'This season has ended. New posts are filed under the season that is running.');
-    } else {
-      newPostBtn.addEventListener('click', function () { openNewsPostModal(token, reload); });
-    }
-    btnGroup.appendChild(newPostBtn);
     // SEASON PREVIEW -- the same Season Details popup drivers see (season format and race calendar; no Current Seat).
     var previewBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Season Preview');
     previewBtn.type = 'button';
@@ -2229,7 +2218,7 @@
     var racesBox = el('div', 'rcd-past-rounds' + '');
     racesBox.appendChild(buildSeasonRacesList(races || [], token, reload, isEnded));
     // LEAGUE NEWS container for this season, below the calendar: same heading and count look as the calendar's.
-    racesBox.appendChild(buildSeasonNewsBox(seasonNews || [], seasonStories || [], token, reload));
+    racesBox.appendChild(buildSeasonNewsBox(seasonNews || [], seasonStories || [], token, reload, isEnded));
     if (!isCurrent) {
       racesBox.style.display = 'none';
       var racesToggleBtn = el('button', 'rc-disclosure-btn rcd-past-toggle', ICON_CHEVRON_DOWN);
@@ -2252,7 +2241,21 @@
 
   // The League News container inside a season: "League news" heading with the post count (same classes as the calendar's
   // "Championship calendar" heading and round count), then that season's posts and AI stories, newest first.
-  function buildSeasonNewsBox(newsRows, stories, token, reload) {
+  function buildSeasonNewsBox(newsRows, stories, token, reload, isEnded) {
+    var outer = el('div', '');
+    // Button section above the list: a line above, the NEW LEAGUE POST button, and (the list's own top line) a line below. A post is
+    // filed under the season that is running when it is published, so the button is only live on a season that has not ended.
+    var bar = el('div', 'rcd-season-actions rc-adm-news-actions');
+    var newPostBtn = el('button', 'rc-btn-secondary rc-btn-row', 'New League Post');
+    newPostBtn.type = 'button';
+    if (isEnded) {
+      newPostBtn.disabled = true;
+      withTooltip(newPostBtn, 'This season has ended. New posts are filed under the season that is running.');
+    } else {
+      newPostBtn.addEventListener('click', function () { openNewsPostModal(token, reload); });
+    }
+    bar.appendChild(newPostBtn);
+    outer.appendChild(bar);
     var wrap = el('div', 'rcd-cal');
     var nh = el('div', 'rcd-cal-head');
     nh.appendChild(el('div', 'rcd-cal-title', 'League news'));
@@ -2260,7 +2263,8 @@
     nh.appendChild(el('div', 'rcd-cal-count', total + (total === 1 ? ' post' : ' posts')));
     wrap.appendChild(nh);
     wrap.appendChild(buildLeagueNewsListFragment(newsRows, token, reload, stories));
-    return wrap;
+    outer.appendChild(wrap);
+    return outer;
   }
 
   // One row per race/special event within a season's expanded Races box (buildSeasonRow above) --
@@ -2365,8 +2369,24 @@
     // most current one -- that's the row that starts with its races already shown on page load.
     var mostCurrentSeasonId = seasons[0] && seasons[0].seasonId;
 
+    // The newest season stands alone. Past seasons are grouped by year: one year pill, then that year's seasons listed under it.
+    var yearGroup = null, yearGroupKey = null;
     seasons.forEach(function (s) {
-      wrap.appendChild(buildSeasonRow(s, racesBySeasonId[s.seasonId] || [], token, reload, s.seasonId === mostCurrentSeasonId, (newsBySeason || {})[s.seasonId], (storiesBySeason || {})[s.seasonId]));
+      var isCur = s.seasonId === mostCurrentSeasonId;
+      var row = buildSeasonRow(s, racesBySeasonId[s.seasonId] || [], token, reload, isCur, (newsBySeason || {})[s.seasonId], (storiesBySeason || {})[s.seasonId]);
+      if (isCur) { yearGroup = null; yearGroupKey = null; wrap.appendChild(row); return; }
+      var year = s.createdAt ? String(s.createdAt).slice(0, 4) : 'Unknown Year';
+      if (!yearGroup || yearGroupKey !== year) {
+        var grp = el('div', 'rcd-year-group');
+        var gh = el('div', 'rcd-year-group-head');
+        gh.appendChild(el('span', 'rc-badge-chip rc-badge-graphite', escapeHtml(year)));
+        grp.appendChild(gh);
+        yearGroup = el('div', 'rcd-year-group-list');
+        grp.appendChild(yearGroup);
+        yearGroupKey = year;
+        wrap.appendChild(grp);
+      }
+      yearGroup.appendChild(row);
     });
 
     return wrap;
