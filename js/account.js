@@ -5689,38 +5689,16 @@
   function openRacePhotoModal(token, opts) {
     opts = opts || {};
     var roundId = opts.roundId || '';
-    var modal = showModal('Race Photo', { wide: true });
+    var MAX_PHOTOS = 3;
+    var modal = showModal('Race Photos', { wide: true });
+    var body = modal.body;
     var roundNo = opts.roundNumber ? 'Round ' + opts.roundNumber : (opts.roundLabel || roundId);
-    modal.body.appendChild(wizField(roundNo, el('div', 'font-size:14px;font-weight:700;color:var(--rc-carbon);padding:2px 0 2px;', escapeHtml(opts.eventLabel || ''))));
-    modal.body.appendChild(el('div', 'rc-hint', 'This picture is used in this round\'s League News story instead of a random track photo. If the story is already written, it changes to this picture right away.'));
-    var photoFile = el('input');
-    photoFile.type = 'file';
-    photoFile.accept = 'image/jpeg,image/png,image/webp';
-    modal.body.appendChild(wizField('Race Photo', photoFile, 'A JPEG, PNG or WebP picture. Landscape pictures look best.'));
-    var capBox = el('input');
-    capBox.type = 'text';
-    capBox.maxLength = 30;
-    capBox.placeholder = 'Caption (30 characters max)';
-    capBox.disabled = true;
-    var capCount = el('div', 'rc-hint', '0 / 30');
-    var capWrap = el('div');
-    capWrap.appendChild(capBox);
-    capWrap.appendChild(capCount);
-    modal.body.appendChild(wizField('Caption', capWrap));
-    capBox.addEventListener('input', function () { capCount.textContent = capBox.value.length + ' / 30'; });
+    body.appendChild(wizField(roundNo, el('div', 'font-size:14px;font-weight:700;color:var(--rc-carbon);padding:2px 0 2px;', escapeHtml(opts.eventLabel || ''))));
+    body.appendChild(el('div', 'rc-hint', 'Add up to ' + MAX_PHOTOS + ' pictures to this round\'s League News story instead of a random track photo. Picture 1 is at the top left, picture 2 is midway on the right and picture 3 is near the end on the left. If the story is already written, it changes right away.'));
+    var slotsWrap = el('div');
+    body.appendChild(slotsWrap);
+    slotsWrap.appendChild(buildSpinner('Loading pictures...'));
 
-    var btnRow = el('div', 'display:flex;justify-content:flex-end;gap:8px;margin-top:16px;');
-    var randomBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'Use Random Track Photo');
-    randomBtn.type = 'button';
-    var saveBtn = el('button', 'rc-btn-primary rc-btn-sm', 'Save Photo');
-    saveBtn.type = 'button';
-    saveBtn.disabled = true;
-    photoFile.addEventListener('change', function () {
-      var has = !!(photoFile.files && photoFile.files[0]);
-      capBox.disabled = !has;
-      saveBtn.disabled = !has;
-    });
-    function busy(on) { saveBtn.disabled = on || !(photoFile.files && photoFile.files[0]); randomBtn.disabled = on; photoFile.disabled = on; capBox.disabled = on || !(photoFile.files && photoFile.files[0]); }
     // The chosen picture as a JPEG about 1000 px wide (base64, no "data:" prefix), so it is small to send and to show.
     function toJpegBase64(file) {
       return new Promise(function (resolve, reject) {
@@ -5742,41 +5720,129 @@
         img.src = url;
       });
     }
-    function send(body, doneText) {
-      busy(true);
-      saveBtn.textContent = body.clear ? 'Save Photo' : 'Saving...';
-      rcWriteStarted_();
-      return fetchApi('adminSaveRoundPhoto', { method: 'POST', token: token, body: body }).then(function (data) {
-        rcWriteFinished_();
-        if (!data || !data.success) { saveBtn.textContent = 'Save Photo'; busy(false); showToast((data && data.message) || 'The race photo could not be saved.', 'error'); return; }
-        showToast(doneText, 'success');
-        modal.close();
-        rcReloadAfterSave();
-      }).catch(function (e) {
-        rcWriteFinished_();
-        saveBtn.textContent = 'Save Photo';
-        busy(false);
-        showToast((e && e.message && !/fetch|network|timeout|abort/i.test(e.message)) ? e.message : 'Could not reach the server. Try again.', 'error');
+
+    fetchApi('adminRoundPhotos', { token: token, roundId: roundId }).then(function (res) {
+      slotsWrap.innerHTML = '';
+      var current = (res && res.success && res.photos) ? res.photos : [];
+      // One slot per picture: { keep: "user/..." } an existing one, { file: File } a new one, or empty. caption is always its own text.
+      var slots = [];
+      for (var n = 0; n < MAX_PHOTOS; n++) slots.push({ keep: current[n] ? current[n].file : '', file: null, caption: current[n] ? current[n].caption : '', changed: false });
+      var originalCount = current.length;
+      var saveBtn, randomBtn;
+      var rows = [];
+
+      function hasPhoto(sl) { return !!(sl.keep || sl.file); }
+      function anyChange() { return slots.some(function (sl) { return sl.changed; }); }
+      function refreshButtons() {
+        saveBtn.disabled = !anyChange();
+        randomBtn.disabled = !originalCount && !slots.some(hasPhoto);
+      }
+      function drawSlot(i) {
+        var sl = slots[i], row = rows[i];
+        row.innerHTML = '';
+        row.appendChild(el('div', 'font-size:12px;font-weight:800;letter-spacing:0.05em;text-transform:uppercase;color:var(--rc-carbon);margin-bottom:6px;', 'Picture ' + (i + 1)));
+        var line = el('div', 'display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap;');
+        var thumb = el('div', 'width:120px;height:80px;border:1px solid var(--rc-silver);border-radius:4px;background:var(--rc-offwhite);overflow:hidden;flex:none;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--rc-steel);', hasPhoto(sl) ? '' : 'No picture');
+        if (hasPhoto(sl)) {
+          var img = document.createElement('img');
+          img.style.cssText = 'width:100%;height:100%;object-fit:cover;';
+          img.alt = '';
+          if (sl.file) { var ou = URL.createObjectURL(sl.file); img.src = ou; img.onload = function () { URL.revokeObjectURL(ou); }; }
+          else img.src = rcStoryPhotoUrl(sl.keep);
+          thumb.appendChild(img);
+        }
+        line.appendChild(thumb);
+        var right = el('div', 'flex:1 1 220px;min-width:0;display:flex;flex-direction:column;gap:6px;');
+        var chooser = el('input');
+        chooser.type = 'file';
+        chooser.accept = 'image/jpeg,image/png,image/webp';
+        chooser.addEventListener('change', function () {
+          if (!chooser.files || !chooser.files[0]) return;
+          sl.file = chooser.files[0]; sl.keep = ''; sl.changed = true;
+          drawSlot(i); refreshButtons();
+        });
+        right.appendChild(chooser);
+        var capBox = el('input');
+        capBox.type = 'text';
+        capBox.maxLength = 30;
+        capBox.placeholder = 'Caption (30 characters max)';
+        capBox.value = sl.caption || '';
+        capBox.disabled = !hasPhoto(sl);
+        var capCount = el('div', 'rc-hint', (capBox.value.length) + ' / 30');
+        capBox.addEventListener('input', function () { sl.caption = capBox.value; sl.changed = true; capCount.textContent = capBox.value.length + ' / 30'; refreshButtons(); });
+        right.appendChild(capBox);
+        right.appendChild(capCount);
+        if (hasPhoto(sl)) {
+          var rm = el('button', 'rc-btn-secondary rc-btn-row', 'Remove');
+          rm.type = 'button';
+          rm.style.alignSelf = 'flex-start';
+          rm.addEventListener('click', function () { sl.keep = ''; sl.file = null; sl.caption = ''; sl.changed = true; drawSlot(i); refreshButtons(); });
+          right.appendChild(rm);
+        }
+        line.appendChild(right);
+        row.appendChild(line);
+      }
+      for (var i = 0; i < MAX_PHOTOS; i++) {
+        var row = el('div', 'padding:12px 0;border-top:1px solid var(--rc-offwhite);');
+        rows.push(row);
+        slotsWrap.appendChild(row);
+      }
+
+      var btnRow = el('div', 'display:flex;justify-content:flex-end;gap:8px;margin-top:16px;');
+      randomBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'Use Random Track Photo');
+      randomBtn.type = 'button';
+      saveBtn = el('button', 'rc-btn-primary rc-btn-sm', 'Save Photos');
+      saveBtn.type = 'button';
+      btnRow.appendChild(randomBtn);
+      btnRow.appendChild(saveBtn);
+      body.appendChild(btnRow);
+      for (var d = 0; d < MAX_PHOTOS; d++) drawSlot(d);
+      refreshButtons();
+
+      function setBusy(on, label) {
+        saveBtn.textContent = label || 'Save Photos';
+        saveBtn.disabled = on || !anyChange();
+        randomBtn.disabled = on;
+        if (on) [].forEach.call(slotsWrap.querySelectorAll('input,button'), function (x) { x.disabled = true; });
+        else { for (var q = 0; q < MAX_PHOTOS; q++) drawSlot(q); refreshButtons(); }
+      }
+      function send(payload, doneText) {
+        setBusy(true, payload.clear ? 'Save Photos' : 'Saving...');
+        rcWriteStarted_();
+        return fetchApi('adminSaveRoundPhoto', { method: 'POST', token: token, body: payload, timeoutMs: RC_FETCH_TIMEOUT_MS_LONG }).then(function (data) {
+          rcWriteFinished_();
+          if (!data || !data.success) { setBusy(false); showToast((data && data.message) || 'The race photos could not be saved.', 'error'); return; }
+          showToast(doneText, 'success');
+          modal.close();
+          rcReloadAfterSave();
+        }).catch(function (e) {
+          rcWriteFinished_();
+          setBusy(false);
+          showToast((e && e.message && !/fetch|network|timeout|abort/i.test(e.message)) ? e.message : 'Could not reach the server. Try again.', 'error');
+        });
+      }
+      saveBtn.addEventListener('click', function () {
+        if (!anyChange()) return;
+        var used = slots.filter(hasPhoto);
+        setBusy(true, 'Preparing...');
+        Promise.all(used.map(function (sl) {
+          if (sl.keep) return Promise.resolve({ keep: sl.keep, caption: String(sl.caption || '').trim() });
+          return toJpegBase64(sl.file).then(function (b64) { return { imageBase64: b64, caption: String(sl.caption || '').trim() }; });
+        })).then(function (photos) {
+          if (!photos.length) return send({ roundId: roundId, clear: 'true' }, 'This round\'s story uses a random track photo again.');
+          return send({ roundId: roundId, photos: JSON.stringify(photos) }, 'Race photos saved for ' + roundNo + '.');
+        }).catch(function (e) {
+          setBusy(false);
+          showToast((e && e.message) || 'A picture could not be read.', 'error');
+        });
       });
-    }
-    saveBtn.addEventListener('click', function () {
-      if (!(photoFile.files && photoFile.files[0])) return;
-      saveBtn.disabled = true;
-      saveBtn.textContent = 'Preparing...';
-      toJpegBase64(photoFile.files[0]).then(function (b64) {
-        return send({ roundId: roundId, imageBase64: b64, caption: capBox.value.trim() }, 'Race photo saved for ' + roundNo + '.');
-      }).catch(function (e) {
-        saveBtn.textContent = 'Save Photo';
-        busy(false);
-        showToast((e && e.message) || 'The picture could not be read.', 'error');
+      randomBtn.addEventListener('click', function () {
+        send({ roundId: roundId, clear: 'true' }, 'This round\'s story uses a random track photo again.');
       });
+    }).catch(function () {
+      slotsWrap.innerHTML = '';
+      slotsWrap.appendChild(el('p', 'color:var(--rc-red);margin:12px 0 0;', 'Could not load this round\'s pictures.'));
     });
-    randomBtn.addEventListener('click', function () {
-      send({ roundId: roundId, clear: 'true' }, 'This round\'s story uses a random track photo again.');
-    });
-    btnRow.appendChild(randomBtn);
-    btnRow.appendChild(saveBtn);
-    modal.body.appendChild(btnRow);
   }
 
   // ADD PREVIEW PHOTO (ECO chat, 2026-11-05) -- Admin > Website. Adds a picture to the pool the Season Preview story picks from.

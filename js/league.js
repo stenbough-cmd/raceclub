@@ -2605,7 +2605,7 @@ function _rclRenderNews(hub) {
   body.appendChild(layout);
 }
 
-// Track photos for a story. A round story has one photo; a Season Preview has two (photoFile "a|b", photoCaption "ca|cb").
+// Track photos for a story. A round story has one to three photos; a Season Preview has two (photoFile "a|b", photoCaption "ca|cb").
 // _rclStoryPhotoEl(item, i) draws photo number i as a <figure> with an italic caption (long track name, country), floated at
 // about a third of the width (half in the popup, see css). A photo that fails to load simply is not there.
 function _rclStoryPhotoEl(item, i, right) {
@@ -2630,10 +2630,17 @@ function _rclStoryPhotoEl(item, i, right) {
   return fig;
 }
 // Puts the story's photos into a story body: the first at the top left, the second (Season Previews) midway through the text, to the right.
-function _rclPlaceStoryPhotos(bodyEl, item, firstOnly) {   // firstOnly: the on-page preview shows one photo, the popup shows all
+function _rclPlaceStoryPhotos(bodyEl, item, firstOnly) {   // firstOnly: the on-page preview shows one photo, the popup shows all (up to 3)
   var first = _rclStoryPhotoEl(item, 0, false);
   var second = firstOnly ? null : _rclStoryPhotoEl(item, 1, true);
+  var third = firstOnly ? null : _rclStoryPhotoEl(item, 2, false);
   var blocks = [].slice.call(bodyEl.children);
+  // Second: midway, on the right. Third: about three quarters of the way, on the left. Both are put in from the later one first so the
+  // positions counted from the original blocks stay right.
+  if (third) {
+    var at3 = Math.ceil(blocks.length * 3 / 4);
+    if (blocks[at3]) bodyEl.insertBefore(third, blocks[at3]); else bodyEl.appendChild(third);
+  }
   if (second) {
     var at = Math.ceil(blocks.length / 2);
     if (blocks[at]) bodyEl.insertBefore(second, blocks[at]); else bodyEl.appendChild(second);
