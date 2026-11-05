@@ -2218,9 +2218,9 @@
     }
 
     if (!isCurrent) {
-      // News for a past season is read on the League Hub.
+      // Opens the League Hub with this season already picked in its season dropdown, where its news is read.
       var viewLink = el('a', 'rc-btn-primary rc-btn-row rcd-view-btn', 'View Season →');
-      viewLink.href = 'league.html';
+      viewLink.href = 'league.html?season=' + encodeURIComponent(s.seasonId);
       btnGroup.appendChild(viewLink);
     }
     var racesBox = el('div', 'rcd-past-rounds' + '');

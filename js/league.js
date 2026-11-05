@@ -3443,6 +3443,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Fetch fresh data; only redraw when it actually differs from what is already on screen.
   var revalidating = false;
+  var deepLinkDone = false;
   function revalidate() {
     if (revalidating) return;
     revalidating = true;
@@ -3451,8 +3452,19 @@ document.addEventListener('DOMContentLoaded', function () {
         var text = JSON.stringify(hub);
         if (text !== currentText) {
           currentText = text;
-          // While a past season is showing, only the saved current-season copy is refreshed.
-          if (!_rclViewSeasonId_) showHub(_rclPatchTimeDerivedFields_(hub));
+          // Opened with league.html?season=SZN-0001 (the View Season button in League Tools): open that season straight away,
+          // as if it had been picked in the navbar's season dropdown. Only on the first draw, and only for a season in the list.
+          var wantedSeason = '';
+          if (!deepLinkDone) {
+            deepLinkDone = true;
+            try { wantedSeason = new URLSearchParams(window.location.search).get('season') || ''; } catch (err) { wantedSeason = ''; }
+            var known = Array.isArray(hub.seasons) && hub.seasons.some(function (sn) { return sn.seasonId === wantedSeason; });
+            if (!known || wantedSeason === hub.seasonId) wantedSeason = '';
+          }
+          if (wantedSeason) {
+            try { _rclRenderNavbar_(hub); } catch (err) { /* the picker is redrawn when the season loads */ }
+            _rclOnSeasonPick_(wantedSeason);
+          } else if (!_rclViewSeasonId_) showHub(_rclPatchTimeDerivedFields_(hub));
         }
         _rclClearLoadError_();
       } else if (!currentText) {
