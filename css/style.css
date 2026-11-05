@@ -3286,15 +3286,20 @@ button.rc-switch { display: inline-flex; align-items: center; gap: 12px; width: 
 .rcd-panel .rcd-row { margin: 18px 0 18px; }
 .rcd-list { display: flex; flex-direction: column; gap: 16px; }
 .rcd-season-box { background: var(--rc-offwhite); border-radius: 10px; padding: 18px 20px; display: flex; flex-direction: column; gap: 10px; }
-.rcd-season-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.rcd-season-top { display: flex; align-items: center; justify-content: flex-end; gap: 12px; }
 .rcd-status-pill { font-family: var(--rc-font-heading); font-size: 11px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; padding: 5px 12px; border-radius: 999px; white-space: nowrap; }
 .rcd-status-ok { background: var(--rc-positive-bg); color: var(--rc-positive); }
 .rcd-status-neutral { background: var(--rc-silver); color: var(--rc-steel); }
-.rcd-season-name { font-family: var(--rc-font-heading); font-size: 20px; font-weight: 800; color: var(--rc-carbon); }
+.rcd-season-name { font-family: var(--rc-font-heading); font-size: 20px; font-weight: 800; color: var(--rc-carbon); display: flex; align-items: center; flex-wrap: wrap; gap: 4px 10px; }
 .rcd-season-meta { font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--rc-steel); }
 .rcd-season-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; padding-top: 14px; margin-top: 4px; border-top: 1px solid var(--rc-silver); }
 .rcd-season-actions .rc-btn-row, .rcd-season-actions .rcd-view-btn { box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; height: 34px; min-width: 0; width: auto; flex: 0 0 auto; padding: 0 14px; margin: 0; font-size: 12px; line-height: 1; text-decoration: none; }
 .rcd-past-toggle { margin-left: auto; }
+/* All past seasons share one container, most recent first; a thin line under each season's buttons (and any rounds opened with the arrow)
+   separates it from the next. */
+.rcd-past-box { gap: 18px; }
+.rcd-season-box.rcd-past-row { background: transparent; border-radius: 0; padding: 0; }
+.rcd-past-box > .rcd-past-row:not(:last-child) { padding-bottom: 18px; border-bottom: 1px solid var(--rc-silver); }
 /* Equal gaps around a button row: line above -> buttons is 14px (padding-top); buttons -> the next line is also 14px.
    Inside a season box (flex, 10px gap) the next block needs 4px more; inside a plain block it needs the full 14px. */
 .rcd-season-actions + .rcd-cal { margin-top: 15px; }

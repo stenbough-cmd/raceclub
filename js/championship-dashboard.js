@@ -225,17 +225,19 @@
       box.appendChild(mk('div', 'rc-dm-empty', 'No seasons yet. Press Create Season above to start your first one, or open the Help guide for a walkthrough.'));
     } else {
       // Past seasons are grouped by year: one year pill, then that year's seasons listed under it. The current season stands alone.
-      var yearGroup = null, yearGroupKey = null;
+      var pastBox = null;
       seasons.forEach(function (s) {
         var year = s.createdAt ? String(s.createdAt).slice(0, 4) : 'Unknown Year';
         var isCurrent = s.seasonId === page.seasonId;
         var st = statusOf(s, isCurrent && !!page.registration);
-        var container = mk('div', 'rcd-season-box');
+        var container = mk('div', 'rcd-season-box' + (isCurrent ? '' : ' rcd-past-row'));
         var top = mk('div', 'rcd-season-top');
-        if (isCurrent) top.appendChild(mk('span', 'rc-badge-chip rc-badge-graphite', year));
         top.appendChild(mk('span', 'rcd-status-pill ' + ((st.label === 'In progress' || st.label === 'Finished') ? 'rcd-status-ok' : 'rcd-status-neutral'), st.label));
         container.appendChild(top);
-        container.appendChild(mk('div', 'rcd-season-name', (s.seasonNumber ? 'Season ' + s.seasonNumber : 'Season') + (s.name ? ': ' + s.name : '')));
+        var nameEl = mk('div', 'rcd-season-name');
+        nameEl.appendChild(mk('span', '', (s.seasonNumber ? 'Season ' + s.seasonNumber : 'Season') + (s.name ? ': ' + s.name : '')));
+        nameEl.appendChild(mk('span', 'rc-badge-chip rc-badge-graphite', year));
+        container.appendChild(nameEl);
         var meta = [];
         if (isCurrent && cal.length) meta.push(cal.filter(function (c) { return c.hasResults; }).length + ' rounds completed');
         else if (s.raceCount != null) meta.push(s.raceCount + (s.raceCount === 1 ? ' round' : ' rounds'));
@@ -316,20 +318,10 @@
           bg.appendChild(pastToggle);
           container.appendChild(racesBox);
         }
-        if (isCurrent) { yearGroup = null; yearGroupKey = null; box.appendChild(container); }
-        else {
-          if (!yearGroup || yearGroupKey !== year) {
-            var grp = mk('div', 'rcd-year-group');
-            var gh = mk('div', 'rcd-year-group-head');
-            gh.appendChild(mk('span', 'rc-badge-chip rc-badge-graphite', year));
-            grp.appendChild(gh);
-            yearGroup = mk('div', 'rcd-year-group-list');
-            grp.appendChild(yearGroup);
-            yearGroupKey = year;
-            box.appendChild(grp);
-          }
-          yearGroup.appendChild(container);
-        }
+        if (isCurrent) { box.appendChild(container); return; }
+        // Every past season shares ONE container below the current season, most recent first.
+        if (!pastBox) { pastBox = mk('div', 'rcd-season-box rcd-past-box'); box.appendChild(pastBox); }
+        pastBox.appendChild(container);
       });
     }
     panel.appendChild(box);

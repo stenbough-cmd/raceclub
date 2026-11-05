@@ -2135,10 +2135,10 @@
   // button on the right" shape the Data Management Cars/Tracks lists already use, just under its
   // own .rc-group-row class since it's indented one level deeper (year -> season) than those lists
   // ever go.
-  function buildSeasonRow(s, races, token, reload, isCurrent, seasonNews, seasonStories) {
+  function buildSeasonRow(s, races, token, reload, isCurrent, seasonNews, seasonStories, asPast) {
     // Same look as a season in the Single Player Championship container (.rcd-season-box): year pill and status pill, name, one
     // meta line, a button row, then the round list. The newest season shows its rounds; older ones open them with the arrow.
-    var container = el('div', 'rcd-season-box rc-adm-season');
+    var container = el('div', 'rcd-season-box rc-adm-season' + (asPast ? ' rcd-past-row' : ''));
     var isEnded = s.status === 'Completed';
     var firstStart = null;
     (races || []).forEach(function (r) {
@@ -2148,11 +2148,13 @@
     });
     var stage = isEnded ? 'Finished' : ((firstStart !== null && firstStart <= Date.now()) ? 'In progress' : 'Registration');
     var top = el('div', 'rcd-season-top');
-    if (isCurrent) top.appendChild(el('span', 'rc-badge-chip rc-badge-graphite', escapeHtml(s.createdAt ? String(s.createdAt).slice(0, 4) : 'Unknown Year')));
     top.appendChild(el('span', 'rcd-status-pill ' + ((stage === 'In progress' || stage === 'Finished') ? 'rcd-status-ok' : 'rcd-status-neutral'), stage));
     container.appendChild(top);
     var seasonRowNum = seasonNumberLabel(s.seasonId);
-    container.appendChild(el('div', 'rcd-season-name', escapeHtml((seasonRowNum ? ('Season ' + seasonRowNum) : (s.seasonId || 'Season')) + (s.name ? (': ' + s.name) : ''))));
+    var nameEl = el('div', 'rcd-season-name');
+    nameEl.appendChild(el('span', '', escapeHtml((seasonRowNum ? ('Season ' + seasonRowNum) : (s.seasonId || 'Season')) + (s.name ? (': ' + s.name) : ''))));
+    nameEl.appendChild(el('span', 'rc-badge-chip rc-badge-graphite', escapeHtml(s.createdAt ? String(s.createdAt).slice(0, 4) : 'Unknown Year')));
+    container.appendChild(nameEl);
     var done = (races || []).filter(function (r) { return r.hasResults; }).length;
     var metaParts = [];
     metaParts.push(isCurrent && done ? (done + (done === 1 ? ' round completed' : ' rounds completed')) : (s.raceCount + (s.raceCount === 1 ? ' round' : ' rounds')));
@@ -2215,10 +2217,17 @@
       btnGroup.appendChild(recomputeBtn);
     }
 
+    if (!isCurrent) {
+      // News for a past season is read on the League Hub.
+      var viewLink = el('a', 'rc-btn-primary rc-btn-row rcd-view-btn', 'View Season →');
+      viewLink.href = 'league.html';
+      btnGroup.appendChild(viewLink);
+    }
     var racesBox = el('div', 'rcd-past-rounds' + '');
     racesBox.appendChild(buildSeasonRacesList(races || [], token, reload, isEnded));
     // LEAGUE NEWS container for this season, below the calendar: same heading and count look as the calendar's.
-    racesBox.appendChild(buildSeasonNewsBox(seasonNews || [], seasonStories || [], token, reload, isEnded));
+    // Past seasons show no news here (their news is read through View Season).
+    if (isCurrent) racesBox.appendChild(buildSeasonNewsBox(seasonNews || [], seasonStories || [], token, reload, isEnded));
     if (!isCurrent) {
       racesBox.style.display = 'none';
       var racesToggleBtn = el('button', 'rc-disclosure-btn rcd-past-toggle', ICON_CHEVRON_DOWN);
@@ -2369,24 +2378,15 @@
     // most current one -- that's the row that starts with its races already shown on page load.
     var mostCurrentSeasonId = seasons[0] && seasons[0].seasonId;
 
-    // The newest season stands alone. Past seasons are grouped by year: one year pill, then that year's seasons listed under it.
-    var yearGroup = null, yearGroupKey = null;
+    // The newest season is its own container. Every older season shares ONE container below it, most recent first, each season
+    // separated from the next by a line under its buttons.
+    var pastBox = null;
     seasons.forEach(function (s) {
       var isCur = s.seasonId === mostCurrentSeasonId;
-      var row = buildSeasonRow(s, racesBySeasonId[s.seasonId] || [], token, reload, isCur, (newsBySeason || {})[s.seasonId], (storiesBySeason || {})[s.seasonId]);
-      if (isCur) { yearGroup = null; yearGroupKey = null; wrap.appendChild(row); return; }
-      var year = s.createdAt ? String(s.createdAt).slice(0, 4) : 'Unknown Year';
-      if (!yearGroup || yearGroupKey !== year) {
-        var grp = el('div', 'rcd-year-group');
-        var gh = el('div', 'rcd-year-group-head');
-        gh.appendChild(el('span', 'rc-badge-chip rc-badge-graphite', escapeHtml(year)));
-        grp.appendChild(gh);
-        yearGroup = el('div', 'rcd-year-group-list');
-        grp.appendChild(yearGroup);
-        yearGroupKey = year;
-        wrap.appendChild(grp);
-      }
-      yearGroup.appendChild(row);
+      var row = buildSeasonRow(s, racesBySeasonId[s.seasonId] || [], token, reload, isCur, (newsBySeason || {})[s.seasonId], (storiesBySeason || {})[s.seasonId], !isCur);
+      if (isCur) { wrap.appendChild(row); return; }
+      if (!pastBox) { pastBox = el('div', 'rcd-season-box rcd-past-box'); wrap.appendChild(pastBox); }
+      pastBox.appendChild(row);
     });
 
     return wrap;
@@ -2402,7 +2402,8 @@
     panel.appendChild(el('h3', 'rc-dash-card-title', 'Seasons'));
 
     {
-      var row = el('div', 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:flex-end;margin-bottom:14px;');
+      // margin-top 1px + the 16px gap between the container's sections = 18px under the gold line, same as the Championship container.
+      var row = el('div', 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:flex-end;margin-top:1px;margin-bottom:14px;');
 
       // Create a Season disables once any season exists that hasn't been Completed yet -- only one
       // season should ever be live at a time; End Season (below) is what frees this back up.
