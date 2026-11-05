@@ -2889,7 +2889,7 @@
 
   function buildSeasonRaceRow(r, token, reload, priorFinalized, specialNumber, isEnded) {
     // Same look as a round in the Single Player Championship container (.rcd-round): number pill, event name, "Track · date",
-    // status circle, status text, then the buttons: Upload Results, Erase Results, Finalize Results.
+    // status circle, status text, then the buttons: Upload Results, Upload Race Photo, Erase Results, Finalize Results.
     var row = el('div', 'rcd-round');
     var isSpecial = r.kind === 'special';
     var roundLabel = 'Round ' + r.roundNumber + (r.track ? ': ' + r.track : '');
@@ -2929,6 +2929,9 @@
       }
       btn('Upload Results', !suppressUnstarted && !r.hasResults, lockWhy || 'Results already uploaded for this round. Erase them first to upload again.', function () {
         openImportXmlModal(token, { roundId: r.roundId, roundLabel: roundLabel, roundNumber: r.roundNumber, eventLabel: (r.eventName || '') + (r.track ? ' (' + r.track + ')' : ''), hasRace: !!r.hasRaceResults, hasQuali: !!(r.hasAnySessionImported && !r.hasRaceResults) });
+      });
+      btn('Upload Race Photo', !locked, 'Finalize the earlier rounds first.', function () {
+        openRacePhotoModal(token, { roundId: r.roundId, roundLabel: roundLabel, roundNumber: r.roundNumber, eventLabel: (r.eventName || '') + (r.track ? ' (' + r.track + ')' : '') });
       });
       btn('Erase Results', !suppressUnstarted && !r.resultsFinalized && !!r.hasAnySessionImported,
         lockWhy || r.resultsFinalized ? 'This round is finalized and its results can no longer be erased.' : 'No results uploaded yet for this round.', function () {
@@ -5667,6 +5670,103 @@
     }
   }
 
+  // RACE PHOTO popup (League Tools > a round > Upload Race Photo): a picture from the organizer's computer for this round's League News
+  // story, with a caption of up to 30 characters under the chooser. It replaces the random track photo, before or after the story is
+  // written (an existing story switches to it right away). The picture is shrunk to a JPEG about 1000 px wide here, then sent to
+  // the adminSaveRoundPhoto call (StoryPhotos.gs), which keeps it in the data repo on GitHub.
+  function openRacePhotoModal(token, opts) {
+    opts = opts || {};
+    var roundId = opts.roundId || '';
+    var modal = showModal('Race Photo', { wide: true });
+    var roundNo = opts.roundNumber ? 'Round ' + opts.roundNumber : (opts.roundLabel || roundId);
+    modal.body.appendChild(wizField(roundNo, el('div', 'font-size:14px;font-weight:700;color:var(--rc-carbon);padding:2px 0 2px;', escapeHtml(opts.eventLabel || ''))));
+    modal.body.appendChild(el('div', 'rc-hint', 'This picture is used in this round\'s League News story instead of a random track photo. If the story is already written, it changes to this picture right away.'));
+    var photoFile = el('input');
+    photoFile.type = 'file';
+    photoFile.accept = 'image/jpeg,image/png,image/webp';
+    modal.body.appendChild(wizField('Race Photo', photoFile, 'A JPEG, PNG or WebP picture. Landscape pictures look best.'));
+    var capBox = el('input');
+    capBox.type = 'text';
+    capBox.maxLength = 30;
+    capBox.placeholder = 'Caption (30 characters max)';
+    capBox.disabled = true;
+    var capCount = el('div', 'rc-hint', '0 / 30');
+    var capWrap = el('div');
+    capWrap.appendChild(capBox);
+    capWrap.appendChild(capCount);
+    modal.body.appendChild(wizField('Caption', capWrap));
+    capBox.addEventListener('input', function () { capCount.textContent = capBox.value.length + ' / 30'; });
+
+    var btnRow = el('div', 'display:flex;justify-content:flex-end;gap:8px;margin-top:16px;');
+    var randomBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'Use Random Track Photo');
+    randomBtn.type = 'button';
+    var saveBtn = el('button', 'rc-btn-primary rc-btn-sm', 'Save Photo');
+    saveBtn.type = 'button';
+    saveBtn.disabled = true;
+    photoFile.addEventListener('change', function () {
+      var has = !!(photoFile.files && photoFile.files[0]);
+      capBox.disabled = !has;
+      saveBtn.disabled = !has;
+    });
+    function busy(on) { saveBtn.disabled = on || !(photoFile.files && photoFile.files[0]); randomBtn.disabled = on; photoFile.disabled = on; capBox.disabled = on || !(photoFile.files && photoFile.files[0]); }
+    // The chosen picture as a JPEG about 1000 px wide (base64, no "data:" prefix), so it is small to send and to show.
+    function toJpegBase64(file) {
+      return new Promise(function (resolve, reject) {
+        var url = URL.createObjectURL(file);
+        var img = new Image();
+        img.onload = function () {
+          var scale = Math.min(1, 1000 / img.naturalWidth);
+          var c = document.createElement('canvas');
+          c.width = Math.max(1, Math.round(img.naturalWidth * scale));
+          c.height = Math.max(1, Math.round(img.naturalHeight * scale));
+          var ctx2d = c.getContext('2d');
+          ctx2d.fillStyle = '#fff';
+          ctx2d.fillRect(0, 0, c.width, c.height);
+          ctx2d.drawImage(img, 0, 0, c.width, c.height);
+          URL.revokeObjectURL(url);
+          resolve(c.toDataURL('image/jpeg', 0.82).split(',')[1] || '');
+        };
+        img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('That picture could not be read. Choose a JPEG, PNG or WebP image.')); };
+        img.src = url;
+      });
+    }
+    function send(body, doneText) {
+      busy(true);
+      saveBtn.textContent = body.clear ? 'Save Photo' : 'Saving...';
+      rcWriteStarted_();
+      return fetchApi('adminSaveRoundPhoto', { method: 'POST', token: token, body: body }).then(function (data) {
+        rcWriteFinished_();
+        if (!data || !data.success) { saveBtn.textContent = 'Save Photo'; busy(false); showToast((data && data.message) || 'The race photo could not be saved.', 'error'); return; }
+        showToast(doneText, 'success');
+        modal.close();
+        rcReloadAfterSave();
+      }).catch(function (e) {
+        rcWriteFinished_();
+        saveBtn.textContent = 'Save Photo';
+        busy(false);
+        showToast((e && e.message && !/fetch|network|timeout|abort/i.test(e.message)) ? e.message : 'Could not reach the server. Try again.', 'error');
+      });
+    }
+    saveBtn.addEventListener('click', function () {
+      if (!(photoFile.files && photoFile.files[0])) return;
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Preparing...';
+      toJpegBase64(photoFile.files[0]).then(function (b64) {
+        return send({ roundId: roundId, imageBase64: b64, caption: capBox.value.trim() }, 'Race photo saved for ' + roundNo + '.');
+      }).catch(function (e) {
+        saveBtn.textContent = 'Save Photo';
+        busy(false);
+        showToast((e && e.message) || 'The picture could not be read.', 'error');
+      });
+    });
+    randomBtn.addEventListener('click', function () {
+      send({ roundId: roundId, clear: 'true' }, 'This round\'s story uses a random track photo again.');
+    });
+    btnRow.appendChild(randomBtn);
+    btnRow.appendChild(saveBtn);
+    modal.body.appendChild(btnRow);
+  }
+
   function openImportXmlModal(token, opts) {
     opts = opts || {};
     var roundId = opts.roundId || '';
@@ -5711,64 +5811,15 @@
     if (qFile) modal.body.appendChild(wizField('1. Qualifying Results (XML)', qFile));
     if (rFile) modal.body.appendChild(wizField('2. Race Results (XML)', rFile));
 
-    // Optional picture of the organizer's own for this round's League News story (used instead of the random track photo),
-    // with a caption of up to 30 characters under the chooser. Saved by the adminSaveRoundPhoto call below (StoryPhotos.gs).
-    var photoFile = el('input');
-    photoFile.type = 'file';
-    photoFile.accept = 'image/jpeg,image/png,image/webp';
-    modal.body.appendChild(wizField('Story Photo (optional)', photoFile, 'Used in this round\'s League News story instead of a random track photo. Landscape pictures look best.'));
-    var capBox = el('input');
-    capBox.type = 'text';
-    capBox.maxLength = 30;
-    capBox.placeholder = 'Caption (30 characters max)';
-    capBox.disabled = true;
-    var capCount = el('div', 'rc-hint', '0 / 30');
-    var capWrap = el('div');
-    capWrap.appendChild(capBox);
-    capWrap.appendChild(capCount);
-    modal.body.appendChild(wizField('Photo Caption', capWrap));
-    capBox.addEventListener('input', function () { capCount.textContent = capBox.value.length + ' / 30'; });
-
     var btnRow = el('div', 'display:flex;justify-content:flex-end;gap:8px;margin-top:16px;');
     var importBtn = el('button', 'rc-btn-primary rc-btn-sm', 'Upload Results');
     importBtn.type = 'button';
     importBtn.disabled = true;
     function chosen(f) { return !!(f && f.files && f.files[0]); }
-    function refreshBtn() { importBtn.disabled = !(chosen(qFile) || chosen(rFile) || chosen(photoFile)); }
+    function refreshBtn() { importBtn.disabled = !(chosen(qFile) || chosen(rFile)); }
     if (qFile) qFile.addEventListener('change', refreshBtn);
     if (rFile) rFile.addEventListener('change', refreshBtn);
-    photoFile.addEventListener('change', function () { capBox.disabled = !chosen(photoFile); refreshBtn(); });
-    function lockInputs(on) { if (qFile) qFile.disabled = on; if (rFile) rFile.disabled = on; photoFile.disabled = on; capBox.disabled = on || !chosen(photoFile); }
-    // The chosen picture as a JPEG about 1000 px wide (base64, no "data:" prefix), so it is small to send and to show.
-    function photoToJpegBase64(file) {
-      return new Promise(function (resolve, reject) {
-        var url = URL.createObjectURL(file);
-        var img = new Image();
-        img.onload = function () {
-          var scale = Math.min(1, 1000 / img.naturalWidth);
-          var c = document.createElement('canvas');
-          c.width = Math.max(1, Math.round(img.naturalWidth * scale));
-          c.height = Math.max(1, Math.round(img.naturalHeight * scale));
-          var ctx2d = c.getContext('2d');
-          ctx2d.fillStyle = '#fff';
-          ctx2d.fillRect(0, 0, c.width, c.height);
-          ctx2d.drawImage(img, 0, 0, c.width, c.height);
-          URL.revokeObjectURL(url);
-          resolve(c.toDataURL('image/jpeg', 0.82).split(',')[1] || '');
-        };
-        img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('That picture could not be read. Choose a JPEG, PNG or WebP image.')); };
-        img.src = url;
-      });
-    }
-    // Sends the picture and caption. Resolves with a message to show when it did not work (the results are already saved by then), or ''.
-    function savePhoto() {
-      if (!chosen(photoFile)) return Promise.resolve('');
-      return photoToJpegBase64(photoFile.files[0]).then(function (b64) {
-        return fetchApi('adminSaveRoundPhoto', { method: 'POST', token: token, body: { roundId: roundId, imageBase64: b64, caption: capBox.value.trim() } });
-      }).then(function (data) {
-        return (data && data.success) ? '' : ((data && data.message) || 'The story photo could not be saved.');
-      }).catch(function (e) { return (e && e.message) || 'The story photo could not be saved.'; });
-    }
+    function lockInputs(on) { if (qFile) qFile.disabled = on; if (rFile) rFile.disabled = on; }
     function readText(file) {
       return new Promise(function (resolve, reject) {
         var reader = new FileReader();
@@ -5822,7 +5873,7 @@
       var jobs = [];
       if (chosen(qFile)) jobs.push({ file: qFile.files[0], want: 'Q', label: 'Qualify' });
       if (chosen(rFile)) jobs.push({ file: rFile.files[0], want: 'R', label: 'Race' });
-      if (!jobs.length && !chosen(photoFile)) { showToast('Choose an XML file or a story photo first.', 'error'); return; }
+      if (!jobs.length) { showToast('Choose an XML file first.', 'error'); return; }
       importBtn.disabled = true;
       importBtn.textContent = 'Uploading...';
       lockInputs(true);
@@ -5855,15 +5906,11 @@
             });
           });
         });
-        return chain.then(function () { return savePhoto(); }).then(function (photoProblem) { return { unmatched: unmatched, photoProblem: photoProblem }; });
-      }).then(function (res) {
+        return chain.then(function () { return unmatched; });
+      }).then(function (unmatched) {
         setImportInProgress(false);
-        var unmatched = res.unmatched;
         if (unmatched.length) showToast('Unmatched driver names (no ProfileID yet): ' + unmatched.join(', ') + '.', 'info');
-        if (res.photoProblem) showToast((jobs.length ? 'Results uploaded, but: ' : '') + res.photoProblem, 'error');
-        else showToast(jobs.length ? roundNo + ' results uploaded.' : 'Story photo saved for ' + roundNo + '.', 'success');
-        if (res.photoProblem && !jobs.length) { reset(); return; }
-        if (res.photoProblem) { setTimeout(rcReloadAfterSave, 4500); return; }   // leave the message on screen a moment
+        showToast(roundNo + ' results uploaded.', 'success');
         rcReloadAfterSave();
       }).catch(function (e) {
         setImportInProgress(false);
