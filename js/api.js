@@ -443,6 +443,13 @@ function _rcFetchOnce_(url, fetchOpts, timeoutMs) {
 //     first such request for a file also carries republish=1 so Apps Script writes the file for the next visitor.
 //   - Add ?source=api to any page address to skip files and use Apps Script only (for checking a page).
 var RC_DATA_BASE_URL = 'https://stenbough-cmd.github.io/race-club-data/website/data/';
+// Web address of a story photo. "spa/spa_061.jpg" is a track photo on the website itself (assets/tracks/); "user/RND-0007_123.jpg" is a
+// picture an organizer chose in Upload Results, kept in the data repo (website/images/tracks/user/).
+function rcStoryPhotoUrl(file) {
+  var enc = String(file || '').split('/').map(encodeURIComponent).join('/');
+  if (/^user\//.test(file)) return RC_DATA_BASE_URL.replace(/data\/$/, 'images/tracks/') + enc;
+  return 'assets/tracks/' + enc;
+}
 var RC_DATA_SCHEMA = 1;                       // must match RC_PUBLISH_SCHEMA_ in Publish.gs
 var RC_DATA_FILE_TIMEOUT_MS = 8000;
 var RC_DATA_REVS_KEY_ = 'rc_pub_revs';        // tiny { path: { rev, t } } note, not data; entries expire after 15 minutes

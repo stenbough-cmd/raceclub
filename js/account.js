@@ -5711,15 +5711,64 @@
     if (qFile) modal.body.appendChild(wizField('1. Qualifying Results (XML)', qFile));
     if (rFile) modal.body.appendChild(wizField('2. Race Results (XML)', rFile));
 
+    // Optional picture of the organizer's own for this round's League News story (used instead of the random track photo),
+    // with a caption of up to 30 characters under the chooser. Saved by the adminSaveRoundPhoto call below (StoryPhotos.gs).
+    var photoFile = el('input');
+    photoFile.type = 'file';
+    photoFile.accept = 'image/jpeg,image/png,image/webp';
+    modal.body.appendChild(wizField('Story Photo (optional)', photoFile, 'Used in this round\'s League News story instead of a random track photo. Landscape pictures look best.'));
+    var capBox = el('input');
+    capBox.type = 'text';
+    capBox.maxLength = 30;
+    capBox.placeholder = 'Caption (30 characters max)';
+    capBox.disabled = true;
+    var capCount = el('div', 'rc-hint', '0 / 30');
+    var capWrap = el('div');
+    capWrap.appendChild(capBox);
+    capWrap.appendChild(capCount);
+    modal.body.appendChild(wizField('Photo Caption', capWrap));
+    capBox.addEventListener('input', function () { capCount.textContent = capBox.value.length + ' / 30'; });
+
     var btnRow = el('div', 'display:flex;justify-content:flex-end;gap:8px;margin-top:16px;');
     var importBtn = el('button', 'rc-btn-primary rc-btn-sm', 'Upload Results');
     importBtn.type = 'button';
     importBtn.disabled = true;
     function chosen(f) { return !!(f && f.files && f.files[0]); }
-    function refreshBtn() { importBtn.disabled = !(chosen(qFile) || chosen(rFile)); }
+    function refreshBtn() { importBtn.disabled = !(chosen(qFile) || chosen(rFile) || chosen(photoFile)); }
     if (qFile) qFile.addEventListener('change', refreshBtn);
     if (rFile) rFile.addEventListener('change', refreshBtn);
-    function lockInputs(on) { if (qFile) qFile.disabled = on; if (rFile) rFile.disabled = on; }
+    photoFile.addEventListener('change', function () { capBox.disabled = !chosen(photoFile); refreshBtn(); });
+    function lockInputs(on) { if (qFile) qFile.disabled = on; if (rFile) rFile.disabled = on; photoFile.disabled = on; capBox.disabled = on || !chosen(photoFile); }
+    // The chosen picture as a JPEG about 1000 px wide (base64, no "data:" prefix), so it is small to send and to show.
+    function photoToJpegBase64(file) {
+      return new Promise(function (resolve, reject) {
+        var url = URL.createObjectURL(file);
+        var img = new Image();
+        img.onload = function () {
+          var scale = Math.min(1, 1000 / img.naturalWidth);
+          var c = document.createElement('canvas');
+          c.width = Math.max(1, Math.round(img.naturalWidth * scale));
+          c.height = Math.max(1, Math.round(img.naturalHeight * scale));
+          var ctx2d = c.getContext('2d');
+          ctx2d.fillStyle = '#fff';
+          ctx2d.fillRect(0, 0, c.width, c.height);
+          ctx2d.drawImage(img, 0, 0, c.width, c.height);
+          URL.revokeObjectURL(url);
+          resolve(c.toDataURL('image/jpeg', 0.82).split(',')[1] || '');
+        };
+        img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('That picture could not be read. Choose a JPEG, PNG or WebP image.')); };
+        img.src = url;
+      });
+    }
+    // Sends the picture and caption. Resolves with a message to show when it did not work (the results are already saved by then), or ''.
+    function savePhoto() {
+      if (!chosen(photoFile)) return Promise.resolve('');
+      return photoToJpegBase64(photoFile.files[0]).then(function (b64) {
+        return fetchApi('adminSaveRoundPhoto', { method: 'POST', token: token, body: { roundId: roundId, imageBase64: b64, caption: capBox.value.trim() } });
+      }).then(function (data) {
+        return (data && data.success) ? '' : ((data && data.message) || 'The story photo could not be saved.');
+      }).catch(function (e) { return (e && e.message) || 'The story photo could not be saved.'; });
+    }
     function readText(file) {
       return new Promise(function (resolve, reject) {
         var reader = new FileReader();
@@ -5773,7 +5822,7 @@
       var jobs = [];
       if (chosen(qFile)) jobs.push({ file: qFile.files[0], want: 'Q', label: 'Qualify' });
       if (chosen(rFile)) jobs.push({ file: rFile.files[0], want: 'R', label: 'Race' });
-      if (!jobs.length) { showToast('Choose an XML file first.', 'error'); return; }
+      if (!jobs.length && !chosen(photoFile)) { showToast('Choose an XML file or a story photo first.', 'error'); return; }
       importBtn.disabled = true;
       importBtn.textContent = 'Uploading...';
       lockInputs(true);
@@ -5806,11 +5855,15 @@
             });
           });
         });
-        return chain.then(function () { return unmatched; });
-      }).then(function (unmatched) {
+        return chain.then(function () { return savePhoto(); }).then(function (photoProblem) { return { unmatched: unmatched, photoProblem: photoProblem }; });
+      }).then(function (res) {
         setImportInProgress(false);
+        var unmatched = res.unmatched;
         if (unmatched.length) showToast('Unmatched driver names (no ProfileID yet): ' + unmatched.join(', ') + '.', 'info');
-        showToast(roundNo + ' results uploaded.', 'success');
+        if (res.photoProblem) showToast((jobs.length ? 'Results uploaded, but: ' : '') + res.photoProblem, 'error');
+        else showToast(jobs.length ? roundNo + ' results uploaded.' : 'Story photo saved for ' + roundNo + '.', 'success');
+        if (res.photoProblem && !jobs.length) { reset(); return; }
+        if (res.photoProblem) { setTimeout(rcReloadAfterSave, 4500); return; }   // leave the message on screen a moment
         rcReloadAfterSave();
       }).catch(function (e) {
         setImportInProgress(false);

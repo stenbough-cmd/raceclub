@@ -2620,7 +2620,7 @@ function _rclStoryPhotoEl(item, i, right) {
   img.decoding = 'async';
   img.loading = 'lazy';
   img.addEventListener('error', function () { if (fig.parentNode) fig.parentNode.removeChild(fig); });
-  img.src = 'assets/tracks/' + file.split('/').map(encodeURIComponent).join('/');
+  img.src = rcStoryPhotoUrl(file);
   fig.appendChild(img);
   if (caption) {
     var cap = document.createElement('figcaption');
