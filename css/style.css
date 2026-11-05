@@ -2825,6 +2825,8 @@ body.rc-modal-scroll-locked {
   color: var(--rc-carbon);
 }
 .rc-cal-stat svg { color: var(--rc-steel); flex-shrink: 0; }
+.rc-cal-stat-points { align-items: flex-start; line-height: 1.4; }
+.rc-cal-stat-points svg { margin-top: 2px; }
 /* Extra breathing room after the Qualifying-length chip, before the Sprint/Medium/Long race-length
    chips in Season Settings -- marks that boundary without widening .rc-cal-stats' own 8px gap
    between every chip in the row. */

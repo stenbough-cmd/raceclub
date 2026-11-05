@@ -211,6 +211,12 @@
   var ICON_RAIN = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 15h9a4 4 0 0 0 0-8 5.5 5.5 0 0 0-10.4-1.4A4 4 0 0 0 6.5 15z"></path><line x1="8" y1="18" x2="7" y2="21"></line><line x1="12" y1="18" x2="11" y2="21"></line><line x1="16" y1="18" x2="15" y2="21"></line></svg>';
   var ICON_UNLOCK = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 7.4-2"></path></svg>';
   var ICON_EXTERNAL = '<svg class="rc-nav-ext" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7"></path><path d="M8 7h9v9"></path></svg>';
+  // Race stat icons (calendar chips): tires, tire wear, fuel, setups, points.
+  var ICON_TIRE = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="3.5"></circle><line x1="12" y1="3" x2="12" y2="8.5"></line><line x1="12" y1="15.5" x2="12" y2="21"></line><line x1="3" y1="12" x2="8.5" y2="12"></line><line x1="15.5" y1="12" x2="21" y2="12"></line></svg>';
+  var ICON_TIRE_WEAR = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17a8 8 0 1 1 16 0"></path><line x1="12" y1="17" x2="16" y2="11"></line><circle cx="12" cy="17" r="1"></circle></svg>';
+  var ICON_FUEL = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="10" height="18" rx="1.5"></rect><line x1="4" y1="9" x2="14" y2="9"></line><path d="M14 8h2.5a1.5 1.5 0 0 1 1.5 1.5V16a1.5 1.5 0 0 0 3 0V9l-3-3"></path></svg>';
+  var ICON_SETUP = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"></line><line x1="4" y1="12" x2="20" y2="12"></line><line x1="4" y1="18" x2="20" y2="18"></line><circle cx="9" cy="6" r="2" fill="var(--rc-offwhite)"></circle><circle cx="15" cy="12" r="2" fill="var(--rc-offwhite)"></circle><circle cx="8" cy="18" r="2" fill="var(--rc-offwhite)"></circle></svg>';
+  var ICON_POINTS = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3h8v5a4 4 0 0 1-8 0V3z"></path><path d="M8 5H4v1a4 4 0 0 0 4 4"></path><path d="M16 5h4v1a4 4 0 0 1-4 4"></path><line x1="12" y1="12" x2="12" y2="17"></line><line x1="8" y1="21" x2="16" y2="21"></line><line x1="9" y1="17" x2="15" y2="17"></line></svg>';
   var ICON_FLAG = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="22" x2="4" y2="3"></line><path d="M4 4h14l-3 4 3 4H4"></path></svg>';
   var ICON_CLOUD_PARTLY = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="17" cy="7" r="3"></circle><path d="M4 17h9a3.5 3.5 0 0 0 0-7 4.8 4.8 0 0 0-8.6 2.1A3.2 3.2 0 0 0 4 17z"></path></svg>';
   var ICON_RAIN_HEAVY = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 13h9a4 4 0 0 0 0-8 5.5 5.5 0 0 0-10.4-1.2A4 4 0 0 0 6 13z"></path><line x1="6" y1="16" x2="5" y2="19"></line><line x1="9.5" y1="16" x2="8.5" y2="19"></line><line x1="13" y1="16" x2="12" y2="19"></line><line x1="16.5" y1="16" x2="15.5" y2="19"></line><line x1="7.5" y1="19" x2="6.5" y2="22"></line><line x1="14.5" y1="19" x2="13.5" y2="22"></line></svg>';
@@ -632,7 +638,7 @@
       var hasNext = !!(registered && next.success && next.hasNextRace);
       var isSpecial = hasNext && next.kind === 'special';
       var roundCorner = (hasNext && !isSpecial && next.roundNum) ? ('Round ' + next.roundNum + (next.totalRounds ? ' of ' + next.totalRounds : '')) : (isSpecial ? 'Special event' : '');
-      var nextTile = tile('Next race', roundCorner, hasSeason ? function () { openSeasonFormatModal(); } : null);
+      var nextTile = tile('Next race', roundCorner, hasSeason ? function () { openSeasonFormatModal(null, { calendarOnly: true }); } : null);
       if (hasNext) {
         var tz = ''; try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (err) { tz = ''; }
         line(nextTile, 'rc-ol-tile-value', next.eventName || (isSpecial ? 'Special event' : ('Round ' + next.roundNum)));
@@ -1028,7 +1034,8 @@
   // "View Season Details" popup -- identical in width (820px, same as league.html's own non-wide
   // .rcl-modal-dialog) and header treatment (bold uppercase title, red 2px underline) to the rest
   // of the account page's popups.
-  function openSeasonFormatModal(seasonId) {
+  function openSeasonFormatModal(seasonId, opts) {
+    var calendarOnly = !!(opts && opts.calendarOnly);   // the Next Race tile: only the calendar, everything else hidden
     var modal = showModal('Season Details', { wide: true });
     // 50px wider than the plain .rc-modal-wide -- the race-card list below needs the extra room the
     // Season Format list above it doesn't.
@@ -1047,7 +1054,7 @@
         modal.body.appendChild(buildEmptyStatePanel('No Data To Display', 'Season details show up here once they are set.'));
         return;
       }
-      buildSeasonFmtGroups_(formatSections).forEach(function (group) { modal.body.appendChild(group); });
+      if (!calendarOnly) buildSeasonFmtGroups_(formatSections).forEach(function (group) { modal.body.appendChild(group); });
 
       // CALENDAR group -- same pill shape as the two stat groups above, same race-card list the old
       // standalone popup rendered, format untouched.
@@ -1064,7 +1071,8 @@
           if (nextIdx === -1 && entry.kind !== 'bye' && !entry.raceOver) nextIdx = idx;
         });
         var calList = el('div', 'rc-cal-race-list');
-        hub.calendar.forEach(function (entry, idx) { calList.appendChild(raceCard(entry, driverTz, null, idx === nextIdx)); });
+        var raceCtx = { rs: hub.raceSettings || {}, tables: hub.pointsTables || {}, bonus: hub.bonusPoints || {} };
+        hub.calendar.forEach(function (entry, idx) { calList.appendChild(raceCard(entry, driverTz, raceCtx, idx === nextIdx)); });
         calGroup.appendChild(calList);
         modal.body.appendChild(calGroup);
       }
@@ -2799,7 +2807,27 @@
     if (entry.passwordOverride) {
       metaRow.appendChild(calStat(ICON_UNLOCK, 'Password Override', 'This round overrides the season default password: ' + entry.passwordOverride));
     }
+    // Race rules for this round: tires allowed, tire wear, fuel consumption and setups, in the same row as the other values.
+    var rsx = (raceSettings && raceSettings.rs) || {};
+    if (rsx.tireCount) metaRow.appendChild(calStat(ICON_TIRE, rsx.tireCount + ' Tires', 'Tires allowed for the race'));
+    if (rsx.tireWearMultiplier) metaRow.appendChild(calStat(ICON_TIRE_WEAR, 'Tire Wear ' + rsx.tireWearMultiplier, 'Tire wear'));
+    if (rsx.fuelMultiplier) metaRow.appendChild(calStat(ICON_FUEL, 'Fuel ' + rsx.fuelMultiplier, 'Fuel consumption'));
+    if (rsx.setupRules) metaRow.appendChild(calStat(ICON_SETUP, 'Setups ' + rsx.setupRules, 'Setup rules'));
     body.appendChild(metaRow);
+
+    // Points for this race on their own row below: a bordered rectangle with the finishing points and any bonus points.
+    // (Special events pay no championship points.)
+    var tableForRace = !isSpecial && raceSettings && raceSettings.tables ? raceSettings.tables[entry.raceLengthTier] : null;
+    var racePts = tableForRace && tableForRace.points ? tableForRace.points : [];
+    if (racePts.length) {
+      var ptsText = racePts.map(function (v, idx) { return 'P' + (idx + 1) + ' ' + v; }).join(', ');
+      var bonusSrc = raceSettings.bonus || {};
+      var bonusLabelsRc = { pole: 'Pole', fastestLap: 'Fastest Lap', mostLapsLed: 'Most Laps Led' };
+      var bonusTxt = Object.keys(bonusLabelsRc).filter(function (k) { return Number(bonusSrc[k]) > 0; }).map(function (k) { return bonusLabelsRc[k] + ' +' + Number(bonusSrc[k]); }).join(', ');
+      var ptsRow = el('div', 'rc-cal-race-meta');
+      ptsRow.appendChild(calStat(ICON_POINTS, ptsText + (bonusTxt ? ' · Bonus: ' + bonusTxt : ''), 'Championship points for this race', 'rc-cal-stat-points'));
+      body.appendChild(ptsRow);
+    }
 
     card.appendChild(body);
     return card;
