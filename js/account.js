@@ -4566,7 +4566,7 @@
 
         var saveChangesBtn = el('button', null, 'Save Changes');
         saveChangesBtn.className = 'rc-btn-primary rc-btn-sm'; saveChangesBtn.type = 'button';
-        saveChangesBtn.addEventListener('click', function () { finishEditWizard(); });
+        saveChangesBtn.addEventListener('click', function () { finishEditWizard(saveChangesBtn); });
         editRightGroup.appendChild(saveChangesBtn);
         footerBar.appendChild(editRightGroup);
       } else if (stepIndex === lastStep) {
@@ -4784,30 +4784,24 @@
     // enforces the lock rule server-side regardless of what this wizard instance has disabled, so
     // nothing here needs to re-derive "is this allowed" -- it just sends everything currently in
     // state, roundId included, and trusts the backend to apply or skip each piece.
-    function finishEditWizard() {
-      contentWrap.innerHTML = '';
-      contentWrap.appendChild(buildSpinner('Saving season...'));
-      footerBar.innerHTML = '';
-      // Same X-disable treatment as finishWizard's "SAVING SEASON..." save above -- Edit Season's
+    function finishEditWizard(triggerBtn) {
+      // Stays on the current step with everything showing; only the footer buttons go gray (the Save button reads "SAVING...") while it saves.
+      var footerButtons = Array.prototype.slice.call(footerBar.querySelectorAll('button'));
+      footerButtons.forEach(function (b) { b.disabled = true; });
+      var originalLabel = triggerBtn ? triggerBtn.textContent : '';
+      if (triggerBtn) triggerBtn.textContent = 'SAVING...';
+      // Same X-disable treatment as finishWizard's save above -- Edit Season's
       // save is the same kind of in-flight write and shouldn't be closeable mid-save either.
       if (modal.closeBtn) modal.closeBtn.disabled = true;
       setWizardSaving(true);
 
       var payload = buildSeasonWizardPayload(true);
 
-      function showResultPanel(ok, title, message) {
+      function restoreButtons() {
         setWizardSaving(false);
-        contentWrap.innerHTML = '';
+        footerButtons.forEach(function (b) { b.disabled = false; });
+        if (triggerBtn) triggerBtn.textContent = originalLabel;
         if (modal.closeBtn) modal.closeBtn.disabled = false;
-        var note = el('div', 'rc-panel');
-        note.style.borderColor = ok ? 'var(--rc-ok)' : 'var(--rc-red)';
-        note.appendChild(el('h3', 'margin-top:0;', title));
-        note.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;', message));
-        var closeBtn = el('button', null, 'Close');
-        closeBtn.className = 'rc-btn-secondary rc-btn-sm'; closeBtn.type = 'button';
-        closeBtn.addEventListener('click', modal.close);
-        note.appendChild(closeBtn);
-        contentWrap.appendChild(note);
       }
 
       fetchApi('updateSeason', {
@@ -4827,11 +4821,12 @@
           showToast(data.message || 'Season updated.', 'success');
           rcReloadAfterSave();
         } else {
-          showResultPanel(false, 'Could Not Update Season',
-            (data && data.message) || 'Something went wrong talking to the server.');
+          restoreButtons();
+          showToast((data && data.message) || 'Something went wrong talking to the server. The season was not updated; it is safe to try again.', 'error');
         }
       }).catch(function () {
-        showResultPanel(false, 'Could Not Reach The Server', 'Check your connection and try again.');
+        restoreButtons();
+        showToast('Could not reach the server. Check your connection and try again.', 'error');
       });
     }
 
