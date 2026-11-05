@@ -3196,16 +3196,24 @@
           var wrap = el('div', 'rc-adm-news');
           wrap.appendChild(sectionHead(title, tiles.length + ' tools'));
           var grid = el('div', 'rc-adm-tiles');
+          var stampEls = [];
           tiles.forEach(function (t) {
             var b = el('button', 'rc-ol-tile rc-ol-tile-click');
             b.type = 'button';
             var top = el('div', 'rc-ol-tile-top');
             top.appendChild(el('div', 'rc-ol-tile-label', escapeHtml(t[0])));
-            top.appendChild(el('div', 'rc-ol-tile-corner', 'Open →'));
+            var opts = t[4] || {};
+            top.appendChild(el('div', 'rc-ol-tile-corner', escapeHtml(opts.corner || 'Open →')));
             b.appendChild(top);
             var valueEl = el('div', 'rc-ol-tile-value', escapeHtml(t[1]));
             b.appendChild(valueEl);
             b.appendChild(el('div', 'rc-ol-tile-sub', escapeHtml(t[2])));
+            // Italic "Last update: mm/dd/yyyy" line at the bottom of the Update and Safety tiles (filled in from adminWebsiteStatus).
+            if (opts.stamp) {
+              var stampEl = el('div', 'rc-ol-tile-stamp', 'Last update: ...');
+              b.appendChild(stampEl);
+              stampEls.push({ key: opts.stamp, node: stampEl });
+            }
             // The old Admin buttons changed their own label and disabled state while working; this stand-in maps that onto the tile.
             var proxy = {
               get textContent() { return valueEl.textContent; },
@@ -3218,6 +3226,21 @@
             grid.appendChild(b);
           });
           wrap.appendChild(grid);
+          if (stampEls.length) {
+            var fmt = function (iso) {
+              var d = iso ? new Date(iso) : null;
+              if (!d || isNaN(d.getTime())) return 'Last update: never';
+              return 'Last update: ' + ('0' + (d.getMonth() + 1)).slice(-2) + '/' + ('0' + d.getDate()).slice(-2) + '/' + d.getFullYear();
+            };
+            var loadStamps = function () {
+              fetchApi('adminWebsiteStatus', { token: token }).then(function (res) {
+                stampEls.forEach(function (x) { x.node.textContent = (res && res.success) ? fmt(res[x.key]) : ''; });
+              }).catch(function () { stampEls.forEach(function (x) { x.node.textContent = ''; }); });
+            };
+            loadStamps();
+            // The Update and Backup actions fire this after they save, so the date changes without a page reload.
+            document.addEventListener('rc-website-status', loadStamps);
+          }
           return wrap;
         }
         function openDesigner(opts) {
@@ -3233,7 +3256,7 @@
           ['People', 'Members', 'Accounts and roles.', function () { openMembersModal(token); }],
           ['Circuits', 'Tracks', 'Tracks and layouts.', function () { openTracksModal(token); }],
           ['Garage', 'Cars', 'Cars and team seats.', function () { openCarsModal(token); }],
-          ['Health', 'Integrity Check', 'Scan the season and the whole site.', function () { openIntegrityCheckModal(token); }]
+          ['Health', 'Integrity Check', 'Scan the season and the whole site.', function () { openIntegrityCheckModal(token); }, { corner: 'Run →' }]
         ]));
         // WEBSITE TOOLS: what the old Admin page held. Each tile runs the same action as the old button.
         var webTools = collectWebsiteTools(token);
@@ -3241,14 +3264,17 @@
         webTools.forEach(function (t) {
           if (t.staged) return;
           var meta = { 'Update Home Page Helmets': ['Update', 'Home Page Helmets', 'Choose the four showcase helmets.'], 'Update Home Page Grid': ['Update', 'Home Page Grid', 'Refresh Meet The Grid.'], 'Add Preview Photo': ['Photos', 'Add Preview Photo', 'Pictures for Season Previews.'], 'Backup Now': ['Safety', 'Backup Now', 'Copy the whole Sheet to Drive.'] }[t.label] || ['Website', t.label, ''];
-          webSpecs.push([meta[0], meta[1], meta[2], t.onClick, t.tooltip]);
+          var stampKey = { 'Update Home Page Helmets': 'helmets', 'Update Home Page Grid': 'grid', 'Backup Now': 'backup' }[t.label] || '';
+          var cornerTxt = t.label === 'Backup Now' ? 'Run →' : 'Open →';
+          webSpecs.push([meta[0], meta[1], meta[2], t.onClick, { corner: cornerTxt, stamp: stampKey }]);
         });
-        var webSection = toolTiles('Website', webSpecs.map(function (x) { return [x[0], x[1], x[2], x[3]]; }).concat([['Preview', 'Staged League Hub', rcStagedHubOn() ? 'On in this browser.' : 'Off in this browser.', function () {
+        var webSection = toolTiles('Website', webSpecs.map(function (x) { return [x[0], x[1], x[2], x[3], x[4]]; }).concat([['Preview', 'Staged League Hub', rcStagedHubOn() ? 'On in this browser.' : 'Off in this browser.', function () {
           var turningOn = !rcStagedHubOn();
           rcSetStagedHub(turningOn);
           showToast(turningOn ? 'Staged League Hub is ON in this browser. Open the League Hub to see it.' : 'Staged League Hub is OFF. The League Hub shows the real league again.', 'success');
           this.querySelector('.rc-ol-tile-sub').textContent = turningOn ? 'On in this browser.' : 'Off in this browser.';
-        }]]));
+          this.querySelector('.rc-ol-tile-corner').textContent = turningOn ? 'ON' : 'OFF';
+        }, { corner: rcStagedHubOn() ? 'ON' : 'OFF' }]]));
         body.appendChild(webSection);
       }
     }).catch(function () {
@@ -5462,7 +5488,7 @@
     }
     function publishDataFile_(key, filename, text, okMsg) {
       return fetchApi('adminPublishDataFile', { method: 'POST', token: token, body: { file: key, content: text }, timeoutMs: RC_FETCH_TIMEOUT_MS_LONG }).then(function (res) {
-        if (res && res.success) { showToast(okMsg + ' Saved to GitHub; the website updates in about a minute.', 'success'); return true; }
+        if (res && res.success) { document.dispatchEvent(new CustomEvent('rc-website-status')); showToast(okMsg + ' Saved to GitHub; the website updates in about a minute.', 'success'); return true; }
         downloadDataFile_(filename, text);
         showToast(((res && res.message) || 'Could not save to GitHub.') + ' The file was downloaded instead: save it at website/data/' + filename + ' in the race-club-data repo and push.', 'error');
         return false;
@@ -5565,7 +5591,7 @@
       btn.textContent = 'Updating...';
       fetchApi('adminExportCarList', { token: token, params: { publish: '1' }, timeoutMs: 120000 }).then(function (res) {
         btn.disabled = false; btn.textContent = label;
-        if (res && res.success && res.published) { showToast('Car list saved (' + (res.summary || '') + '). Saved to GitHub; the website updates in about a minute.', 'success'); return; }
+        if (res && res.success && res.published) { document.dispatchEvent(new CustomEvent('rc-website-status')); showToast('Car list saved (' + (res.summary || '') + '). Saved to GitHub; the website updates in about a minute.', 'success'); return; }
         if (res && res.carListJson) {   // GitHub could not be reached or is not set up: download the file instead
           downloadDataFile_('car-list.json', res.carListJson);
           showToast((res.message || 'Could not save to GitHub.') + ' The file was downloaded instead: save it at website/data/car-list.json in the race-club-data repo and push.', 'error');
@@ -5626,6 +5652,7 @@
       fetchApi('adminBackupNow', { token: token, timeoutMs: 180000 }).then(function (res) {
         btn.disabled = false; btn.textContent = label;
         if (res && res.success) {
+          document.dispatchEvent(new CustomEvent('rc-website-status'));
           if (res.championshipError) { showToast('Sheet backup saved (' + res.name + '), but the Championship data could NOT be copied: ' + res.championshipError, 'error'); return; }
           showToast('Backup saved: ' + res.name + (res.championship ? ' and ' + res.championship : '') + '. It is in your Drive folder Race Club Backups.', 'success');
           return;
@@ -6860,8 +6887,8 @@
     textarea.setSelectionRange(lineStart, lineStart + newBlock.length);
     textarea.dispatchEvent(new Event('input'));
   }
-  function _rcBuildNewsFormattingToolbar(textarea) {
-    var bar = el('div', 'display:flex;gap:6px;margin-bottom:6px;');
+  function _rcBuildNewsFormattingToolbar(textarea, extraBtn) {
+    var bar = el('div', 'display:flex;gap:6px;margin-bottom:6px;align-items:center;flex-wrap:wrap;');
     function toolBtn(label, title, onClick) {
       var btn = el('button', 'rc-btn-secondary rc-btn-sm', label);
       btn.type = 'button';
@@ -6892,6 +6919,11 @@
       textarea.setSelectionRange(emailStart, emailStart + placeholder.length);
       textarea.dispatchEvent(new Event('input'));
     });
+    // Optional extra button (the News Image icon), set apart from the text buttons by a | divider.
+    if (extraBtn) {
+      bar.appendChild(el('span', 'color:var(--rc-silver);font-size:20px;line-height:1;padding:0 2px;user-select:none;', '|'));
+      bar.appendChild(extraBtn);
+    }
     return bar;
   }
   // Character counter + hard cap -- textarea.maxLength stops typing/most
@@ -7131,23 +7163,26 @@
     var body = el('div');
     var form = el('form');
 
-    // Image button at the top: opens the News Image popup. The picture is held here until Publish Post.
+    // Image button sits in the formatting toolbar (after a | divider). The picture is held here until Publish Post.
+    // When a picture is attached the button turns dark and a badge appears inside the text box.
     var newsImage = null;
-    var imageRow = el('div', 'display:flex;align-items:center;gap:10px;margin-bottom:6px;');
     var imageBtn = el('button', 'rc-icon-btn', ICON_IMAGE);
     imageBtn.type = 'button';
     imageBtn.setAttribute('aria-label', 'Add an image to this post');
     withTooltip(imageBtn, 'Add an image to this post');
-    var imageNote = el('div', 'font-size:12px;color:var(--rc-steel);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;', 'No image');
-    imageRow.appendChild(imageBtn);
-    imageRow.appendChild(imageNote);
-    form.appendChild(imageRow);
+    var imageBadge = el('div', 'display:none;position:absolute;right:10px;bottom:10px;max-width:70%;padding:3px 9px;border:1px solid var(--rc-carbon);border-radius:12px;background:var(--rc-offwhite);color:var(--rc-carbon);font-size:12px;font-weight:700;pointer-events:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;', '');
+    function paintImage() {
+      var has = !!newsImage;
+      imageBtn.style.background = has ? 'var(--rc-carbon)' : '';
+      imageBtn.style.color = has ? 'var(--rc-white)' : '';
+      imageBtn.style.borderColor = has ? 'var(--rc-carbon)' : '';
+      imageBtn.setAttribute('aria-label', has ? 'Change or remove the image on this post' : 'Add an image to this post');
+      imageBtn.setAttribute('data-tooltip', has ? 'Image attached. Click to change or remove it.' : 'Add an image to this post');
+      imageBadge.style.display = has ? 'block' : 'none';
+      imageBadge.textContent = has ? 'Image: ' + (newsImage.name || 'picture') : '';
+    }
     imageBtn.addEventListener('click', function () {
-      openNewsImageModal(newsImage, function (v) {
-        newsImage = v;
-        imageNote.textContent = v ? 'Image: ' + (v.name || 'picture') : 'No image';
-        imageNote.style.color = v ? 'var(--rc-carbon)' : 'var(--rc-steel)';
-      });
+      openNewsImageModal(newsImage, function (v) { newsImage = v; paintImage(); });
     });
 
     form.appendChild(el('label', 'margin-top:0;', 'Title'));
@@ -7158,8 +7193,11 @@
     var post = document.createElement('textarea');
     post.rows = 8;
     post.required = true;
-    form.appendChild(_rcBuildNewsFormattingToolbar(post));
-    form.appendChild(post);
+    form.appendChild(_rcBuildNewsFormattingToolbar(post, imageBtn));
+    var postWrap = el('div', 'position:relative;');
+    postWrap.appendChild(post);
+    postWrap.appendChild(imageBadge);
+    form.appendChild(postWrap);
     form.appendChild(_rcAttachNewsCharCounter(post));
     form.appendChild(el('div', 'rc-hint', 'Shows on the public League Hub (league.html). Posts go live the moment you publish. Leave a blank line between paragraphs.'));
 
