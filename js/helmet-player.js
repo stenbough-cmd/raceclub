@@ -241,7 +241,7 @@
 
     /* ---- buttons ---- */
     var btns = mk('div', 'rch-btns rch-pbtns');
-    var saveB = mk('button', 'rc-btn-primary rc-btn-sm', 'Save'); saveB.type = 'button';
+    var saveB = mk('button', 'rc-btn-primary rc-btn-sm', 'Save & Apply'); saveB.type = 'button';
     var clearB = mk('button', 'rc-btn-secondary rc-btn-sm', 'Start Over'); clearB.type = 'button';
     clearB.title = 'Start over with a plain white helmet';
     var cancelB = mk('button', 'rc-btn-secondary rc-btn-sm', 'Cancel'); cancelB.type = 'button';
