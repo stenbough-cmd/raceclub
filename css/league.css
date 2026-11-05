@@ -1644,9 +1644,6 @@ body.rc-league-page:not(.rcc-page) .rcl-allresults-session-select { min-width: 1
   text-transform: uppercase;
   color: var(--rcl-ink);
 }
-/* League News / Season Stories popups: the popup title is the big one (swapped with the story titles, Matt 2026-11-05). */
-.rcl-story-dialog .rcl-modal-title, .rcc-story-dialog .rcl-modal-title { font-size: 28px; }
-@media (max-width: 640px) { .rcl-story-dialog .rcl-modal-title, .rcc-story-dialog .rcl-modal-title { font-size: 22px; } }
 .rcl-modal-close {
   flex: none;
   width: 30px;
