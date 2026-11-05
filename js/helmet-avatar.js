@@ -38,12 +38,6 @@
 
   /* ---- loading ---- */
   function loadScript(src) { return rcLoadScript(src); }
-  function loadCss(href) {
-    if (document.querySelector('link[data-rch-css]')) return;
-    var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = href; l.setAttribute('data-rch-css', '1');
-    document.head.appendChild(l);
-  }
-
   // ---- design list + default helmet (from the HelmetAssets / HelmetPresets sheet tabs) ----
   var assets = null;   // { designs, logos, manufacturers, def }  def = the saved "Website Default" helmet, or null
   function slimOf(res) { return { designs: res.designs || [], logos: res.logos || [], manufacturers: res.manufacturers || [], def: res.defaultRecipe || null, defName: res.defaultName || '', ver: res.helmetVersion || '', byId: res.presetsById || {}, byMaker: res.presetsByMaker || {} }; }

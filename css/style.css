@@ -293,8 +293,7 @@ p { margin: 0 0 0.75em; }
 
 /* League Tools round status line -- a small circle-icon + text line under a race row's date/track
    hint, replacing the old plain-gray partial-import note. */
-.rc-round-status { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
-.rc-round-status-text { font-size: 12px; color: var(--rc-steel); font-style: italic; }
+
 /* .rc-ruling-select/.rc-ruling-standards-btn removed -- both were sized to share one row (the
    ruling dropdown at 66%, the Penalty Standards opener filling the rest); the Penalty Standards
    popup is gone, so the select is back to plain full width, styled inline. */
@@ -837,7 +836,7 @@ canvas.rc-helmet { display: block; max-width: 100%; height: auto; filter: drop-s
 .rc-team-card-taken { opacity: 0.5; }
 .rc-team-car-pic { display: flex; align-items: flex-end; justify-content: center; height: 96px; margin-bottom: 10px; }
 .rc-team-car-pic img { display: block; max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; }
-.rc-team-card-identity { display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; }
+
 .rc-team-carline { display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; }
 .rc-team-logo { max-width: 50px; max-height: 24px; width: auto; height: auto; object-fit: contain; flex: 0 0 auto; }
 .rc-team-desc { color: var(--rc-steel); font-size: 13px; margin: 10px 0 0; text-align: left; }
@@ -1065,24 +1064,21 @@ canvas.rc-helmet { display: block; max-width: 100%; height: auto; filter: drop-s
    level rather than patching it with extra breakpoints: the browser fits as many 280px-or-wider
    columns as the row has room for (3, then 2, then 1, as the row narrows), and every column in that
    count is the SAME width, splitting the row evenly. */
-.rc-dash-card-link { display: block; text-align: left; margin-top: auto; padding-top: 14px; }
+
 /* caps) -- one class so every card's title reads at the same weight.    */
 .rc-dash-card-title { position: relative; z-index: 1; margin: 0 0 16px; font-size: 20px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--rc-carbon); font-family: var(--rc-font-heading); padding-bottom: 12px; border-bottom: 2px solid var(--rc-red); }
 /* Header row for cards that need a top-right corner figure alongside the title -- Current Seat's
    car number, Next Race's "Round n". This row carries the border/spacing that used to live on
    .rc-dash-card-title itself; .rc-dash-card-header-title strips that back off the h3 so the two
    don't double up. */
-.rc-dash-card-header-row { position: relative; z-index: 1; display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 0 0 16px; padding-bottom: 12px; border-bottom: 2px solid var(--rc-red); }
-.rc-dash-card-header-title { margin: 0; padding: 0; border: 0; font-size: 20px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--rc-carbon); font-family: var(--rc-font-heading); }
+
 /* Plain flex child now -- no position/top/right/z-index needed, the row above places it. Mid-gray,
    same size as the card title, numbers stay tabular so multi-digit car numbers don't jitter in
    width. */
-.rc-dash-card-header-row .rc-dash-card-corner-figure { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; font-family: var(--rc-font-heading); font-size: 20px; font-weight: 700; color: var(--rc-steel); font-variant-numeric: tabular-nums; }
+
 /* Current Seat's class-pill corner figure only: align-self: center overrides the header row's own
    align-items: baseline (above) so the pill lines up on its vertical center against "CURRENT SEAT"
    instead of sitting on the title's text baseline. */
-.rc-cs-corner-figure { align-self: center; }
-.rc-cs-class-pill.rc-badge-chip-abbrev { padding: 4px 9px; font-size: 15px; }
 
 /* Shared Dashboard card chrome: a faint checkered-flag corner that fades toward the card's center,
    a red "finish flag" accent along the top-left edge, and a slightly heavier drop shadow than a
@@ -1129,65 +1125,32 @@ canvas.rc-helmet { display: block; max-width: 100%; height: auto; filter: drop-s
   z-index: 2;
 }
 
-.rc-regstatus-card { flex: 1 1 320px; min-width: 280px; margin-top: 0; }
 /* Flex column, filling whatever height .rc-quick-row's stretch gives the card -- lets
    .rc-regstatus-footer push itself to the bottom with margin-top: auto below, the same trick
    already used for .rc-dash-card-link. */
-.rc-regstatus-body { display: flex; flex-direction: column; flex: 1 1 auto; }
+
 /* Slightly larger gap under the row -- between the icon/headline row and the divider line above the
    Registered On/Class stats (.rc-regstatus- footer's border-top). */
-.rc-regstatus-row { display: flex; align-items: center; gap: 16px; margin-bottom: 10px; }
-.rc-regstatus-row-clickable { cursor: pointer; }
+
 /* Hover on the Register row: the circle fills in and grows a touch, the headline darkens and underlines. */
-.rc-regstatus-row-clickable .rc-regstatus-icon,
-.rc-regstatus-row-clickable .rc-regstatus-headline { transition: background-color .15s ease, border-color .15s ease, transform .15s ease, color .15s ease; }
-.rc-regstatus-row-clickable:hover .rc-regstatus-icon-open { background: var(--rc-warning); border-color: var(--rc-warning); color: var(--rc-white); transform: scale(1.08); }
-.rc-regstatus-row-clickable:hover .rc-regstatus-headline { text-decoration: underline; text-underline-offset: 3px; }
-.rc-regstatus-icon-droppable { position: relative; cursor: pointer; transition: background-color .15s ease, border-color .15s ease, color .15s ease, transform .15s ease; }
-.rc-regstatus-icon-droppable .rc-regstatus-x { display: none; }
-.rc-regstatus-icon-droppable:hover, .rc-regstatus-icon-droppable:focus-visible { background: var(--rc-red); border-color: var(--rc-red); color: var(--rc-white); transform: scale(1.08); outline: none; }
-.rc-regstatus-icon-droppable:hover .rc-regstatus-tick, .rc-regstatus-icon-droppable:focus-visible .rc-regstatus-tick { display: none; }
-.rc-regstatus-icon-droppable:hover .rc-regstatus-x, .rc-regstatus-icon-droppable:focus-visible .rc-regstatus-x { display: inline; }
-.rc-regstatus-row-clickable:focus-visible { outline: 2px solid var(--rc-warning); outline-offset: 4px; border-radius: 8px; }
-.rc-regstatus-icon { flex: none; width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; line-height: 1; font-size: 20px; font-weight: 700; border: 2px solid; }
-.rc-regstatus-icon-none { color: var(--rc-steel); border-color: var(--rc-silver); }
+
 /* Nudges the "+" glyph up and right a hair -- the flex centering above is correct for the circle
    itself, but the "+" character's own glyph metrics sit it slightly low/left of true center.
    padding-bottom pushes the centered content up; padding-left pushes it right. */
-.rc-regstatus-icon-open { color: var(--rc-warning); border-color: #e8b93a; background: #fdf6e3; padding-bottom: 2px; padding-left: 1px; }
-.rc-regstatus-icon-done { color: var(--rc-positive); border-color: var(--rc-positive-border); background: var(--rc-positive-bg); }
-.rc-regstatus-headline { font-family: var(--rc-font-heading); font-size: 15px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; }
-.rc-regstatus-headline-none { color: var(--rc-steel); }
-.rc-regstatus-headline-open { color: var(--rc-warning); }
-.rc-regstatus-headline-done { color: var(--rc-positive); }
-.rc-regstatus-sub { font-size: 13px; color: var(--rc-steel); margin-top: 4px; }
-.rc-regstatus-footer { display: flex; gap: 16px; flex-wrap: wrap; margin-top: auto; margin-bottom: 17px; padding-top: 14px; border-top: 1px solid var(--rc-silver); }
-.rc-regstatus-stat { flex: 1 1 100px; text-align: center; }
-.rc-regstatus-stat-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--rc-steel); }
-.rc-regstatus-stat-value { font-size: 14px; font-weight: 700; color: var(--rc-carbon); margin-top: 2px; }
+
 /* Registration Status flag -- Probation (yellow) and Suspended/Removed (red), sits inside the same
    card between the top row and the footer stats, only rendered when a driver's Registration Status
    is actually one of those two states (see registrationStatusCard's renderRegistered, Account.html)
    -- the ordinary Active case never shows this block at all. */
-.rc-regstatus-flag { display: flex; align-items: flex-start; gap: 12px; margin-top: 4px; margin-bottom: 14px; padding: 10px 12px; border-radius: 6px; }
-.rc-regstatus-flag-probation { background: #fef9e7; }
-.rc-regstatus-flag-suspended { background: var(--rc-negative-bg); }
-.rc-regstatus-flag-dot { flex: none; width: 14px; height: 14px; border-radius: 50%; margin-top: 3px; }
-.rc-regstatus-flag-dot-probation { background: var(--rc-warning-accent); }
-.rc-regstatus-flag-dot-suspended { background: var(--rc-red); }
-.rc-regstatus-flag-label { font-family: var(--rc-font-heading); font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
-.rc-regstatus-flag-label-probation { color: var(--rc-warning); }
-.rc-regstatus-flag-label-suspended { color: var(--rc-red); }
-.rc-regstatus-flag-reason { font-size: 13px; color: var(--rc-carbon); margin-top: 3px; line-height: 1.4; }
 
 /* Current Seat card -- manufacturer logo left, team/car identity + class pill next to it,
    Position/Points/Podiums stat row underneath (sourced from SeasonHistory.CurrentSeat's JSON once a
    round's results exist -- see handleGetMyCurrentSeat, DataCache.gs). */
-.rc-currentseat-card { flex: 1 1 320px; min-width: 280px; margin-top: 0; }
+
 /* Same flex-column body trick as .rc-regstatus-body above -- lets .rc-cs-stats push itself to the
    card's bottom with margin-top: auto regardless of how tall the logo/name/pill row above it ends
    up. */
-.rc-cs-body { display: flex; flex-direction: column; flex: 1 1 auto; }
+
 /* margin-bottom guarantees breathing room under the class/tier pills before the
    Position/Points/Podiums divider line, the same fix as .rc-finrep-meter's margin-bottom above. */
 .rc-cs-row { display: flex; align-items: center; gap: 20px; margin-bottom: 18px; }
@@ -1262,50 +1225,29 @@ canvas.rc-helmet { display: block; max-width: 100%; height: auto; filter: drop-s
    Account.html) -- sits to the right of the row's icon+text body, right-justified and top-aligned
    with the date/first line. */
 .rc-protest-popup-item-actions { display: flex; flex-wrap: nowrap; gap: 8px; flex: none; margin-left: auto; align-self: flex-start; }
-.rc-cs-stats { display: flex; gap: 16px; flex-wrap: wrap; margin-top: auto; padding-top: 14px; border-top: 1px solid var(--rc-silver); }
-.rc-cs-stat { flex: 1 1 80px; text-align: center; }
-.rc-cs-stat-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--rc-steel); }
-.rc-cs-stat-value { font-family: var(--rc-font-heading); font-size: 24px; font-weight: 800; color: var(--rc-carbon); margin-top: 4px; font-variant-numeric: tabular-nums; }
 
 /* Next Race -- full-width banner card (its own .rc-quick-row below the Registration Status/Current
    Seat row, one card filling it). No flag/ location line -- Tracks has no country/location field
    yet to source one from. */
 /* Half-width now -- shares its row with the new Finances & Reputation card instead of filling it
    alone. */
-.rc-nextrace-card { flex: 1 1 320px; min-width: 280px; margin-top: 0; }
+
 /* Left-justified info column (Event title, then Track/Layout, then the rest) with the track image
    to the right, vertically centered against the whole text block via align-items: center on this
    row. */
-.rc-nextrace-body { display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
-.rc-nextrace-info { flex: 1 1 260px; min-width: 0; text-align: left; }
-.rc-nextrace-date { font-size: 12px; font-weight: 700; color: var(--rc-steel); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
-.rc-nextrace-name { font-family: var(--rc-font-heading); font-size: 24px; font-weight: 800; letter-spacing: 0.02em; color: var(--rc-carbon); text-transform: uppercase; }
+
 /* .rc-nextrace-track is back. Same size/color treatment .rc-cal-track always used. */
-.rc-nextrace-track { font-size: 13px; color: var(--rc-steel); margin-top: 2px; }
-.rc-nextrace-track strong { color: var(--rc-carbon); font-weight: 600; }
+
 /* Track/layout row. justify-content: space-between is now vestigial (this row only ever holds the
    track text) but harmless -- left as-is rather than churn it for no visual change. */
 /* Faint gray divider below the track row. */
-.rc-nextrace-track-row { display: flex; align-items: center; flex-wrap: wrap; justify-content: space-between; gap: 6px 12px; margin-top: 4px; padding-bottom: 8px; border-bottom: 1px solid var(--rc-offwhite); }
-.rc-nextrace-track-row .rc-nextrace-track { margin-top: 0; }
-.rc-nextrace-info .rc-cal-datetime { margin-top: 8px; }
-.rc-nextrace-info .rc-cal-stats { margin-top: 14px; justify-content: flex-start; }
 
 /* Server password pill, NEXT RACE dashboard card + Season Format panel -- a scoped modifier on the
    shared .rc-cal-stat/.rc-cal-mini-stat chip (via calStat's own extraClass param, Account.html), so
    every other pill on these cards and elsewhere (Calendar's own race cards, etc.) is untouched. */
-.rc-cal-stat.rc-nextrace-password-gold {
-  background: linear-gradient(135deg, #f7dd8f 0%, #e0c168 28%, #c9a227 52%, #e8c464 76%, #fbe7a6 100%);
-  border: 1px solid var(--rc-gold);
-  color: #3f2c00;
-  font-weight: 700;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
-}
-.rc-cal-stat.rc-nextrace-password-gold svg { color: #5c3f00; }
 
 /* Finances card + Reputation card. Both share this class for the same half-width sizing as every
    other Dashboard card. */
-.rc-finrep-card { flex: 1 1 320px; min-width: 280px; margin-top: 0; }
 
 /* -------------------------------------------------------------------- */
 /* Finances page -- a "checking account" style overview: */
@@ -1332,10 +1274,8 @@ canvas.rc-helmet { display: block; max-width: 100%; height: auto; filter: drop-s
    in flight (kept off the main dashboard batch, see the comment above dashboardDataPromise in
    Account.html), then fades to fully opaque once content lands, instead of showing an empty/loading
    card. */
-.rc-dash-card-fade { opacity: 0; transition: opacity 0.55s ease; }
-.rc-dash-card-fade-in { opacity: 1; }
+
 /* First paint of the dashboard: every card is already loaded, so no fade -- everything shows at once. */
-.rc-dash-instant .rc-dash-card-fade { transition: none; }
 
 @media (orientation: portrait) {
   .rc-field-pair,
@@ -2860,18 +2800,13 @@ body.rc-modal-scroll-locked {
    reusing the site's shared .rc-cal-stat chip (below) same as every other pill row on the site. */
 .rc-cal-race-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-top: 10px; }
 
-.rc-cal-datetime { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 13px; color: var(--rc-carbon); margin-top: 10px; }
-.rc-cal-datetime span { display: inline-flex; align-items: center; gap: 5px; }
-.rc-cal-datetime svg { color: var(--rc-steel); flex-shrink: 0; }
-
 /* Practice/Qualifying in-game times, trailing the In-Game Race Start time on the same line. Muted
    gray/normal-weight so Race Start still reads as the primary figure on that line. */
-.rc-cal-igtimes-extra { color: var(--rc-steel); font-weight: 400; }
 
 /* Stat chips -- tires / wear / fuel multiplier / setup / weather / points tier. Small icon + value,
    same flat-stroke icon language as the rest of the site, laid out as a wrapping row so it degrades
    gracefully on narrow widths. */
-.rc-cal-stats { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+
 .rc-cal-stat {
   display: inline-flex;
   align-items: center;
@@ -3308,7 +3243,7 @@ button.rc-switch { display: inline-flex; align-items: center; gap: 12px; width: 
 .rc-ol-tile-top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
 .rc-ol-tile-corner { font-family: var(--rc-font-heading); font-size: 11px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--rc-steel); white-space: nowrap; }
 .rc-ol-tile-value { font-family: var(--rc-font-heading); font-size: 20px; font-weight: 800; color: var(--rc-carbon); overflow-wrap: anywhere; }
-.rc-ol-tile-stamp { margin-top: 6px; font-size: 12px; font-style: italic; color: var(--rc-steel); line-height: 1.3; }
+.rc-ol-tile-stamp { margin-top: auto; padding-top: 6px; font-size: 12px; font-style: italic; color: var(--rc-steel); line-height: 1.3; }
 .rc-ol-tile-sub { font-size: 14px; color: var(--rc-steel); line-height: 1.35; overflow-wrap: anywhere; }
 /* Portrait: tiles stack one under another. */
 @media (orientation: portrait) { .rc-ol-tiles { grid-template-columns: 1fr; } .rc-ol-title { font-size: 26px; } }
@@ -3375,7 +3310,7 @@ button.rc-switch { display: inline-flex; align-items: center; gap: 12px; width: 
 .rc-adm .rc-dash-card > div:first-of-type:not(.rc-panel) { margin: 18px 0; }
 .rc-adm .rc-group-head { padding: 0 0 10px; }
 .rc-adm-season { background: var(--rc-offwhite); border-radius: 10px; padding: 18px 20px; margin-bottom: 16px; }
-.rc-adm .rc-adm-season .rc-group-row:not(.rc-season-record), .rc-adm-news .rc-group-row { background: var(--rc-white); border: 0; border-radius: 10px; padding: 12px 14px; }
+.rc-adm .rc-adm-season .rc-group-row, .rc-adm-news .rc-group-row { background: var(--rc-white); border: 0; border-radius: 10px; padding: 12px 14px; }
 .rc-adm-news .rc-panel .rc-panel > div { display: flex; flex-direction: column; gap: 8px; background: var(--rc-offwhite); border-radius: 10px; padding: 16px; }
 .rc-adm .rc-btn-row { box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; height: 34px; padding: 0 14px; font-size: 12px; line-height: 1; }
 @media (orientation: portrait) { .rc-adm-title { font-size: 26px; } .rc-adm-icon { width: 46px; height: 46px; } }

@@ -1305,8 +1305,6 @@ function _rccRaceDetailsBody(result, el) {
 function _rccRaceBody(result, el) {
   el.innerHTML = '';
   if (!result || !(result.classes || []).length) { el.appendChild(_rccEmpty('No Data To Display', 'No race result imported for this round.')); return; }
-  var playerName = '';
-  result.classes.forEach(function (cls) { (cls.standings || []).forEach(function (r) { if (r.isPlayer) playerName = r.name; }); });
   result.classes.forEach(function (cls, ci) {
     var w = _rccEl('div', 'rcl-race-class');
     w.appendChild(_rccRecapHeader(cls.className + ' Results', result));
@@ -2817,8 +2815,6 @@ function rccRenderStories(page) {
   var all = page.stories || [];
   var published = all.filter(function (s) { return s.status === 'published'; });
   RCC.storyList = published;
-  var queue = page.storyQueue || [];
-  var failed = all.filter(function (s) { return s.status === 'failed'; });
   // Writing / failed notice above the newest story.
   if (RCC.storyWriting) {
     var w = _rccEl('div', 'rcc-story-status');

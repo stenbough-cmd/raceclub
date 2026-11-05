@@ -36,12 +36,8 @@
     r.logos = [];
     return r;
   }
-  // a plain white helmet with no design at all: the whole shell takes the Base Color
-  var RESET_ICON = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 3.5 3 8.5 8 8.5"/></svg>';
   function blank() { var r = H.normalizeRecipe(H.defaultRecipe()); r.d = 0; r.logos = []; return clean(r); }
   function copy(o) { return JSON.parse(JSON.stringify(o)); }
-  function esc(t) { return rcEscapeHtml(t); }
-
 
   function open(ctx) {
     var toast = ctx.showToast || function () {};

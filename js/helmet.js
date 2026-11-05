@@ -263,7 +263,7 @@
         var y0 = (i - 3) * h * 0.09 + (R() - 0.5) * h * 0.03, th = h * (0.012 + R() * 0.03), x = -w / 2 + R() * w * 0.1, end = w / 2 - R() * w * 0.2;
         c.globalAlpha = 0.35 + R() * 0.5; c.beginPath(); c.moveTo(x, y0);
         while (x < end) { x += w * (0.02 + R() * 0.05); c.lineTo(x, y0 + (R() - 0.5) * th * 1.4 - th / 2); }
-        for (x = x; x > -w / 2 + w * 0.05; x -= w * (0.02 + R() * 0.05)) c.lineTo(x, y0 + th / 2 + (R() - 0.5) * th * 0.9);
+        for (; x > -w / 2 + w * 0.05; x -= w * (0.02 + R() * 0.05)) c.lineTo(x, y0 + th / 2 + (R() - 0.5) * th * 0.9);
         c.closePath(); c.fill();
       }
       c.globalAlpha = 1;
@@ -834,7 +834,6 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
       var out = new Float32Array(N * 4);
       var specK = new Float32Array(N);
       var accCov = new Float32Array(N);            // how much of each pixel is accent 1 or 2 paint (drives the soft shadow below the accents)
-      var cOut = [0, 0, 0];
       var staged = recipe.ac > 0;                  // some layers sit between the base paint and the accent paint
       var baseOnly = staged ? new Float32Array(N * 3) : null, accC = staged ? new Float32Array(N * 3) : null, accA = staged ? new Float32Array(N) : null;
 

@@ -14,8 +14,6 @@
   var token = redirectIfNoToken();
   if (!token) return; // already redirected to login.html
 
-  startInactivityWatcher();
-
   // Called by the Logout nav item built in buildSidebarNav() below. Clears the local token and
   // redirects immediately, without waiting on the server-side logout call to finish -- if it never
   // completes, the token just sits unused until its normal 7-day expiry, harmless.
@@ -191,7 +189,6 @@
   var ICON_SETTINGS = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1z"></path></svg>';
   var ICON_LEAGUE = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"></rect><path d="M9 3v2h6V3"></path><line x1="8" y1="11" x2="16" y2="11"></line><line x1="8" y1="15" x2="16" y2="15"></line></svg>';
   var ICON_LOCK = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>';
-  var ICON_ADMIN = ICON_LOCK.replace('width="18" height="18"', 'width="16" height="16"');
   // Radiation trefoil -- the site's one deliberately filled, non-nav icon, used exactly once, for
   // the one action severe enough to earn it. Three wedges, each a 60deg arc from radius 3.2 to 10.8
   // around center (12,12), rotated 120deg apart.
@@ -202,7 +199,6 @@
     '<path d="M14.8,10.4 L21.4,6.6 A10.8,10.8 0 0,1 21.4,17.4 L14.8,13.6 A3.2,3.2 0 0,0 14.8,10.4 Z" fill="#e0483c" transform="rotate(240 12 12)"></path>' +
     '<circle cx="12" cy="12" r="2.6" fill="#e0483c"></circle>' +
     '</svg>';
-  var ICON_DATAMGMT = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="8" ry="3"></ellipse><path d="M4 5v6c0 1.66 3.58 3 8 3s8-1.34 8-3V5"></path><path d="M4 11v6c0 1.66 3.58 3 8 3s8-1.34 8-3v-6"></path></svg>';
   var ICON_LOGOUT = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>';
   var ICON_HELP = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M9.2 9a2.8 2.8 0 0 1 5.4 1c0 1.8-2.6 2-2.6 3.6"></path><line x1="12" y1="17" x2="12" y2="17.2"></line></svg>';
   // Feedback nav item icon -- a speech bubble, matching this file's icon convention (16x16,
@@ -210,37 +206,17 @@
   var ICON_FEEDBACK = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-8 8H7l-4 3 1-4.2A8 8 0 1 1 21 12Z"></path><line x1="8" y1="11" x2="16" y2="11"></line><line x1="8" y1="14" x2="13" y2="14"></line></svg>';
   var ICON_MAIL = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"></rect><path d="M3 7l9 6 9-6"></path></svg>';
 
-  var ICON_CLOCK = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><polyline points="12 7 12 12 16 14"></polyline></svg>';
   var ICON_SUN = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><line x1="12" y1="2" x2="12" y2="4"></line><line x1="12" y1="20" x2="12" y2="22"></line><line x1="4.2" y1="4.2" x2="5.6" y2="5.6"></line><line x1="18.4" y1="18.4" x2="19.8" y2="19.8"></line><line x1="2" y1="12" x2="4" y2="12"></line><line x1="20" y1="12" x2="22" y2="12"></line><line x1="4.2" y1="19.8" x2="5.6" y2="18.4"></line><line x1="18.4" y1="5.6" x2="19.8" y2="4.2"></line></svg>';
   var ICON_CLOUD = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18h10a4 4 0 0 0 0-8 5.5 5.5 0 0 0-10.7-1.6A4.5 4.5 0 0 0 7 18z"></path></svg>';
   var ICON_RAIN = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 15h9a4 4 0 0 0 0-8 5.5 5.5 0 0 0-10.4-1.4A4 4 0 0 0 6.5 15z"></path><line x1="8" y1="18" x2="7" y2="21"></line><line x1="12" y1="18" x2="11" y2="21"></line><line x1="16" y1="18" x2="15" y2="21"></line></svg>';
-  var ICON_TIRE = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="3"></circle><line x1="12" y1="3" x2="12" y2="9"></line><line x1="12" y1="15" x2="12" y2="21"></line><line x1="3" y1="12" x2="9" y2="12"></line><line x1="15" y1="12" x2="21" y2="12"></line></svg>';
-  var ICON_FUEL = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2s6 7 6 12a6 6 0 0 1-12 0c0-5 6-12 6-12z"></path></svg>';
   var ICON_UNLOCK = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 7.4-2"></path></svg>';
   var ICON_EXTERNAL = '<svg class="rc-nav-ext" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7"></path><path d="M8 7h9v9"></path></svg>';
   var ICON_FLAG = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="22" x2="4" y2="3"></line><path d="M4 4h14l-3 4 3 4H4"></path></svg>';
-  var ICON_TRACK = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 0 1 8-8h4a4 4 0 0 1 0 8h-8a4 4 0 0 0 0 8h4a8 8 0 0 0 8-8"></path></svg>';
   var ICON_CLOUD_PARTLY = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="17" cy="7" r="3"></circle><path d="M4 17h9a3.5 3.5 0 0 0 0-7 4.8 4.8 0 0 0-8.6 2.1A3.2 3.2 0 0 0 4 17z"></path></svg>';
   var ICON_RAIN_HEAVY = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 13h9a4 4 0 0 0 0-8 5.5 5.5 0 0 0-10.4-1.2A4 4 0 0 0 6 13z"></path><line x1="6" y1="16" x2="5" y2="19"></line><line x1="9.5" y1="16" x2="8.5" y2="19"></line><line x1="13" y1="16" x2="12" y2="19"></line><line x1="16.5" y1="16" x2="15.5" y2="19"></line><line x1="7.5" y1="19" x2="6.5" y2="22"></line><line x1="14.5" y1="19" x2="13.5" y2="22"></line></svg>';
-  var ICON_PROTESTS = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 22 20H2z"></path><line x1="12" y1="10" x2="12" y2="14.5"></line><line x1="12" y1="17.2" x2="12" y2="17.4"></line></svg>';
   // Stewarding -- a shield with a checkmark, reading as "official ruling/oversight" rather than
   // reusing the Protests caution triangle.
   var ICON_STEWARDING = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z"></path><path d="M9 12l2 2 4-4"></path></svg>';
-
-  // Season Format pill icons -- one clear symbol per concept, same 24 viewBox/1.8
-  // stroke-width/round cap-join convention as every other ICON_* here. Repeat arrows -- Race
-  // Frequency ("Weekly"/"Bi-Weekly").
-  var ICON_REPEAT = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2.1 21 6l-4 3.9"></path><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><path d="M7 21.9 3 18l4-3.9"></path><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>';
-  // Drop Weeks -- a card being taken off the bottom of a stack, "your
-  // worst round(s) get dropped."
-  var ICON_DROPWEEKS = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="9" rx="1.5"></rect><path d="M8 17h8"></path><path d="M12 13v8"></path><path d="M9 18.5 12 21.5 15 18.5"></path></svg>';
-  // Bye Weeks -- a calendar square with a slash through it, "a week with
-  // no race."
-  var ICON_BYEWEEKS = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line><line x1="7" y1="20" x2="17" y2="13"></line></svg>';
-  // Qualifying -- a stopwatch (distinct silhouette from ICON_CLOCK's plain wall-clock face, via the
-  // top button/crown) so Practice and Qualifying don't read as the identical icon next to each
-  // other.
-  var ICON_STOPWATCH = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"></circle><path d="M12 9v4l3 2"></path><path d="M9 2h6"></path><path d="M12 2v3"></path></svg>';
 
   // Same 10-item primary nav, same order, as v0.4.0. League Management, Admin, and Data Management
   // are appended separately in buildSidebarNav below since they're permission-gated rather than
@@ -309,21 +285,6 @@
     hr.className = 'rc-nav-divider';
     if (elId) hr.id = elId;
     return hr;
-  }
-
-  // Sets whether a sidebar nav item (by its elId) is usable, instead of hiding it entirely --
-  // native `disabled` already blocks the click listener from firing, so no extra guard is needed in
-  // each button's own onClick.
-  function setNavAccess(elId, allowed, deniedText) {
-    var btn = document.getElementById(elId);
-    if (!btn) return;
-    btn.disabled = !allowed;
-    if (!allowed && deniedText) {
-      withTooltip(btn, deniedText);
-    } else {
-      btn.classList.remove('rc-tooltip');
-      btn.removeAttribute('data-tooltip');
-    }
   }
 
   // Uses the official Discord-Symbol-White.svg mark. Sized to roughly match this file's 16x16 icon
@@ -879,229 +840,6 @@
     return m ? String(parseInt(m[1], 10)) : '';
   }
 
-  // Three states, rendered directly from data the page already prefetched in parallel with the
-  // profile itself (see the bottom of this script) -- this card NEVER fetches or spinners on its
-  // own, first paint or otherwise.
-  // 1. No season currently open to registration -- gray X, "Unregistered."
-  function registrationStatusCard(profile, token, initialData, onRegistered) {
-    var card = el('div', 'rc-panel rc-regstatus-card rc-dash-card');
-    // Title + seat count share one flex row -- same
-    // .rc-dash-card-header-row/-header-title/-corner-figure treatment Next Race's "ROUND n OF
-    // total" already uses (see nextRaceCard below). seatsFigure itself starts hidden and is only
-    // ever filled in by renderFromData further down, once a response has actually confirmed there's
-    // an open season and how many seats it has -- there is nothing to show here before that first
-    // response lands, or when no season is open at all.
-    var headerRow = el('div', 'rc-dash-card-header-row');
-    headerRow.appendChild(el('h3', 'rc-dash-card-header-title', 'Registration Status'));
-    var seatsFigure = el('div', 'rc-dash-card-corner-figure');
-    seatsFigure.style.display = 'none';
-    headerRow.appendChild(seatsFigure);
-    card.appendChild(headerRow);
-    var body = el('div', 'rc-regstatus-body');
-    card.appendChild(body);
-
-    // "View Season Format" link -- opens the same season-snapshot + league-format popup
-    // league.html's own "View Season Details" link opens (_rclOpenSeasonDetailsModal, league.js),
-    // just themed with the account page's own white/red modal chrome instead of league.html's dark
-    // hero styling.
-    var formatBtn = el('button', 'rc-link-btn rc-dash-card-link', '← View season details');
-    formatBtn.type = 'button';
-    formatBtn.addEventListener('click', function () { openSeasonFormatModal(); });
-    card.appendChild(formatBtn);
-
-    // status, not role -- Role is set to 'Driver' at registration time and never actually reads
-    // 'Prospect' (Prospect isn't a Status or a Role at all -- it's just "no seat in the
-    // currently-open-to- registration season," computed on the fly; see Auth.gs's VALID_ROLES
-    // header comment).
-    if (profile.status !== 'Active') {
-      body.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;', 'Verify your email to unlock registration.'));
-      return card;
-    }
-
-    function renderUnregistered() {
-      body.innerHTML = '';
-      var row = el('div', 'rc-regstatus-row');
-      row.appendChild(el('div', 'rc-regstatus-icon rc-regstatus-icon-none', '&#10005;'));
-      var text = el('div');
-      text.appendChild(el('div', 'rc-regstatus-headline rc-regstatus-headline-none', 'UNREGISTERED'));
-      text.appendChild(el('div', 'rc-regstatus-sub', 'No season is currently open for registration.'));
-      row.appendChild(text);
-      body.appendChild(row);
-    }
-
-    // Not clickable -- there's genuinely nothing to pick.
-    function renderSeasonFull(data) {
-      body.innerHTML = '';
-      var row = el('div', 'rc-regstatus-row');
-      row.appendChild(el('div', 'rc-regstatus-icon rc-regstatus-icon-none', '&#10005;'));
-      var text = el('div');
-      var fullSeasonNum = seasonNumberLabel(data.seasonId);
-      var fullSeasonLabel = fullSeasonNum ? ('SEASON ' + fullSeasonNum) : 'SEASON';
-      // Season name appended after the number.
-      if (data.seasonName) fullSeasonLabel += ': ' + data.seasonName;
-      text.appendChild(el('div', 'rc-regstatus-headline rc-regstatus-headline-none', escapeHtml(fullSeasonLabel) + ' FULL'));
-      text.appendChild(el('div', 'rc-regstatus-sub', 'Every seat is taken -- check back if a spot opens up.'));
-      row.appendChild(text);
-      body.appendChild(row);
-    }
-
-    function renderOpenToRegister(data) {
-      body.innerHTML = '';
-      var row = el('div', 'rc-regstatus-row rc-regstatus-row-clickable');
-      row.appendChild(el('div', 'rc-regstatus-icon rc-regstatus-icon-open', '+'));
-      var text = el('div');
-      var openSeasonNum = seasonNumberLabel(data.seasonId);
-      var openSeasonLabel = openSeasonNum ? ('SEASON ' + openSeasonNum) : 'SEASON';
-      // Season name appended after the number.
-      if (data.seasonName) openSeasonLabel += ': ' + data.seasonName;
-      text.appendChild(el('div', 'rc-regstatus-headline rc-regstatus-headline-open', 'REGISTER FOR ' + escapeHtml(openSeasonLabel)));
-      // Seats-remaining count -- only shown once it's gotten low enough to matter.
-      var subLine = 'Click to choose your car and lock in your seat.';
-      if (typeof data.seatsRemaining === 'number' && data.seatsRemaining <= 5) {
-        subLine += ' Only ' + data.seatsRemaining + ' seat' + (data.seatsRemaining === 1 ? '' : 's') + ' left.';
-      }
-      text.appendChild(el('div', 'rc-regstatus-sub', subLine));
-      row.appendChild(text);
-      body.appendChild(row);
-      row.addEventListener('click', function () {
-        // No refreshStatus() call here anymore -- onRegistered() below is onRegisteredRebuild
-        // (renderDashboardSection), which already re-fetches this card's own data (among everything
-        // else) via one combined getDashboardData call and repaints this card from that.
-        buildRegistrationModal(profile, token, data, function () {
-          if (onRegistered) onRegistered();
-        });
-      });
-    }
-
-    function renderRegistered(data) {
-      body.innerHTML = '';
-      var row = el('div', 'rc-regstatus-row');
-      // Before the first race the circle doubles as the drop out button: on hover it turns red with an X.
-      var canDropOut = !!(data.registration && data.registration.canDropOut);
-      var doneIcon = el('div', 'rc-regstatus-icon rc-regstatus-icon-done' + (canDropOut ? ' rc-regstatus-icon-droppable' : ''),
-        canDropOut ? '<span class="rc-regstatus-tick">&#10003;</span><span class="rc-regstatus-x">&#10005;</span>' : '&#10003;');
-      if (canDropOut) {
-        doneIcon.title = 'Drop out and give up your seat';
-        doneIcon.setAttribute('role', 'button');
-        doneIcon.setAttribute('aria-label', 'Drop out and give up your seat');
-        doneIcon.tabIndex = 0;
-        var startDrop = function () { openDropOutConfirm(profile, token, data); };
-        doneIcon.addEventListener('click', startDrop);
-        doneIcon.addEventListener('keydown', function (ev) { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); startDrop(); } });
-      }
-      row.appendChild(doneIcon);
-      var text = el('div');
-      var regSeasonNum = seasonNumberLabel(data.seasonId);
-      var regSeasonLabel = regSeasonNum ? ('SEASON ' + regSeasonNum) : 'SEASON';
-      if (data.seasonName) regSeasonLabel += ': ' + data.seasonName;
-      text.appendChild(el('div', 'rc-regstatus-headline rc-regstatus-headline-done', 'REGISTERED FOR ' + escapeHtml(regSeasonLabel)));
-      text.appendChild(el('div', 'rc-regstatus-sub',
-        'All drivers must race in only their registered car for the entire season. Penalties will be levied for violations.'));
-      row.appendChild(text);
-      body.appendChild(row);
-
-      var reg = data.registration || {};
-
-      // Yellow/red status flag -- only shown when this driver's Registration Status for the active
-      // season is actually Probation or Suspended/Removed; the ordinary Active case (the vast
-      // majority of the time) renders nothing here at all, same "REGISTERED FOR SEASON n" card as
-      // before.
-      if (reg.status === 'Probation') {
-        var flagP = el('div', 'rc-regstatus-flag rc-regstatus-flag-probation');
-        flagP.appendChild(el('div', 'rc-regstatus-flag-dot rc-regstatus-flag-dot-probation'));
-        var flagPText = el('div');
-        flagPText.appendChild(el('div', 'rc-regstatus-flag-label rc-regstatus-flag-label-probation', 'PROBATION'));
-        if (reg.statusReason) flagPText.appendChild(el('div', 'rc-regstatus-flag-reason', escapeHtml(reg.statusReason)));
-        flagP.appendChild(flagPText);
-        body.appendChild(flagP);
-      } else if (reg.status === 'Suspended' || reg.status === 'Removed') {
-        var flagS = el('div', 'rc-regstatus-flag rc-regstatus-flag-suspended');
-        flagS.appendChild(el('div', 'rc-regstatus-flag-dot rc-regstatus-flag-dot-suspended'));
-        var flagSText = el('div');
-        flagSText.appendChild(el('div', 'rc-regstatus-flag-label rc-regstatus-flag-label-suspended', reg.status === 'Removed' ? 'REMOVED FROM LEAGUE' : 'SUSPENDED'));
-        if (reg.statusReason) flagSText.appendChild(el('div', 'rc-regstatus-flag-reason', escapeHtml(reg.statusReason)));
-        flagS.appendChild(flagSText);
-        body.appendChild(flagS);
-      }
-
-      var footer = el('div', 'rc-regstatus-footer');
-      var joinedDate = reg.joinedAt ? formatDateLabel(String(reg.joinedAt).slice(0, 10)) : '—';
-      var joinedStat = el('div', 'rc-regstatus-stat');
-      joinedStat.appendChild(el('div', 'rc-regstatus-stat-label', 'Registered On'));
-      joinedStat.appendChild(el('div', 'rc-regstatus-stat-value', escapeHtml(joinedDate)));
-      footer.appendChild(joinedStat);
-
-      var classStat = el('div', 'rc-regstatus-stat');
-      classStat.appendChild(el('div', 'rc-regstatus-stat-label', 'Class'));
-      var classValue = el('div', 'rc-regstatus-stat-value', escapeHtml(reg.carClass || '—'));
-      classStat.appendChild(classValue);
-      footer.appendChild(classStat);
-
-      // Manufacturer stat, right of Class -- reg.manufacturer already comes back from
-      // handleGetActiveSeason (Results.gs), no backend change needed.
-      var mfrStat = el('div', 'rc-regstatus-stat');
-      mfrStat.appendChild(el('div', 'rc-regstatus-stat-label', 'Manufacturer'));
-      var mfrValue = el('div', 'rc-regstatus-stat-value', escapeHtml(reg.manufacturer ? reg.manufacturer.toUpperCase() : '—'));
-      mfrStat.appendChild(mfrValue);
-      footer.appendChild(mfrStat);
-
-      body.appendChild(footer);
-    }
-
-    // "Couldn't check" is NOT the same thing as "checked, and there's genuinely nothing open". This
-    // state is deliberately non-alarming (a season IS probably open) and self-heals once via
-    // refreshStatus() below rather than asking the driver to do anything.
-    function renderLoadError() {
-      body.innerHTML = '';
-      var row = el('div', 'rc-regstatus-row');
-      row.appendChild(el('div', 'rc-regstatus-icon rc-regstatus-icon-none', '&#8635;'));
-      var text = el('div');
-      text.appendChild(el('div', 'rc-regstatus-headline rc-regstatus-headline-none', 'CHECKING...'));
-      text.appendChild(el('div', 'rc-regstatus-sub', 'Could not reach the server just now -- trying again.'));
-      row.appendChild(text);
-      body.appendChild(row);
-    }
-
-    var didRetryLoad = false;
-    function renderFromData(data) {
-      // Seat count corner figure. Evaluated once here, ahead of every branch below, so it stays
-      // correct across a load error, unregistered, season-full, open-to-register, and already-
-      // registered alike, instead of being duplicated in each render* function.
-      if (data && data.success && data.hasActiveSeason && typeof data.seatsTotal === 'number') {
-        seatsFigure.textContent = data.seatsTaken + '/' + data.seatsTotal + ' SEATS';
-        seatsFigure.style.display = '';
-      } else {
-        seatsFigure.style.display = 'none';
-      }
-
-      if (!data || !data.success) {
-        renderLoadError();
-        // One silent, automatic retry (not a loop -- didRetryLoad only ever lets this fire once per
-        // page view) so the common case, a single bad round trip, resolves itself without the
-        // driver needing to notice anything or refresh the page by hand.
-        if (!didRetryLoad) {
-          didRetryLoad = true;
-          setTimeout(refreshStatus, 2500);
-        }
-        return;
-      }
-      if (!data.hasActiveSeason) { renderUnregistered(); return; }
-      if (data.registered) { renderRegistered(data); return; }
-      if (data.seasonFull) { renderSeasonFull(data); return; }
-      renderOpenToRegister(data);
-    }
-
-    // Quiet re-check after a registration completes (or after a load failure above) -- no spinner,
-    // the card's current content stays exactly as-is until the new data actually arrives, then
-    // swaps in one shot.
-    function refreshStatus() {
-      fetchApi('getActiveSeason', { token: token }).then(renderFromData).catch(function () { renderFromData({ success: false }); });
-    }
-
-    renderFromData(initialData);
-    return card;
-  }
-
   // Ported straight from league.js's own _rclBuildSeasonFormatBlocks_ (same field order, same
   // conditions for showing a given row, same SECTION shape -- { pill, blocks:
   // [[{label,value},...],...] } for a plain section, or { pill, tiers, bonus } for Championship
@@ -1255,41 +993,6 @@
       group.appendChild(list);
       return group;
     });
-  }
-
-  // _rcPatchLeagueHubTimeFields_(hub) -- local port of js/league.js's own
-  // _rclPatchTimeDerivedFields_.
-  function _rcPatchLeagueHubTimeFields_(hub) {
-    if (!hub || !hub.hasSeason || !Array.isArray(hub.calendar)) return hub;
-    var nowMs = Date.now();
-
-    hub.calendar.forEach(function (entry) {
-      entry.finished = !!(entry.startUtc && new Date(entry.startUtc).getTime() < nowMs);
-      // raceOver = start + 3 hours has passed; used only to pick the next race (matches Seasons.gs).
-      entry.raceOver = !!(entry.startUtc && (new Date(entry.startUtc).getTime() + 3 * 60 * 60 * 1000) <= nowMs);
-    });
-
-    var completedEntries = hub.calendar.filter(function (entry) {
-      return entry.kind === 'round' && entry.finished && entry.hasResults;
-    });
-    hub.roundsCompleted = completedEntries.length;
-    hub.hasUnofficialResults = completedEntries.some(function (entry) { return !entry.resultsFinalized; });
-
-    var nextEntry = hub.calendar.filter(function (entry) {
-      return entry.kind !== 'bye' && !entry.raceOver;
-    })[0];
-    hub.nextRace = nextEntry ? {
-      kind: nextEntry.kind,
-      eventName: nextEntry.eventName || '',
-      track: nextEntry.track || '',
-      layout: nextEntry.layout || '',
-      startUtc: nextEntry.startUtc || '',
-      raceLengthTier: nextEntry.raceLengthTier || '',
-      roundNum: nextEntry.roundNum || 0,
-      totalRounds: hub.totalRounds
-    } : null;
-
-    return hub;
   }
 
   // _rcFetchLeagueHubCsvFirst_() -- Season Details popup's own copy of js/league.js's
@@ -1456,269 +1159,6 @@
       modal.body.innerHTML = '';
       modal.body.appendChild(el('p', 'color:var(--rc-red);', 'Could not reach the server.'));
     });
-  }
-
-  // Manufacturer logo left, team/car identity + class pill next to it, Position/Points/Podiums stat
-  // row underneath.
-  function currentSeatCard(profile, token, initialData, activeSeasonData) {
-    var card = el('div', 'rc-panel rc-currentseat-card rc-dash-card');
-    // Title + car number share one flex row now. A genuine flex row is more robust than fighting
-    // the cascade with specificity tricks.
-    var headerRow = el('div', 'rc-dash-card-header-row');
-    headerRow.appendChild(el('h3', 'rc-dash-card-header-title', 'Current Seat'));
-    card.appendChild(headerRow);
-    var body = el('div', 'rc-cs-body');
-    card.appendChild(body);
-
-    // "View current seat info" link -- opens a popup with the same team-card fields the Choose Your
-    // Team screen shows during registration (logo, team name, car number, car model, team
-    // description), just for the team/car this driver is actually seated in right now.
-    var seatInfoBtn = el('button', 'rc-link-btn rc-dash-card-link', '← View current seat info');
-    seatInfoBtn.type = 'button';
-    seatInfoBtn.addEventListener('click', function () { openCurrentSeatInfoModal(token, profile.profileId); });
-    // The link is added at the bottom of this function, and only for a driver who has a seat.
-
-    function setCornerPill(carClass) {
-      var existing = headerRow.querySelector('.rc-dash-card-corner-figure');
-      if (existing) existing.remove();
-      if (!carClass) return;
-      // rc-cs-corner-figure -- overrides the header row's default baseline alignment (shared with
-      // every other Dashboard card's own corner figure) for just this one, and the pill itself gets
-      // a size bump via .rc-cs-class-pill below, both scoped so Registration Status/Next Race's own
-      // corner figures and every other .rc-badge-chip-abbrev use on the site (e.g. league.js's
-      // report pill) are untouched.
-      var figure = el('div', 'rc-dash-card-corner-figure rc-cs-corner-figure');
-      var pill = _rcClassAbbrevPill(carClass);
-      pill.classList.add('rc-cs-class-pill');
-      figure.appendChild(pill);
-      headerRow.appendChild(figure);
-    }
-
-    // status, not role -- Role is set to 'Driver' at registration time and never actually reads
-    // 'Prospect' (Prospect isn't a Status or a Role at all -- it's just "no seat in the
-    // currently-open-to- registration season," computed on the fly; see Auth.gs's VALID_ROLES
-    // header comment).
-    if (profile.status !== 'Active') {
-      body.appendChild(el('p', 'rc-cs-empty', 'Available once your email is verified.'));
-      return card;
-    }
-
-    function renderEmpty(message) {
-      body.innerHTML = '';
-      body.appendChild(el('p', 'rc-cs-empty', message));
-      setCornerPill('');
-    }
-
-    function renderSeat(data) {
-      body.innerHTML = '';
-
-      // Class pill, top-right corner of the card header.
-      setCornerPill(data.carClass);
-
-      // Same identity block (car picture, TEAM #NN on one line, maker logo + car name) the Current
-      // Seat Info popup shows -- built by _rcBuildSeatIdentity (defined above buildSeatInfoPanel).
-      var row = _rcBuildSeatIdentity({
-        team: data.team, carNumber: data.carNumber, carModel: data.carModel,
-        manufacturer: data.manufacturer, carYear: data.carYear, carSeries: data.carSeries
-      });
-      body.appendChild(row);
-
-      var stats = el('div', 'rc-cs-stats');
-      var posValue = (data.statsKnown && data.position) ? (String(data.position) + (data.positionOutOf ? '/' + data.positionOutOf : '')) : '—';
-      var pointsValue = data.statsKnown ? String(data.points || 0) : '—';
-      var podiumsValue = data.statsKnown ? String(data.podiums || 0) : '—';
-      [['Position', posValue], ['Points', pointsValue], ['Podiums', podiumsValue]].forEach(function (pair) {
-        var stat = el('div', 'rc-cs-stat');
-        stat.appendChild(el('div', 'rc-cs-stat-label', pair[0]));
-        stat.appendChild(el('div', 'rc-cs-stat-value', escapeHtml(pair[1])));
-        stats.appendChild(stat);
-      });
-      body.appendChild(stats);
-    }
-
-    // No active season at all -- checked ahead of hasSeat, since a driver with no seat and a driver
-    // whose last season just ended both land on hasSeat:false otherwise indistinguishably.
-    if (!activeSeasonData || !activeSeasonData.success || !activeSeasonData.hasActiveSeason) {
-      renderEmpty('No season is currently open for registration.');
-    } else if (!initialData || !initialData.success || !initialData.hasSeat) {
-      renderEmpty('Not on a team yet. Register for a season to lock in a seat.');
-    } else {
-      renderSeat(initialData);
-      card.appendChild(seatInfoBtn);
-    }
-
-    return card;
-  }
-
-  // Returns a placeholder card immediately, already carrying the real card's own classes (so it
-  // takes up the exact same grid slot, same size, from the very first paint) plus
-  // .rc-dash-card-fade (invisible).
-  function asyncDashCard(cardClass, fetchPromise, buildFn, activeSeasonData) {
-    var placeholder = el('div', cardClass + ' rc-dash-card-fade');
-    Promise.all([
-      fetchPromise.catch(function () { return { success: false }; }),
-      Promise.resolve(activeSeasonData).catch(function () { return { success: false }; })
-    ]).then(function (results) {
-      var built;
-      try {
-        // The server (or the connection) failed, which is not the same as "no data": say so and
-        // offer a Retry instead of showing an empty card.
-        if (results[0] && results[0].success === false && results[0].error) {
-          built = el('div');
-          built.appendChild(el('p', 'rc-cs-empty', 'Could not load this right now.'));
-          var retryBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'Retry');
-          retryBtn.type = 'button';
-          retryBtn.addEventListener('click', function () { window.location.reload(); });
-          built.appendChild(retryBtn);
-        } else {
-          built = buildFn(results[0], results[1]);
-        }
-      } catch (err) {
-        // Every OTHER promise in this chain was already defensively .catch()-guarded; the actual
-        // card-building step was the one place that wasn't. Logs to the console for debugging
-        // rather than failing completely silently.
-        if (window.console && console.error) console.error('Dashboard card failed to render:', err);
-        built = el('div');
-        built.appendChild(el('p', 'rc-cs-empty', 'Could not load this right now.'));
-      }
-      while (built.firstChild) placeholder.appendChild(built.firstChild);
-      placeholder.classList.add('rc-dash-card-fade-in');
-    });
-    return placeholder;
-  }
-
-  // Full-width "quick glance" banner, backed by action=getNextRace (handleGetNextRace, Seasons.gs)
-  // -- reuses the exact same merged round/special/bye entries the Calendar page computes, so this
-  // can never show a different "next race" than Calendar would.
-  // Gated client-side off activeSeasonData (the same getActiveSeason payload Registration Status
-  // already renders from) rather than a second server-side check, since getNextRace's schedule data
-  // isn't otherwise driver-specific.
-  function nextRaceCard(data, activeSeasonData) {
-    var card = el('div', 'rc-panel rc-nextrace-card rc-dash-card');
-    // Title + "Round n" share one flex row now -- same .rc-dash-card-header-row treatment as
-    // Current Seat's car number, more robust than the earlier absolute-positioning attempt.
-    var headerRow = el('div', 'rc-dash-card-header-row');
-    headerRow.appendChild(el('h3', 'rc-dash-card-header-title', 'Next Race'));
-    card.appendChild(headerRow);
-
-    // No active season at all vs. a season that's open but this driver isn't registered for -- two
-    // different messages.
-    var hasActiveSeason = !!(activeSeasonData && activeSeasonData.success && activeSeasonData.hasActiveSeason);
-    if (!hasActiveSeason) {
-      card.appendChild(el('p', 'rc-cs-empty', 'No season is currently open for registration.'));
-      return card;
-    }
-    if (!activeSeasonData.registered) {
-      card.appendChild(el('p', 'rc-cs-empty', 'Not on a team yet. Register for a season to view the next race information.'));
-      return card;
-    }
-
-    if (!data || !data.success) {
-      card.appendChild(el('p', 'rc-cs-empty', 'Could not load the next race right now.'));
-      return card;
-    }
-    if (!data.hasNextRace) {
-      card.appendChild(el('p', 'rc-cs-empty', 'No season currently open, or the schedule has already finished.'));
-      return card;
-    }
-
-    var driverTz = '';
-    try { driverTz = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (err) { driverTz = ''; }
-
-    var isSpecial = data.kind === 'special';
-
-    // "Round n", right side of the header row, same treatment as Current Seat's car number. Special
-    // Events don't consume a round number, so they don't get this either -- same rule the Calendar
-    // page's own round-number column follows.
-    if (!isSpecial && data.roundNum) {
-      // "ROUND n OF total" -- totalRounds comes straight off _rcBuildActiveSeasonCalendar_'s own
-      // rounds.length (Seasons.gs), the same season the round number itself is drawn from, so this
-      // can never disagree with the Calendar page's own round count.
-      var roundLabel = 'ROUND ' + data.roundNum + (data.totalRounds ? (' OF ' + data.totalRounds) : '');
-      headerRow.appendChild(el('div', 'rc-dash-card-corner-figure', roundLabel));
-    }
-
-    var body = el('div', 'rc-nextrace-body');
-
-    // Left-justified info column (Event title, then Track/Layout, then the rest), track image to
-    // the right, vertically centered against the whole text block -- .rc-nextrace-body centers this
-    // row's cross-axis so the image lines up regardless of how tall the text column ends up.
-    var info = el('div', 'rc-nextrace-info');
-    // Date/time as a plain line above the event title, not a pill -- was one of the .rc-cal-stats
-    // chips below the title; that row now carries Weather, Race Length, In-Game Race Start, and the
-    // server password.
-    info.appendChild(el('div', 'rc-nextrace-date', escapeHtml(formatRaceDateTime(data.startUtc, driverTz))));
-    var nameWrap = el('div', 'rc-nextrace-name');
-    var nameText = data.eventName || (isSpecial ? 'Special Event' : ('Round ' + data.roundNum));
-    nameWrap.appendChild(document.createTextNode(nameText));
-    if (isSpecial) nameWrap.style.color = 'var(--rc-gold)';
-    // Space before the star -- .rc-nextrace-name isn't a flex row with its own gap the way
-    // Calendar's .rc-cal-race-name is, so the plain text node and the star span were sitting flush
-    // against each other with nothing between them.
-    if (isSpecial) nameWrap.appendChild(document.createTextNode(' '));
-    if (isSpecial) nameWrap.appendChild(withTooltip(el('span', 'rc-cal-race-star', ICON_NAV_STAR), 'Special Event -- fun race, no championship points.'));
-    info.appendChild(nameWrap);
-
-    // Track name/layout line is back. Same treatment as the Calendar's own .rc-cal- track (bold
-    // track name, layout trailing in lighter steel text).
-    var trackLine = el('div', 'rc-nextrace-track-row');
-    var trackText = el('div', 'rc-nextrace-track');
-    // "<Full Track Name> (<ShortName>): <Layout>" -- the short name is left out when the venue has none (or it
-    // is the same as the full name).
-    var fullTrack = data.trackFullName || data.track || '';
-    var trackShort = (data.track && data.track !== fullTrack) ? ' (' + data.track + ')' : '';
-    trackText.innerHTML = '<strong>' + escapeHtml((fullTrack + trackShort) || '(no track)') + '</strong>' +
-      (data.layout ? '<span class="rc-cal-layout">: ' + escapeHtml(data.layout) + '</span>' : '');
-    trackLine.appendChild(trackText);
-    info.appendChild(trackLine);
-
-    // In-game time line, below the track row -- same shape Calendar's own race cards use
-    // (.rc-cal-datetime + Race Start with Practice/ Qualifying trailing in muted gray text), now
-    // that this card carries Practice/Qualifying too, not just Race Start (data.igPracticeStart/
-    // data.igQualifyStart already come through handleGetNextRace, just unused here before this
-    // pass).
-    if (data.igRaceStart) {
-      var igExtras = [];
-      if (data.igPracticeStart) igExtras.push('Practice ' + escapeHtml(data.igPracticeStart));
-      if (data.igQualifyStart) igExtras.push('Qualifying ' + escapeHtml(data.igQualifyStart));
-      var igText = 'In-Game Race Start ' + escapeHtml(data.igRaceStart);
-      if (igExtras.length) igText += ' <span class="rc-cal-igtimes-extra">(' + igExtras.join(' &middot; ') + ')</span>';
-      var igLine = el('div', 'rc-cal-datetime');
-      igLine.appendChild(el('span', null, ICON_FLAG + '<span>' + igText + '</span>'));
-      info.appendChild(igLine);
-    }
-
-    var stats = el('div', 'rc-cal-stats');
-    // Race length pill now comes first, ahead of Weather, and spells out the tier before the
-    // minutes -- same lengthLabel pattern renderCalendarSection's own race cards use
-    // (entry.raceLengthTier + ' · ' + entry.raceLengthMinutes + ' min'), so this card matches the
-    // Calendar page's own Season Format wording instead of minutes alone.
-    if (data.raceLengthMinutes) {
-      var nextRaceLengthLabel = data.raceLengthTier ? (data.raceLengthTier + ' · ' + rcFormatRaceLength(data.raceLengthMinutes)) : rcFormatRaceLength(data.raceLengthMinutes);
-      stats.appendChild(calStat(ICON_CLOCK, nextRaceLengthLabel, 'Race length'));
-    }
-    // Weather pill -- same chip the Calendar page's own race cards use (weatherIcon() + "N% Rain ·
-    // N°C").
-    stats.appendChild(calStat(weatherIcon(data), (data.chanceOfRain || 0) + '% Rain' + (data.temperatureC !== null && data.temperatureC !== undefined ? ' · ' + data.temperatureC + '°C' : ''), 'Weather'));
-    // Metallic gold treatment -- .rc-cal-stat itself stays untouched (shared by Calendar's own race
-    // cards and every other pill on this card), this is a scoped modifier class via calStat's own
-    // extraClass param, only ever applied here.
-    if (data.password) stats.appendChild(calStat(ICON_LOCK, data.password, 'Server password', 'rc-nextrace-password-gold'));
-    info.appendChild(stats);
-
-    // The SPECIAL EVENT pill is gone: a special event's title is dark gold instead (Matt, 2026-10-24).
-    body.appendChild(info);
-
-    // Track image removed entirely.
-
-    card.appendChild(body);
-
-    // "← View full season" link removed entirely -- the Calendar popup it opened is gone; its
-    // content now lives at the bottom of the View Season Details popup instead (see
-    // openSeasonFormatModal), reachable from Registration Status's own "← View season details"
-    // link.
-
-    return card;
   }
 
   // CAREER PAGE removed entirely. The old renderCareerSection/buildCareerCard/ buildCareerStat,
@@ -1911,49 +1351,6 @@
     body.appendChild(noteRow);
     row.appendChild(body);
     return row;
-  }
-
-  // Protest -- Dashboard preview card. Backed by action=getMyProtests with no `full`/`limit` param,
-  // which the server already caps at the most recent 3 within that current race (see
-  // handleGetMyProtests, Protests.gs) -- this card never re-slices the array itself, it just
-  // renders whatever comes back.
-  function protestCard(data, activeSeasonData) {
-    var card = el('div', 'rc-panel rc-finrep-card rc-dash-card');
-    card.appendChild(el('h3', 'rc-dash-card-title', 'Protests'));
-
-    var protests = (data && data.success && data.protests) ? data.protests : [];
-    // No active season at all -- handleGetMyProtests itself has no hasSeason flag of its own (it
-    // just returns an empty protests list either way, season or no season), so this reads off the
-    // same getActiveSeason payload Registration Status/Current Seat/Next Race all already check.
-    var hasActiveSeason = !!(activeSeasonData && activeSeasonData.success && activeSeasonData.hasActiveSeason);
-
-    if (!hasActiveSeason) {
-      card.appendChild(el('p', 'rc-cs-empty', 'No season is currently open for registration.'));
-      return card;   // no link: nothing to file or review without a season
-    }
-    if (!activeSeasonData.registered) {
-      card.appendChild(el('p', 'rc-cs-empty', 'Not on a team yet. Register for a season to unlock this section.'));
-      return card;   // no File, withdraw, and review link until the driver has a seat
-    }
-    if (!protests.length) {
-      card.appendChild(el('p', 'rc-cs-empty', 'No protests filed by or against you yet.'));
-    } else {
-      card.appendChild(buildProtestsByRound_(protests, buildDashProtestItem));
-    }
-
-    // Link text updated -- "File, withdraw, and review" (Oxford comma added to match) plus a
-    // pending-decision count in parens, e.g.
-    var pendingCount = (data && data.success && typeof data.pendingCount === 'number') ? data.pendingCount : 0;
-    var linkText = '← File, withdraw, and review protests' +
-      (pendingCount > 0 ? (' (' + pendingCount + ' currently pending a decision)') : '');
-    var protestLink = el('button', 'rc-link-btn rc-dash-card-link', linkText);
-    protestLink.type = 'button';
-    protestLink.addEventListener('click', function () {
-      openProtestModal(currentToken);
-    });
-    card.appendChild(protestLink);
-
-    return card;
   }
 
   // ---------------------------------------------------------------------
@@ -2586,27 +1983,6 @@
   }
 
   // ---------------------------------------------------------------------
-  // Page-by-page guide content for the Help section's icon-card grid. Each entry: icon (one of the
-  // ICON_* constants above, same glyph used in the sidebar/header for that page), title, and one
-  // short plain-English description. Kept as data, not inline markup, so the grid-building code
-  // below stays generic.
-  // ---------------------------------------------------------------------
-  var HELP_GUIDE_ITEMS = [
-    { icon: ICON_DASHBOARD, title: 'Dashboard',
-      body: 'Your homepage: registration status, current seat, next race, most recent result, and recent protests.' },
-    { icon: ICON_CALENDAR, title: 'Calendar',
-      body: 'The full season schedule -- date and time in your timezone, track, session details, and weather.' },
-    { icon: ICON_PROFILE, title: 'Driver Profile Page',
-      body: 'Placeholder -- this will explain your public Driver Profile page (Driver Profiles in the menu), where your seasons, results and stats live in one place.' },
-    { icon: ICON_PROTESTS, title: 'Protests',
-      body: 'File, edit, or withdraw a protest, and see your protest history for the season.' },
-    { icon: ICON_SETTINGS, title: 'Account Settings',
-      body: 'Click your name in the header to edit your profile or change your password.' },
-    { icon: ICON_ADMIN, title: 'Admin and League Tools',
-      body: 'Admin accounts get two extra pages: League Tools (seasons, races, results, news) and Admin (members, tracks, cars).' }
-  ];
-
-  // ---------------------------------------------------------------------
   // HELP SECTION -- How To Use This Site, then Rules and Regulations (the Rulebook), then Need More
   // Help?, each its own card using the same "rc-panel rc-dash-card" + "rc-dash-card-title" chrome
   // as every other featured panel on the site (Calendar's season panel, Results, League Management,
@@ -2850,37 +2226,6 @@
     });
     wrap.appendChild(list);
     return wrap;
-  }
-
-  // Round status line -- one line summarizing exactly where a round's results stand, in a fixed
-  // 4-stage sequence, each with its own circle look now:
-  // 2. Qualifying (or Race) results uploaded, awaiting the other.
-  function buildRoundStatusLine(r, locked) {
-    var isFinal = !!r.resultsFinalized;
-    var text, iconCls, glyph;
-    if (isFinal) {
-      text = 'Results reviewed and finalized. Official results posted.';
-      iconCls = 'rc-statuscircle-green'; glyph = '✓';
-    } else if (r.hasResults) {
-      text = 'Results uploaded, awaiting review.';
-      iconCls = 'rc-statuscircle-yellow'; glyph = '✓';
-    } else if (r.hasAnySessionImported) {
-      // The 4-stage sequence names only the Qualifying-then-Race order; this mirrors that same
-      // wording for the reverse order (a race session imported before qualifying), a case the
-      // original design already handled separately -- judgment call, item 8.
-      text = r.hasRaceResults ? 'Race results uploaded, awaiting qualifying results.' : 'Qualifying results uploaded, awaiting race results.';
-      iconCls = 'rc-statuscircle-yellow'; glyph = '~';
-    } else if (!locked) {
-      text = 'Awaiting results.';
-      iconCls = null; glyph = null;
-    } else {
-      return null;
-    }
-    var line = el('div', 'rc-round-status');
-    var icon = el('span', 'rc-protest-dash-icon' + (iconCls ? (' ' + iconCls) : ' rc-protest-dash-icon-pending'), glyph || undefined);
-    line.appendChild(icon);
-    line.appendChild(el('span', 'rc-round-status-text', text));
-    return line;
   }
 
   // The function body itself is unchanged: passing true either way still means "say nothing, this
@@ -5752,7 +5097,7 @@
       var current = (res && res.success && res.photos) ? res.photos : [];
       var classOptions = (res && res.classes) || [];
       var driverOptions = (res && res.drivers) || [];
-      // One slot per picture: { keep: "user/..." } an existing one, { file: File } a new one, or empty. caption is always its own text.
+      // One slot per picture: { keep: "stories/..." } an existing one, { file: File } a new one, or empty. caption is always its own text.
       var slots = [];
       for (var n = 0; n < MAX_PHOTOS; n++) slots.push({ keep: current[n] ? current[n].file : '', file: null, caption: current[n] ? current[n].caption : '', cls: current[n] ? (current[n].cls || '') : '', driverId: current[n] ? (current[n].driverId || '') : '', driverName: current[n] ? (current[n].driverName || '') : '', changed: false });
       var originalCount = current.length;
@@ -7862,7 +7207,7 @@
     form.appendChild(saveBtn);
     body.appendChild(form);
 
-    var modalHandle = showModal('Add Driver', { bodyEl: body });
+    showModal('Add Driver', { bodyEl: body });
 
     form.addEventListener('submit', function (evt) {
       evt.preventDefault();
@@ -8577,17 +7922,6 @@
     var map = { LMGTE: 'rc-badge-lmgte', LMGT3: 'rc-badge-lmgt3', LMP3: 'rc-badge-lmp3', LMP2: 'rc-badge-lmp2', Hypercar: 'rc-badge-hypercar' };
     var colorClass = map[key] || '';
     return el('span', 'rc-badge-chip' + (colorClass ? ' ' + colorClass : ''), escapeHtml(_rcClassPillLabel(key) || 'Unclassified'));
-  }
-
-  // Compact, abbreviated class pill -- same rounded-rectangle colored treatment as _rcClassBadge
-  // above, just a short label (HY/GT3/ P3/P2, from CAR_CLASS_ABBREV in reference-data.js) for the
-  // Dashboard's Current Seat card corner figure, where it sits directly in front of the car number.
-  function _rcClassAbbrevPill(cls) {
-    var key = String(cls || '').trim();
-    var map = { LMGTE: 'rc-badge-lmgte', LMGT3: 'rc-badge-lmgt3', LMP3: 'rc-badge-lmp3', LMP2: 'rc-badge-lmp2', Hypercar: 'rc-badge-hypercar' };
-    var colorClass = map[key] || '';
-    var label = (typeof CAR_CLASS_ABBREV !== 'undefined' && CAR_CLASS_ABBREV[key]) ? CAR_CLASS_ABBREV[key] : key;
-    return el('span', 'rc-badge-chip rc-badge-chip-abbrev' + (colorClass ? ' ' + colorClass : ''), escapeHtml(label || '?'));
   }
 
   // Grouped by Class (fixed order: LMGTE -> LMGT3 -> LMP3 -> LMP2 -> Hypercar, per CAR_CLASS_LIST

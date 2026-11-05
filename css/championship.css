@@ -52,12 +52,6 @@ body.rc-league-page.rcc-page {
 
 /* Hero meta line under "Season N / Name" -- tucked right under it (negative margin eats part of
    the season line's own line-height). */
-.rcc-hero-meta {
-  margin-top: -3px;
-  font-family: var(--rc-font-body);
-  font-size: 15px;
-  color: var(--rcl-ink-dim);
-}
 
 /* Season title in white; "Season N" stays navy and the slash red (Matt). */
 /* Car maker logo in front of the team name, sized like the ticker's logos. */
@@ -92,27 +86,11 @@ body.rc-league-page.rcc-page {
   flex-wrap: wrap;
   min-height: 48px;
 }
-.rcc-actionbar-links { display: flex; flex-wrap: wrap; align-items: center; }
-.rcc-actionbar-link {
-  background: none;
-  border: none;
-  padding: 14px 14px;
-  font-family: var(--rc-font-heading);
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--rc-white);
-  cursor: pointer;
-  position: relative;
-}
+
 /* No dots between the bar's items (Matt, 2026-10-27). */
-.rcc-actionbar-link:first-child { padding-left: 0; }
-.rcc-actionbar-link:hover:not(:disabled) { color: var(--rc-red); }
-.rcc-actionbar-link:disabled { color: var(--rc-steel); cursor: not-allowed; }
-a.rcc-actionbar-link { display: inline-block; text-decoration: none; }
+
 /* The page you are on (Championship) is red (Matt, 2026-10-27). */
-.rcc-page .rcc-actionbar-current, .rcc-page .rcc-actionbar-current:hover { color: var(--rcc-true-red, #F21B0C); }
+
 /* Season Tools: a vertical dropdown under the link, styled like the avatar menu (Matt, 2026-10-13). */
 
 /* Triangle points left, towards SEASON TOOLS, while closed and turns to point down when the menu opens (Matt, 2026-10-17). */
@@ -273,7 +251,7 @@ a.rcc-actionbar-link { display: inline-block; text-decoration: none; }
 /* -------------------------------------------------------------------- */
 /* Popups                                                                */
 /* -------------------------------------------------------------------- */
-.rcc-confirm-text, .rcc-reg-intro { font-size: 14px; color: var(--rc-steel); line-height: 1.5; margin: 0 0 16px; }
+.rcc-confirm-text{ font-size: 14px; color: var(--rc-steel); line-height: 1.5; margin: 0 0 16px; }
 .rcc-btn-row { display: flex; gap: 10px; flex-wrap: wrap; }
 .rcc-btn-row-end { justify-content: flex-end; margin-top: 18px; }
 .rcc-error-line { color: var(--rc-red); font-size: 13px; margin-top: 8px; min-height: 0; }
@@ -372,7 +350,7 @@ a.rcc-actionbar-link { display: inline-block; text-decoration: none; }
 
 @media (orientation: portrait) {
   .rcc-actionbar-inner { padding: 0 16px; }
-  .rcc-actionbar-link { padding: 10px 8px; }
+  
   .rcc-class-row { grid-template-columns: 22px 1fr 1fr; }
   .rcc-points-row { grid-template-columns: 1fr; }
   .rcc-points-boxes { grid-template-columns: repeat(5, minmax(0, 1fr)); }
@@ -469,22 +447,18 @@ a.rcc-actionbar-link { display: inline-block; text-decoration: none; }
 .rcc-help-body .rcc-help-callout-title { display: block; margin-bottom: 4px; color: var(--rc-carbon); }
 
 /* Ticker round entries: flag, event and " at track" as one inline group (no flex gap inside). */
-.rcc-ticker-event { white-space: nowrap; }
-.rcc-ticker-flag { height: 12px; width: auto; vertical-align: -1px; border-radius: 1px; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.12); }
 
 /* Buttons under the "switched off" / "sign up" message. */
 .rcc-off-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 18px; }
 
 /* Welcome ticker: bold navy welcome line; perk labels bold navy, perk text normal black. */
-.rcc-page .rcc-ticker-lead { font-weight: 800; color: var(--rcc-navy); }
-.rcc-page .rcc-ticker-plain { font-weight: 400; color: var(--rc-carbon); }
 
 /* RACE RECAP button in the Last Race header: the metal switch's track with a single full-width knob. */
 
 /* Driver Report owner line: driver name bold black, then team and number normal weight in steel. */
 /* Header seat line (same as the Driver Report's): the name links to the profile, the team opens
    Team Information. Links keep the line's own colors; underline on hover. */
-.rcc-hero-meta .rcc-seat-line { margin: 6px 0 0; }
+
 /* Hero band the same height as league.html's (Matt), with the text block centred as a unit.
    League Hub: eyebrow + title + season line inside 46px top / 58px bottom padding. Championship has
    the same lines (same fonts, so the same heights at every width) plus the seat line, so its
@@ -493,11 +467,7 @@ a.rcc-actionbar-link { display: inline-block; text-decoration: none; }
      line's -3px pull-up);
    - with the seat line (about 55px taller): 24.3px + 24.3px.
    Phones: League is a 150px centred band; the seat line's car box shrinks to 36px tall so it fits. */
-@media (orientation: portrait) {
-    .rcc-hero-meta .rcc-seat-line { margin-top: 4px; }
-  .rcc-hero-meta .rc-cs-logo-wrap { height: 36px; min-width: 0; }
-  .rcc-hero-meta .rc-cs-logo { max-height: 36px; max-width: 90px; }
-}
+
 .rcc-seat-line-team { background: none; border: none; padding: 0; font: inherit; letter-spacing: inherit; text-transform: inherit; cursor: pointer; }
 a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
 .rcc-seat-line-team:hover, .rcc-seat-line-team:focus-visible { text-decoration: underline; text-underline-offset: 3px; }
@@ -606,7 +576,7 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
 
 /* More Stories: round badge before each headline (RD over 01, or PRE), about 1.5 lines tall. */
 .rcc-story-prev { display: flex; align-items: center; gap: 10px; text-align: left; }
-.rcc-story-prev-title { min-width: 0; }
+
 .rcc-story-prev .rcl-news-badge { flex: 0 0 auto; }
 /* The story window's title opens the full story (Matt, 2026-10-27). */
 .rcc-story-title-link { cursor: pointer; }
@@ -693,11 +663,11 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
 /* PHONES (Matt, 2026-10-13). */
 @media (orientation: portrait) {
   /* Header and Driver Report seat line: no car picture, and the driver / team / car rows sit tighter. */
-  .rcc-hero-meta .rcc-seat-line .rc-cs-logo-wrap,
+  
   .rcr-report-who .rc-cs-logo-wrap { display: none; }
-  .rcc-hero-meta .rcc-seat-line .rc-cs-team-name-flex,
+  
   .rcr-report-who .rc-cs-team-name-flex { row-gap: 0; line-height: 1.2; }
-  .rcc-hero-meta .rcc-seat-line .rc-cs-car-line,
+  
   .rcr-report-who .rc-cs-car-line { margin-top: 2px; }
   /* Last Race podium: names only, no car numbers. */
   .rcc-page .rcc-podium-num { display: none; }
@@ -718,7 +688,7 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
 /* Portrait (phones and tablets alike): link bar fits on one line (Matt, 2026-10-14; 2026-11-02 portrait-only). */
 @media (orientation: portrait) {
   .rcc-actionbar-inner { padding: 0 16px; }
-  .rcc-actionbar-link { padding-left: 6px; padding-right: 6px; font-size: 11px; letter-spacing: 0.03em; }
+  
   
   
 }
@@ -758,9 +728,6 @@ a.rcr-who-driver:hover, a.rcr-who-driver:focus-visible,
 
 /* Last Race footer (Matt, 2026-10-17): a link to this round's Race Recap under a gray line, in the
    standings board footers' small heading style. */
-.rcc-page .rcc-lr-footer { text-align: right; }
-.rcc-page .rcc-lr-footer-link { font-family: var(--rc-font-heading); font-size: 12px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--rcc-navy); text-decoration: none; }
-.rcc-page .rcc-lr-footer-link:hover, .rcc-page .rcc-lr-footer-link:focus-visible { color: var(--rc-red); text-decoration: underline; }
 
 /* ===== SAMPLE: BLACK CALENDAR BAND (Matt, 2026-10-17) -- delete this whole block to revert ===== */
 /* A plain black band, edge to edge, behind the calendar. Inside it the League Hub's dark-page colors
@@ -879,20 +846,6 @@ body.rcc-page { --rcc-true-red: #F21B0C; }
 .rcc-page .rcc-actionbar { border-bottom: 1px solid #2c2d31; }
 
 /* Navigation look for the page links: same tab style as the League Hub's bar, with a gold bar for the hovered and current page. */
-.rcc-actionbar-links { align-self: stretch; align-items: stretch; }
-.rcc-actionbar-link, a.rcc-actionbar-link {
-  display: flex; align-items: center; min-height: 48px; padding: 0 18px;
-  font-size: 13px; text-decoration: none; color: rgba(255, 255, 255, 0.82);
-  border-left: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: inset 0 -2px 0 transparent;
-  transition: background-color .15s ease, color .15s ease, box-shadow .15s ease;
-}
-.rcc-actionbar-link:last-child { border-right: 1px solid rgba(255, 255, 255, 0.12); }
-.rcc-actionbar-link:first-child { padding-left: 18px; }
-.rcc-actionbar-link:disabled { color: var(--rc-steel); box-shadow: none; background: none; }
-.rcc-actionbar-link:hover:not(:disabled), a.rcc-actionbar-link:hover { color: var(--rc-white); background: rgba(255, 255, 255, 0.08); box-shadow: inset 0 -2px 0 #e0b64c; }
-.rcc-page .rcc-actionbar-current, .rcc-page .rcc-actionbar-current:hover { color: var(--rc-white); background: rgba(255, 255, 255, 0.1); box-shadow: inset 0 -2px 0 #e0b64c; }
-@media (orientation: portrait) { .rcc-actionbar-link, a.rcc-actionbar-link { min-height: 44px; padding: 0 12px; } .rcc-actionbar-link:first-child { padding-left: 12px; } }
 
 /* ===== CHAMPIONSHIP TICKER BAR = HUB LOOK (Matt, 2026-11-02) -- delete this whole block to revert ===== */
 /* ===== END CHAMPIONSHIP TICKER BAR ===== */

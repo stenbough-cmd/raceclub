@@ -444,13 +444,12 @@ function _rcFetchOnce_(url, fetchOpts, timeoutMs) {
 //   - Add ?source=api to any page address to skip files and use Apps Script only (for checking a page).
 var RC_DATA_BASE_URL = 'https://stenbough-cmd.github.io/race-club-data/website/data/';
 // Web address of a story photo. "spa/spa_061.jpg" is a track photo on the website itself (assets/tracks/); a picture an organizer uploaded lives in the
-// data repo: "stories/RND-0007_123_1.jpg" in website/images/stories/ (since 2026-11-05), "user/..." in website/images/tracks/user/ (older ones) and
-// "previews/..." in website/images/previews/ (Season Preview pictures added from the website; older "userpreview/..." until moved).
+// data repo: "stories/RND-0007_123_1.jpg" in website/images/stories/ and
+// "previews/..." in website/images/previews/ (Season Preview pictures added from the website).
 function rcStoryPhotoUrl(file) {
   var enc = String(file || '').split('/').map(encodeURIComponent).join('/');
   if (/^stories\//.test(file)) return RC_DATA_BASE_URL.replace(/data\/$/, 'images/') + enc;
   if (/^previews\//.test(file)) return RC_DATA_BASE_URL.replace(/data\/$/, 'images/') + enc;
-  if (/^(user|userpreview)\//.test(file)) return RC_DATA_BASE_URL.replace(/data\/$/, 'images/tracks/') + enc;
   return 'assets/tracks/' + enc;
 }
 var RC_DATA_SCHEMA = 1;                       // must match RC_PUBLISH_SCHEMA_ in Publish.gs

@@ -233,7 +233,6 @@ function _rcBuildAccountMenuSectionLinks(role) {
 // always have access and keep a plain ADMIN pill. Takes a profile-cache object or a Users row.
 function rcRolePlusHtml(p) {
   if (!p) return '';
-  var role = p.role || p.Role;
   return '';   // Championship is open to every member now (Matt, 2026-10-27): no + marker any more
 }
 

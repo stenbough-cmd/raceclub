@@ -795,7 +795,7 @@ function _rcrDraw(body, dr, mode, prof) {
   var raceLen = Math.max(1, (laps.length ? laps.length : 1));
   // Place marks by race time (two contacts on lap 1 would otherwise sit on top of each other).
   var raceSecs = laps.reduce(function (a, l) { return a + (l.t || 0); }, 0) || null;
-  var at = function (t, lap) { return raceSecs && t !== null && t !== undefined ? Math.max(0, Math.min(100, t / raceSecs * 100)) : ((lap || 1) - 0.5) / raceLen * 100; };
+  var markPos = function (t, lap) { return raceSecs && t !== null && t !== undefined ? Math.max(0, Math.min(100, t / raceSecs * 100)) : ((lap || 1) - 0.5) / raceLen * 100; };
   if ((dr.contacts || []).length || (dr.trackLimits || []).length) {
     var line = _rccEl('div', 'rcr-contact-line');
     var maxImp = Math.max.apply(null, (dr.contacts || []).map(function (c) { return c.impact; }).concat([1]));
@@ -803,13 +803,13 @@ function _rcrDraw(body, dr, mode, prof) {
       var d = _rccEl('div', 'rcr-contact' + (c.wall ? ' rcr-contact-wall' : ''));
       var size = 10 + Math.sqrt(c.impact / maxImp) * 26;
       d.style.width = size + 'px'; d.style.height = size + 'px';
-      d.style.left = at(c.t, c.lap) + '%';
+      d.style.left = markPos(c.t, c.lap) + '%';
       d.title = 'Lap ' + (c.lap || '—') + ' at ' + _rccEventTime(c.t) + ': ' + c.other + ' (impact ' + Math.round(c.impact) + ')';
       line.appendChild(d);
     });
     (dr.trackLimits || []).forEach(function (t) {
       var d = _rccEl('div', 'rcr-limit');
-      d.style.left = at(t.t, t.lap) + '%';
+      d.style.left = markPos(t.t, t.lap) + '%';
       d.title = 'Lap ' + (t.lap || '—') + ': track limits, ' + (t.outcome || 'warning') + ', ' + t.points + ' points';
       line.appendChild(d);
     });

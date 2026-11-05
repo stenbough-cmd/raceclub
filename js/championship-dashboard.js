@@ -138,8 +138,6 @@
     var active = hasSeason && !page.seasonEnded;
     var running = !!(page && page.hasActiveSeason);
     var cal = (page && page.calendar) || [];
-    var anyEmpty = cal.some(function (c) { return !c.hasResults; });
-    var anyResults = cal.some(function (c) { return c.hasQualifyResults || c.hasRaceResults; });
 
     function btn(label, enabled, onClick, why, cls) {
       var b = mk('button', cls || 'rc-btn-secondary rc-btn-sm', label);
