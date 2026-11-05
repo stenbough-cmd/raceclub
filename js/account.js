@@ -2541,14 +2541,27 @@
           var wrap = el('div', 'rc-adm-news');
           wrap.appendChild(sectionHead(title, tiles.length + ' tools'));
           var grid = el('div', 'rc-adm-tiles');
-          var stampEls = [];
+          var stampEls = [], pillEls = [];
           tiles.forEach(function (t) {
             var b = el('button', 'rc-ol-tile rc-ol-tile-click');
             b.type = 'button';
             var top = el('div', 'rc-ol-tile-top');
             top.appendChild(el('div', 'rc-ol-tile-label', escapeHtml(t[0])));
             var opts = t[4] || {};
-            top.appendChild(el('div', 'rc-ol-tile-corner', escapeHtml(opts.corner || 'Open →')));
+            // opts.pill = an ON/OFF switch tile: the corner shows a green ON or red OFF pill. opts.pill is 'on'/'off' (known now) or 'status'
+            // (the state comes from adminWebsiteStatus; opts.statusKey names the field).
+            var cornerEl = el('div', 'rc-ol-tile-corner', escapeHtml(opts.corner || 'Open →'));
+            var pillState = null;
+            function paintPill(on) {
+              pillState = on;
+              cornerEl.className = 'rc-ol-tile-corner rc-ol-switch ' + (on === null ? 'rc-ol-switch-wait' : (on ? 'rc-ol-switch-on' : 'rc-ol-switch-off'));
+              cornerEl.textContent = on === null ? '...' : (on ? 'ON' : 'OFF');
+            }
+            if (opts.pill) {
+              paintPill(opts.pill === 'on' ? true : (opts.pill === 'off' ? false : null));
+              if (opts.pill === 'status') pillEls.push({ key: opts.statusKey, paint: paintPill });
+            }
+            top.appendChild(cornerEl);
             b.appendChild(top);
             var valueEl = el('div', 'rc-ol-tile-value', escapeHtml(t[1]));
             b.appendChild(valueEl);
@@ -2565,13 +2578,15 @@
               set textContent(v) { valueEl.textContent = v; },
               get disabled() { return b.disabled; },
               set disabled(v) { b.disabled = v; },
-              querySelector: function (q) { return b.querySelector(q); }
+              querySelector: function (q) { return b.querySelector(q); },
+              getState: function () { return pillState; },
+              setState: function (on) { paintPill(on); }
             };
             b.addEventListener('click', function (ev) { t[3].call(proxy, ev); });
             grid.appendChild(b);
           });
           wrap.appendChild(grid);
-          if (stampEls.length) {
+          if (stampEls.length || pillEls.length) {
             var fmt = function (iso) {
               var d = iso ? new Date(iso) : null;
               if (!d || isNaN(d.getTime())) return 'Last update: never';
@@ -2580,6 +2595,7 @@
             var loadStamps = function () {
               fetchApi('adminWebsiteStatus', { token: token }).then(function (res) {
                 stampEls.forEach(function (x) { x.node.textContent = (res && res.success) ? fmt(res[x.key]) : ''; });
+                pillEls.forEach(function (x) { if (res && res.success) x.paint(!!res[x.key]); });
               }).catch(function () { stampEls.forEach(function (x) { x.node.textContent = ''; }); });
             };
             loadStamps();
@@ -2601,6 +2617,7 @@
           ['People', 'Members', 'Accounts and roles.', function () { openMembersModal(token); }],
           ['Circuits', 'Tracks', 'Tracks and layouts.', function () { openTracksModal(token); }],
           ['Garage', 'Cars', 'Cars and team seats.', function () { openCarsModal(token); }],
+          ['Photos', 'Add Preview Photo', 'Pictures for Season Previews.', function () { openPreviewPhotoModal(token); }],
           ['Health', 'Integrity Check', 'Scan the season and the whole site.', function () { openIntegrityCheckModal(token); }, { corner: 'Run →' }]
         ]));
         // WEBSITE TOOLS: what the old Admin page held. Each tile runs the same action as the old button.
@@ -2608,18 +2625,20 @@
         var webSpecs = [];
         webTools.forEach(function (t) {
           if (t.staged) return;
-          var meta = { 'Update Home Page Helmets': ['Update', 'Home Page Helmets', 'Choose the four showcase helmets.'], 'Update Home Page Grid': ['Update', 'Home Page Grid', 'Refresh Meet The Grid.'], 'Add Preview Photo': ['Photos', 'Add Preview Photo', 'Pictures for Season Previews.'], 'Backup Now': ['Safety', 'Backup Now', 'Copy the whole Sheet to Drive.'] }[t.label] || ['Website', t.label, ''];
-          var stampKey = { 'Update Home Page Helmets': 'helmets', 'Update Home Page Grid': 'grid', 'Backup Now': 'backup' }[t.label] || '';
-          var cornerTxt = t.label === 'Backup Now' ? 'Run →' : 'Open →';
-          webSpecs.push([meta[0], meta[1], meta[2], t.onClick, { corner: cornerTxt, stamp: stampKey }]);
+          var meta = { 'Update Home Page Helmets': ['Update', 'Home Page Helmets', 'Choose the four showcase helmets.'], 'Update Home Page Grid': ['Update', 'Home Page Grid', 'Refresh Meet The Grid.'], 'Weekly Backup': ['Safety', 'Weekly Backup', 'Copy the whole Sheet to Drive each week.'] }[t.label] || ['Website', t.label, ''];
+          var stampKey = { 'Update Home Page Helmets': 'helmets', 'Update Home Page Grid': 'grid', 'Weekly Backup': 'backup' }[t.label] || '';
+          var cornerTxt = t.label === 'Update Home Page Grid' ? 'Run →' : 'Open →';
+          var tileOpts = { corner: cornerTxt, stamp: stampKey };
+          if (t.label === 'Weekly Backup') tileOpts = { stamp: stampKey, pill: 'status', statusKey: 'weeklyOn' };
+          webSpecs.push([meta[0], meta[1], meta[2], t.onClick, tileOpts]);
         });
         var webSection = toolTiles('Website', webSpecs.map(function (x) { return [x[0], x[1], x[2], x[3], x[4]]; }).concat([['Preview', 'Staged League Hub', rcStagedHubOn() ? 'On in this browser.' : 'Off in this browser.', function () {
           var turningOn = !rcStagedHubOn();
           rcSetStagedHub(turningOn);
           showToast(turningOn ? 'Staged League Hub is ON in this browser. Open the League Hub to see it.' : 'Staged League Hub is OFF. The League Hub shows the real league again.', 'success');
           this.querySelector('.rc-ol-tile-sub').textContent = turningOn ? 'On in this browser.' : 'Off in this browser.';
-          this.querySelector('.rc-ol-tile-corner').textContent = turningOn ? 'ON' : 'OFF';
-        }, { corner: rcStagedHubOn() ? 'ON' : 'OFF' }]]));
+          this.setState(turningOn);
+        }, { pill: rcStagedHubOn() ? 'on' : 'off' }]]));
         body.appendChild(webSection);
       }
     }).catch(function () {
@@ -4847,7 +4866,7 @@
     // HOME PAGE HELMETS (ECO chat, 2026-10-27) -- pick 4 helmets from the whole helmet catalog (the same list as the Helmet
     // Designer's presets), then download home-helmets.json. Saved at website/data/ in the race-club-data repo, it is what the helmet
     // showcase on index.html draws. Read-only and gray: nothing is written to the Sheet.
-    // WEBSITE TOOLS container (below Data Management): the Update buttons, Backup Now and the Staged League Hub switch.
+    // WEBSITE TOOLS container (below Data Management): the Update buttons, the Weekly Backup switch and the Staged League Hub switch.
     addItem('Update Home Page Helmets', function () {
       var modal = showModal('Home Page Helmets', { wide: true });
       var body = modal.body;
@@ -4927,8 +4946,6 @@
     // EXPORT CURRENT CAR LIST (ECO chat, 2026-10-27) -- read-only. Asks Website.gs (adminExportCarList, Admin only) for the newest
     // season of every class on the Cars tab and downloads it as car-list.json. Saved at website/data/ in the race-club-data repo, it is what
     // the Meet The Grid section on index.html draws. Gray: it writes nothing to the Sheet.
-    addItem('Add Preview Photo', function () { openPreviewPhotoModal(token); }, ['Add a picture for Season Preview stories.']);
-
     addItem('Update Home Page Grid', function () {
       var btn = this;
       var label = btn.textContent;
@@ -4987,30 +5004,35 @@
       tools.push({ staged: true });
     })(); } catch (stagedErr) { /* the switch is optional: Data Management must always draw */ }
 
-    // BACKUP NOW (ECO chat, 2026-11-01). Asks Apps Script to copy the whole Sheet into the owner's Drive folder "Race Club Backups".
-    // Gray: it writes nothing to the Sheet (the copy is a separate Drive file).
-    addItem('Backup Now', function () {
-      var btn = this;
-      var label = btn.textContent;
-      btn.disabled = true;
-      btn.textContent = 'Backing up...';
-      fetchApi('adminBackupNow', { token: token, timeoutMs: 180000 }).then(function (res) {
-        btn.disabled = false; btn.textContent = label;
+    // WEEKLY BACKUP (switch). ON: Apps Script makes a copy of the whole Sheet (and the Championship Data sheet) in the owner's Drive folder
+    // "Race Club Backups" right now and adds a weekly Google timer (Mondays around 3 am). OFF: only removes the timer.
+    addItem('Weekly Backup', function () {
+      var tile = this;
+      var current = tile.getState();
+      if (current === null) { showToast('Still checking the weekly backup. Try again in a moment.', 'error'); return; }
+      var turningOn = !current;
+      var label = tile.textContent;
+      tile.disabled = true;
+      tile.textContent = turningOn ? 'Backing up...' : 'Turning off...';
+      fetchApi('adminWeeklyBackup', { token: token, params: { enabled: turningOn ? '1' : '0' }, timeoutMs: 180000 }).then(function (res) {
+        tile.disabled = false; tile.textContent = label;
         if (res && res.success) {
+          tile.setState(turningOn);
           document.dispatchEvent(new CustomEvent('rc-website-status'));
-          if (res.championshipError) { showToast('Sheet backup saved (' + res.name + '), but the Championship data could NOT be copied: ' + res.championshipError, 'error'); return; }
-          showToast('Backup saved: ' + res.name + (res.championship ? ' and ' + res.championship : '') + '. It is in your Drive folder Race Club Backups.', 'success');
+          if (!turningOn) { showToast('Weekly backup is OFF. The backups already made are still in your Drive folder.', 'success'); return; }
+          if (res.championshipError) { showToast('Weekly backup is ON. The Sheet was backed up (' + res.name + '), but the Championship data could NOT be copied: ' + res.championshipError, 'error'); return; }
+          showToast('Weekly backup is ON. A backup was made now' + (res.name ? ' (' + res.name + ')' : '') + ' in your Drive folder Race Club Backups, and another will be made every Monday around 3 am.', 'success');
           return;
         }
-        showToast((res && (res.message || res.error)) || 'Could not make the backup.', 'error');
+        showToast((res && (res.message || res.error)) || 'Could not change the weekly backup.', 'error');
       }).catch(function () {
-        btn.disabled = false; btn.textContent = label;
-        showToast('No answer from the server. The backup may still be running; check the Drive folder before trying again.', 'error');
+        tile.disabled = false; tile.textContent = label;
+        showToast('No answer from the server. Refresh the page to see whether the weekly backup changed.', 'error');
       });
     }, [
-      'Saves a dated copy of the whole Sheet in your Google Drive, in a folder called Race Club Backups. The newest 8 copies are kept; older ones go to the Drive trash. The copy is private to your Google account.',
-      'Weekly copies are switched on from the Sheet menu: Race Club > Turn On Weekly Backup.'
-    ], 'Saves a dated copy of the whole Sheet in your Google Drive.');
+      'Turn it ON and a dated copy of the whole Sheet (plus the Championship Data sheet) is saved in your Google Drive folder Race Club Backups straight away, then again every Monday around 3 am. The newest 8 copies are kept; older ones go to the Drive trash.',
+      'Turn it OFF and only the weekly timer is removed. The copies already made stay where they are.'
+    ], 'Saves a dated copy of the whole Sheet in your Google Drive every week.');
 
     return tools;
   }
