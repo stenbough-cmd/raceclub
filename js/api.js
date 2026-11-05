@@ -236,7 +236,7 @@ function _rcStagedCtx_() {
     } catch (err) { /* keep the real seat */ }
     var feedRounds = rounds.slice().reverse().map(function (r) {
       var ps = all.filter(function (p) { return p.roundId === r.roundId; }).map(strip).sort(function (a, b) { return new Date(b.submittedAt) - new Date(a.submittedAt); });
-      return { roundId: r.roundId, seasonId: hub.seasonId || '', seasonName: hub.seasonName || '', roundNumber: Number(r.roundNumber) || 0, eventName: r.eventName || '', track: r.track || '',
+      return { roundId: r.roundId, seasonId: hub.seasonId || '', seasonName: hub.seasonName || '', roundNumber: Number(r.roundNumber || r.roundNum) || (rounds.indexOf(r) + 1), eventName: r.eventName || '', track: r.track || '',
         shortName: r.shortName || (r.track || '').slice(0, 3).toUpperCase(), startUtc: r.startUtc || '', resultsFinalized: r.roundId !== lastRoundId,
         pendingCount: ps.filter(function (p) { return p.status === 'Pending'; }).length, protests: ps };
     });
@@ -251,6 +251,85 @@ function _rcStagedCtx_() {
   return _rcStagedCtx_P;
 }
 
+// The rest of the Dashboard in the staged league (Matt, 2026-11-05): registration status, Next Race and the League Tools season list,
+// all drawn from the staged hub so every container fills in the way it will with a real season running. Read only.
+var _rcStagedDashP = null;
+function _rcStagedDash_() {
+  if (_rcStagedDashP) return _rcStagedDashP;
+  _rcStagedDashP = Promise.all([_rcStagedFile_('hub'), _rcStagedFile_('profiles').catch(function () { return {}; })]).then(function (a) {
+    var hub = a[0] || {}, prof = a[1] || {};
+    var me = _rcStagedMe_();
+    var people = [], myCls = '', myRow = null;
+    (hub.standings || []).forEach(function (blk) {
+      (blk.standings || []).forEach(function (row) {
+        if (!row.name) return;
+        people.push(row);
+        if (me && (row.profileId === me.id || row.id === me.id || row.name === me.name)) { myCls = blk.className || ''; myRow = row; }
+      });
+    });
+    var open = 0;
+    try { Object.keys(hub.availableSeatsByClass || {}).forEach(function (k) { open += Number(hub.availableSeatsByClass[k]) || 0; }); } catch (err) { open = 0; }
+    var th = null;
+    try { var pg = me && (prof.pages || {})[me.id]; th = pg && pg.teamHistory && pg.teamHistory[0]; } catch (err) { th = null; }
+    var seatInfo = (th && th.seat) || {};
+    var done = Number(hub.roundsCompleted) || 0;
+    var activeSeason = {
+      success: true, hasActiveSeason: true, seasonId: hub.seasonId || '', seasonName: hub.seasonName || '',
+      registered: !!myCls, seatsTotal: people.length + open, seatsTaken: people.length
+    };
+    if (myCls) {
+      activeSeason.registration = {
+        joinedAt: hub.seasonStartUtc || new Date().toISOString(), teamName: seatInfo.team || (myRow && myRow.team) || '', carClass: seatInfo.carClass || myCls,
+        manufacturer: seatInfo.manufacturer || (myRow && myRow.manufacturer) || '', carModel: seatInfo.carModel || '', carNumber: seatInfo.carNumber || (myRow && myRow.carNumber) || '',
+        status: 'Active', statusReason: '', canDropOut: done === 0
+      };
+    } else { activeSeason.seatsRemaining = open; activeSeason.seasonFull = open === 0; }
+    // Calendar: rounds numbered in order, byes skipped.
+    var n = 0;
+    var entries = (hub.calendar || []).map(function (e) {
+      if (e.kind === 'bye') return e;
+      n++;
+      return Object.assign({}, e, { roundNumber: e.roundNumber || e.roundNum || n });
+    });
+    var next = entries.filter(function (e) { return e.kind !== 'bye' && !e.hasResults; })[0];
+    var hn = hub.nextRace || {};
+    var nextRace = { success: true, hasNextRace: false };
+    if (next || (hn && hn.eventName)) {
+      var src = Object.assign({}, hn, next || {});
+      nextRace = {
+        success: true, hasNextRace: true, seasonId: hub.seasonId || '', seasonName: hub.seasonName || '', kind: src.kind || 'round',
+        eventName: src.eventName || '', trackId: src.trackId || '', track: src.track || '', trackFullName: src.trackFullName || src.track || '', layout: src.layout || '',
+        startUtc: src.startUtc || '', raceLengthTier: src.raceLengthTier || '', raceLengthMinutes: src.raceLengthMinutes || 0, password: myCls ? (src.password || 'STAGED') : '',
+        chanceOfRain: src.chanceOfRain || 0, temperatureC: (src.temperatureC === '' || src.temperatureC === undefined) ? null : src.temperatureC,
+        igRaceStart: src.igRaceStart || '', igPracticeStart: src.igPracticeStart || '', igQualifyStart: src.igQualifyStart || '',
+        roundNum: src.roundNum || src.roundNumber || 0, totalRounds: hub.totalRounds || n
+      };
+    }
+    // League Tools (Admin): this season with its calendar, and the earlier seasons the hub lists.
+    var classes = (hub.standings || []).map(function (b) { return b.className; }).filter(Boolean);
+    var nowIso = hub.seasonStartUtc || new Date().toISOString();
+    var seasonsOut = [{ seasonId: hub.seasonId || '', name: hub.seasonName || '', status: hub.seasonEnded ? 'Completed' : 'Registration', createdAt: nowIso, classes: classes,
+      raceCount: n, registrationCount: people.length, locked: done > 0 }];
+    (hub.seasons || []).forEach(function (sn) {
+      if (!sn || sn.seasonId === hub.seasonId) return;
+      seasonsOut.push({ seasonId: sn.seasonId, name: sn.name || '', status: 'Completed', createdAt: sn.createdAt || '', classes: [], raceCount: 0, registrationCount: 0, locked: true });
+    });
+    var races = entries.map(function (e) {
+      return Object.assign({}, e, { hasRaceResults: !!e.hasResults, hasAnySessionImported: !!e.hasResults, resultsFinalized: !!e.hasResults, finished: !!e.hasResults });
+    });
+    var racesBySeasonId = {}; racesBySeasonId[hub.seasonId || ''] = races;
+    var news = [], stories = [];
+    (hub.news || []).forEach(function (x) {
+      if (x.isStory) stories.push({ storyId: x.storyId || x.newsId || '', seasonId: hub.seasonId || '', kind: x.storyKind || 'recap', roundNum: x.roundNum || 0, title: x.title || '', status: 'published',
+        chars: String(x.body || '').length, seasonName: hub.seasonName || '', publishedAt: x.publishedAt || '', createdAt: x.publishedAt || '' });
+      else news.push({ NewsID: x.newsId || '', Title: x.title || '', Body: x.body || '', AuthorName: x.authorName || '', PublishedAt: x.publishedAt || '', HeroImageUrl: x.heroImageUrl || '', Active: 'Active' });
+    });
+    return { activeSeason: activeSeason, nextRace: nextRace, adminList: { success: true, seasons: seasonsOut, racesBySeasonId: racesBySeasonId, news: news, stories: stories } };
+  });
+  _rcStagedDashP.catch(function () { _rcStagedDashP = null; });
+  return _rcStagedDashP;
+}
+
 // Returns a Promise with the staged answer, or null when this request is not one the staged data covers.
 function _rcStagedAnswer_(action, options) {
   var params = (options && options.params) || {};
@@ -260,15 +339,24 @@ function _rcStagedAnswer_(action, options) {
       : { success: true, signedIn: false, eligibleSeasonIds: [], votes: {} });
   }
   if (isPost) return null;
+  if (action === 'adminListSeasonsWithRaces') {
+    return _rcStagedDash_().then(function (sd) { return sd ? sd.adminList : _rcFetchApiLive_(action, options); }).catch(function () { return _rcFetchApiLive_(action, options); });
+  }
   var NF = { success: false, error: 'NOT_FOUND', message: 'No posted results for that round.' };
   if (action === 'getDashboardData') {
     return _rcFetchApiLive_(action, options).then(function (d) {
-      return _rcStagedCtx_().then(function (c) {
-        if (!c || !d || !d.success) return d;
-        if (c.seat) d.currentSeat = c.seat;
-        d.myProtests = c.dash;
-        return d;
-      }).catch(function () { return d; });
+      if (!d || !d.success) return d;
+      // Registration status and Next Race come from the staged hub; Current Seat and Protests from the staged protests.
+      return _rcStagedDash_().then(function (sd) {
+        if (sd) { d.activeSeason = sd.activeSeason; d.nextRace = sd.nextRace; }
+      }).catch(function () { /* keep the live answers */ }).then(function () {
+        return _rcStagedCtx_().then(function (c) {
+          if (!c) return d;
+          if (c.seat) d.currentSeat = c.seat;
+          d.myProtests = c.dash;
+          return d;
+        }).catch(function () { return d; });
+      });
     });
   }
   if (action === 'getProtestsPageData') {
