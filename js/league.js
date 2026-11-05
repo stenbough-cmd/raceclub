@@ -2599,7 +2599,7 @@ function _rclRenderNews(hub) {
 }
 
 // Track photo for a story (League News round stories): <figure> with the photo and an italic caption (long track name, country).
-// mode 'side' = floated left, about a third of the width, for the preview; 'full' = full width, for the popup.
+// Floated left at about a third of the width, with the story text wrapping around it (on the page and in the popup).
 // No photo, or a photo that fails to load, and the figure is simply not there.
 function _rclStoryPhotoEl(item, mode) {
   if (!item || !item.photoFile) return null;
@@ -2632,9 +2632,9 @@ function _rclBuildStoryEl_(item) {
     wrap.appendChild(heroImg);
   }
   wrap.appendChild(_rclNewsHeadRow(item));
-  var fullPhoto = _rclStoryPhotoEl(item, 'full');
-  if (fullPhoto) wrap.appendChild(fullPhoto);
   var bodyEl = _rclEl('div', 'rcl-news-body');
+  var fullPhoto = _rclStoryPhotoEl(item, 'side');
+  if (fullPhoto) bodyEl.appendChild(fullPhoto);
   _rclRenderStoryBodyBlocks(bodyEl, item.body);
   wrap.appendChild(bodyEl);
   if (item.editNote) {
@@ -2681,9 +2681,9 @@ function _rclOpenStoryModal(startIndex, single) {
       wrap.appendChild(heroImg);
     }
     wrap.appendChild(_rclNewsHeadRow(item));
-    var popPhoto = _rclStoryPhotoEl(item, 'full');
-    if (popPhoto) wrap.appendChild(popPhoto);
     var bodyEl = _rclEl('div', 'rcl-news-body');
+    var popPhoto = _rclStoryPhotoEl(item, 'side');
+    if (popPhoto) bodyEl.appendChild(popPhoto);
     _rclRenderStoryBodyBlocks(bodyEl, item.body);
     wrap.appendChild(bodyEl);
     if (item.editNote) {

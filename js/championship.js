@@ -2741,7 +2741,7 @@ function _rccStoryPreview(raw, limit) {
   return { el: box, truncated: truncated };
 }
 // Track photo for a Race Story or Season Finale: photo plus italic caption (long track name, country).
-// mode 'side' = floated left, a third of the width (the preview); 'full' = full width (the popup).
+// Floated left at about a third of the width, with the story text wrapping around it (on the page and in the popup).
 // No photo, or one that fails to load, and the figure is simply not there. Season Previews have none.
 function _rccStoryPhotoEl(s, mode) {
   if (!s || !s.photoFile) return null;
@@ -2946,10 +2946,10 @@ function rccOpenStory(startIndex) {
     var w = _rccEl('div', 'rcl-news-item rcl-modal-story');
     // Badge to the left of the title and date, like the League News popup (Matt, 2026-10-13).
     w.appendChild(_rccStoryHeadRow(s));
-    var popPhoto = _rccStoryPhotoEl(s, 'full');
-    if (popPhoto) w.appendChild(popPhoto);
     if (s.standfirst) w.appendChild(_rccText('p', 'rcc-story-standfirst', s.standfirst));
     var b = _rccEl('div', 'rcl-news-body');
+    var popPhoto = _rccStoryPhotoEl(s, 'side');
+    if (popPhoto) b.appendChild(popPhoto);
     _rccStoryBlocks(b, s.body);
     w.appendChild(b);
     w.appendChild(_rccStoryVote(s));
