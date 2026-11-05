@@ -1515,8 +1515,10 @@ body.rc-league-page:not(.rcc-page) .rcl-allresults-session-select { min-width: 1
    drops to row 2 under the title, so the badge is never centered against title + subtitle together. */
 .rcl-news-headrow { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 12px; align-items: start; }
 .rcl-news-headtext { display: contents; }
-.rcl-news-badge-wrap { grid-column: 1; grid-row: 1; align-self: center; display: flex; }
-.rcl-news-headrow .rcl-news-title { grid-column: 2; grid-row: 1; min-width: 0; align-self: center; }
+.rcl-news-badge-wrap { grid-column: 1; grid-row: 1; align-self: start; display: flex; }
+/* Icon lines up with the FIRST line of the title: the title's first line is centered on the 46px icon, extra lines hang below. */
+.rcl-news-headrow .rcl-news-title { grid-column: 2; grid-row: 1; min-width: 0; align-self: start; padding-top: max(0px, calc((46px - 1lh) / 2)); }
+.rcl-news-headrow:has(.rcl-news-badge-sm) .rcl-news-title { padding-top: 0; }
 .rcl-news-headrow .rcl-news-meta { min-width: 0; }
 .rcl-news-headrow:not(:has(.rcl-news-badge-wrap)) { grid-template-columns: minmax(0, 1fr); }
 .rcl-news-headrow:not(:has(.rcl-news-badge-wrap)) .rcl-news-title,
