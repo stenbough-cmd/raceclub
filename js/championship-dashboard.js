@@ -55,9 +55,9 @@
       '.rcd-panel .rc-btn-row { min-height: 28px; }' +
       // Popups look like the Account page popups (Edit Season in League Tools): plain white header, thin gray line, small bold title, a plain X,
       // no red slash or red line, and centered over the page body (right of the sidebar), not the whole screen.
-      '.rcc-modal-overlay.rcc-page { background: rgba(23, 23, 23, 0.5); align-items: center; padding: 24px; z-index: 2000; }' +
+      '.rcc-modal-overlay.rcc-page { background: rgba(23, 23, 23, 0.5); align-items: center; padding: calc(var(--rc-band-top, 0px) + 24px) 24px calc(var(--rc-band-bottom, 0px) + 24px); z-index: 2000; }' +
       '@media (orientation: landscape) { .rcc-modal-overlay.rcc-page { padding-left: 244px; } }' +
-      '.rcc-modal-overlay.rcc-page .rcl-modal-dialog { background: var(--rc-white); border: 0; border-radius: 10px; box-shadow: var(--rc-shadow-lg); padding: 0; max-width: 820px; max-height: calc(100vh - 48px); margin: 0; }' +
+      '.rcc-modal-overlay.rcc-page .rcl-modal-dialog { background: var(--rc-white); border: 0; border-radius: 10px; box-shadow: var(--rc-shadow-lg); padding: 0; max-width: 820px; max-height: calc(100vh - var(--rc-band-top, 0px) - var(--rc-band-bottom, 0px) - 48px); margin: auto; }' +
       '.rcc-modal-overlay.rcc-page .rcl-modal-dialog-wide { max-width: 820px; }' +
       '.rcc-modal-overlay.rcc-page .rcl-modal-dialog-narrow { max-width: 460px; }' +
       '.rcc-modal-overlay.rcc-page .rcl-modal-head { margin: 0; padding: 18px 20px; background: var(--rc-white); border-bottom: 1px solid var(--rc-silver); border-radius: 10px 10px 0 0; }' +

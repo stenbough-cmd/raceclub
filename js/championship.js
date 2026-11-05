@@ -2519,6 +2519,7 @@ function _rccShowOnlyMessage(panelId, title, text, actions) {
   if (!main) { _rccReveal(); return; }
   if (document.getElementById(panelId)) { _rccReveal(); return; }
   Array.prototype.forEach.call(main.children, function (child) { child.style.display = 'none'; });
+  main.classList.add('rcc-only-message');
   var box = _rccEl('div', 'rcl-panel rcl-row-full');
   box.id = panelId;
   var empty = _rccEmpty(title, text);

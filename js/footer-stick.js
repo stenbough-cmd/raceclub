@@ -47,3 +47,49 @@
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
 })();
+
+// ---- Page centre (Matt, 2026-11-05) ------------------------------------------------------------------------------------------------
+// The centre of a page is the band between the bottom of the header / navbar and the top of the footer. This publishes three numbers
+// on <html> that the stylesheets use to centre loaders, popups and "nothing here yet" panels inside that band:
+//   --rc-band-top     bottom edge of the lowest header / navbar bar, in px from the top of the window
+//   --rc-band-bottom  how much of the footer is showing at the bottom of the window (0 when it is off-screen)
+//   --rc-footer-h     the footer's full height
+(function () {
+  var queued = false;
+  function barBottom(node) {
+    var cs = window.getComputedStyle(node);
+    if (cs.display === 'none' || cs.visibility === 'hidden') return 0;
+    var r = node.getBoundingClientRect();
+    if (!r.height) return 0;
+    if (cs.position === 'fixed') return r.bottom;
+    if (cs.position === 'sticky') return Math.max(r.bottom, (parseFloat(cs.top) || 0) + r.height);
+    return 0;
+  }
+  function measure() {
+    queued = false;
+    var top = 0;
+    var bars = document.querySelectorAll('#rc-header, .rc-fixed-header, .rc-account-navbar, .rcl-navbar, .rc-profile-navbar');
+    for (var i = 0; i < bars.length; i++) top = Math.max(top, barBottom(bars[i]));
+    var footer = document.querySelector('.rc-site-footer');
+    var bottom = 0, fh = 0;
+    if (footer && window.getComputedStyle(footer).display !== 'none') {
+      var fr = footer.getBoundingClientRect();
+      fh = fr.height;
+      var vh = document.documentElement.clientHeight;
+      if (fr.top < vh) bottom = vh - Math.max(fr.top, top);
+    }
+    var root = document.documentElement.style;
+    root.setProperty('--rc-band-top', Math.round(top) + 'px');
+    root.setProperty('--rc-band-bottom', Math.round(Math.max(0, bottom)) + 'px');
+    root.setProperty('--rc-footer-h', Math.round(fh) + 'px');
+  }
+  function schedule() { if (queued) return; queued = true; (window.requestAnimationFrame || window.setTimeout)(measure, 0); }
+  function begin() {
+    measure();
+    window.addEventListener('resize', schedule);
+    window.addEventListener('scroll', schedule, { passive: true });
+    window.addEventListener('load', schedule);
+    if (window.MutationObserver) new MutationObserver(schedule).observe(document.body, { childList: true, subtree: true });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', begin); else begin();
+})();

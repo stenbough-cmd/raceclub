@@ -45,8 +45,9 @@ body.rc-league-page {
   justify-content: center;
   gap: 18px;
   background: var(--rc-offwhite, #F4F4F2);
-  justify-content: flex-start;
-  padding-top: 120px;
+  /* Centred between the header and the bottom of the window (the footer is hidden while a page is loading). */
+  justify-content: center;
+  padding-top: 0;
   transition: opacity 0.4s ease;
   /* Stays invisible for the first second, then fades in. Pages that load faster than that never show the
      loader at all (a split-second flash looks like a glitch); slow loads still get the start lights.
@@ -1577,7 +1578,8 @@ body.rc-league-page:not(.rcc-page) .rcl-allresults-session-select { min-width: 1
      that high renders partly behind/under the navbar and reads as "cut off." 86px = 70px navbar + a
      16px gap, so even a dialog tall enough to hit its own max-height ceiling (below) never starts
      above the navbar. */
-  padding: 86px 20px 24px;
+  /* Centred between the bottom of the header/navbar and the top of the footer (js/footer-stick.js). */
+  padding: calc(var(--rc-band-top, 70px) + 16px) 20px calc(var(--rc-band-bottom, 0px) + 16px);
   overflow-y: auto;
   z-index: 500;
 }
@@ -1596,7 +1598,8 @@ body.rc-league-page:not(.rcc-page) .rcl-allresults-session-select { min-width: 1
   /* Capped to fit inside the overlay's own top/bottom padding (86px + 24px = 110px, kept in sync
      with .rcl-modal-overlay above), so the dialog always sits fully inside the page -- clear of the
      fixed navbar at the top -- and scrolls its own content internally once it hits this ceiling. */
-  max-height: calc(100vh - 110px);
+  max-height: calc(100vh - var(--rc-band-top, 70px) - var(--rc-band-bottom, 0px) - 32px);
+  margin: auto;
   overflow-y: auto;
   /* Same gutters as Account.html's popups (.rc-modal-body: 20px). */
   padding: 0 20px 20px;
@@ -2388,3 +2391,7 @@ body.rcl-hub .rcl-news-current-body, .rcl-modal-story .rcl-news-body { display: 
 .rcl-story-dialog .rcl-news-body { font-size: 15px; line-height: 1.7; }
 .rcl-news-title-link { cursor: pointer; }
 .rcl-news-title-link:hover, .rcl-news-title-link:focus-visible { text-decoration: underline; text-underline-offset: 3px; }
+
+/* A page that shows only one message (no Championship season yet, sign-up invite): the message sits in the middle of the band between the
+   navbar and the footer. */
+.rcl-main.rcc-only-message { min-height: calc(100vh - var(--rc-band-top, 114px) - var(--rc-footer-h, 70px)); display: flex; flex-direction: column; justify-content: center; padding-top: 0; padding-bottom: 0; box-sizing: border-box; }

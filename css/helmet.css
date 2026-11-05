@@ -151,7 +151,7 @@
 
 /* Admin Helmet Designer on a computer: the helmet side is locked in place and only the controls side scrolls. */
 @media (orientation: landscape) {
-  .rc-modal.rch-modal { height: calc(100vh - 48px); display: flex; flex-direction: column; overflow: hidden; }
+  .rc-modal.rch-modal { height: calc(100vh - var(--rc-band-top, 0px) - var(--rc-band-bottom, 0px) - 48px); display: flex; flex-direction: column; overflow: hidden; }
   .rc-modal.rch-modal .rc-modal-body { flex: 1 1 auto; min-height: 0; overflow: hidden; }
   .rch-designer:not(.rch-player) { height: 100%; }
   .rch-designer:not(.rch-player) .rch-grid { height: 100%; }
