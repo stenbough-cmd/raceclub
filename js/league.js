@@ -2581,7 +2581,7 @@ function _rclRenderNews(hub) {
   current.appendChild(curHead);
   var pv = _rclStoryPreviewHtml(cur.body, 1000);
   var curBody = _rclEl('div', 'rcl-news-current-body', pv.html);
-  _rclPlaceStoryPhotos(curBody, cur);
+  _rclPlaceStoryPhotos(curBody, cur, true);
   current.appendChild(curBody);
   var cont = _rclEl('button', 'rcl-news-continue', 'Continue Reading');
   cont.type = 'button';
@@ -2630,9 +2630,9 @@ function _rclStoryPhotoEl(item, i, right) {
   return fig;
 }
 // Puts the story's photos into a story body: the first at the top left, the second (Season Previews) midway through the text, to the right.
-function _rclPlaceStoryPhotos(bodyEl, item) {
+function _rclPlaceStoryPhotos(bodyEl, item, firstOnly) {   // firstOnly: the on-page preview shows one photo, the popup shows all
   var first = _rclStoryPhotoEl(item, 0, false);
-  var second = _rclStoryPhotoEl(item, 1, true);
+  var second = firstOnly ? null : _rclStoryPhotoEl(item, 1, true);
   var blocks = [].slice.call(bodyEl.children);
   if (second) {
     var at = Math.ceil(blocks.length / 2);

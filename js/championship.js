@@ -2765,9 +2765,9 @@ function _rccStoryPhotoEl(s, i, right) {
   return fig;
 }
 // First photo at the top left of the story body, second (Season Previews) midway through the text, to the right.
-function _rccPlaceStoryPhotos(bodyEl, s) {
+function _rccPlaceStoryPhotos(bodyEl, s, firstOnly) {   // firstOnly: the on-page preview shows one photo, the popup shows all
   var first = _rccStoryPhotoEl(s, 0, false);
-  var second = _rccStoryPhotoEl(s, 1, true);
+  var second = firstOnly ? null : _rccStoryPhotoEl(s, 1, true);
   var blocks = [].slice.call(bodyEl.children);
   if (second) {
     var at = Math.ceil(blocks.length / 2);
@@ -2854,7 +2854,7 @@ function rccRenderStories(page) {
   curTitle.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); rccOpenStory(0); } });
   wrap.appendChild(curHead);
   var pv = _rccStoryPreview(cur.body, RCC_STORY_PREVIEW_CHARS);
-  _rccPlaceStoryPhotos(pv.el, cur);
+  _rccPlaceStoryPhotos(pv.el, cur, true);
   wrap.appendChild(pv.el);
   var more = _rccText('button', 'rcl-news-continue', 'Continue Reading');
   more.type = 'button';

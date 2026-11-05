@@ -447,7 +447,7 @@ var RC_DATA_BASE_URL = 'https://stenbough-cmd.github.io/race-club-data/website/d
 // picture an organizer chose in Upload Results, kept in the data repo (website/images/tracks/user/).
 function rcStoryPhotoUrl(file) {
   var enc = String(file || '').split('/').map(encodeURIComponent).join('/');
-  if (/^user\//.test(file)) return RC_DATA_BASE_URL.replace(/data\/$/, 'images/tracks/') + enc;
+  if (/^(user|userpreview)\//.test(file)) return RC_DATA_BASE_URL.replace(/data\/$/, 'images/tracks/') + enc;
   return 'assets/tracks/' + enc;
 }
 var RC_DATA_SCHEMA = 1;                       // must match RC_PUBLISH_SCHEMA_ in Publish.gs

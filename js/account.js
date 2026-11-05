@@ -3241,7 +3241,7 @@
         var webSpecs = [];
         webTools.forEach(function (t) {
           if (t.staged) return;
-          var meta = { 'Update Home Page Helmets': ['Update', 'Home Page Helmets', 'Choose the four showcase helmets.'], 'Update Home Page Grid': ['Update', 'Home Page Grid', 'Refresh Meet The Grid.'], 'Backup Now': ['Safety', 'Backup Now', 'Copy the whole Sheet to Drive.'] }[t.label] || ['Website', t.label, ''];
+          var meta = { 'Update Home Page Helmets': ['Update', 'Home Page Helmets', 'Choose the four showcase helmets.'], 'Update Home Page Grid': ['Update', 'Home Page Grid', 'Refresh Meet The Grid.'], 'Add Preview Photo': ['Photos', 'Add Preview Photo', 'Pictures for Season Previews.'], 'Backup Now': ['Safety', 'Backup Now', 'Copy the whole Sheet to Drive.'] }[t.label] || ['Website', t.label, ''];
           webSpecs.push([meta[0], meta[1], meta[2], t.onClick, t.tooltip]);
         });
         var webSection = toolTiles('Website', webSpecs.map(function (x) { return [x[0], x[1], x[2], x[3]]; }).concat([['Preview', 'Staged League Hub', rcStagedHubOn() ? 'On in this browser.' : 'Off in this browser.', function () {
@@ -5547,6 +5547,8 @@
     // EXPORT CURRENT CAR LIST (ECO chat, 2026-10-27) -- read-only. Asks Website.gs (adminExportCarList, Admin only) for the newest
     // season of every class on the Cars tab and downloads it as car-list.json. Saved at website/data/ in the race-club-data repo, it is what
     // the Meet The Grid section on index.html draws. Gray: it writes nothing to the Sheet.
+    addItem('Add Preview Photo', function () { openPreviewPhotoModal(token); }, ['Add a picture for Season Preview stories.']);
+
     addItem('Update Home Page Grid', function () {
       var btn = this;
       var label = btn.textContent;
@@ -5765,6 +5767,101 @@
     btnRow.appendChild(randomBtn);
     btnRow.appendChild(saveBtn);
     modal.body.appendChild(btnRow);
+  }
+
+  // ADD PREVIEW PHOTO (ECO chat, 2026-11-05) -- Admin > Website. Adds a picture to the pool the Season Preview story picks from.
+  // Pick a series, a class and a track, choose a picture; it is shrunk to a JPEG about 1000 px wide and saved by Apps Script into the
+  // data repo (website/images/tracks/userpreview/series_class_track_time.jpg). The preview picker reads that folder with the site's own.
+  function openPreviewPhotoModal(token) {
+    var modal = showModal('Add Preview Photo', { wide: true });
+    var body = modal.body;
+    body.appendChild(buildSpinner('Loading tracks...'));
+    var CLASS_LABELS = { hypercar: 'Hypercar', prototype: 'Prototype', gt: 'GT', multiclass: 'Multiclass' };
+    fetchApi('adminPreviewPhotoOptions', { token: token }).then(function (res) {
+      body.innerHTML = '';
+      if (!res || !res.success) { body.appendChild(el('p', 'margin:0;color:var(--rc-red);', escapeHtml((res && (res.message || res.error)) || 'Could not load the track list.'))); return; }
+      body.appendChild(el('div', 'rc-hint', 'Season Preview stories pick their pictures from this pool. A picture is used when its class fits the season (a season with two or more classes uses Multiclass), and a picture of a track on the season\'s calendar is picked first.'));
+      var trackNames = {};
+      var trackOpts = (res.tracks || []).map(function (t) { trackNames[t.shortName] = t.label; return t.shortName; });
+      if (!trackOpts.length) { body.appendChild(el('p', 'margin:12px 0 0;color:var(--rc-red);', 'There are no tracks on the Tracks tab yet.')); return; }
+      var state = { series: (res.series || ['WEC'])[0], cls: (res.classes || ['hypercar'])[0], track: trackOpts[0] };
+      var countLine = el('div', 'rc-hint', '');
+      function plain(t) { return String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').trim().toLowerCase(); }
+      function refreshCount() {
+        var n = (res.counts || {})[state.series.toLowerCase() + '|' + state.cls + '|' + plain(state.track)] || 0;
+        countLine.textContent = n ? (n + (n === 1 ? ' picture' : ' pictures') + ' already for this series, class and track.') : 'No pictures yet for this series, class and track.';
+      }
+      var seriesSel = wizSelect(res.series || ['WEC', 'ELMS'], state.series, function (v) { state.series = v; refreshCount(); });
+      var classSel = wizSelect(res.classes || [], state.cls, function (v) { state.cls = v; refreshCount(); }, function (c) { return CLASS_LABELS[c] || c; });
+      var trackSel = wizSelect(trackOpts, state.track, function (v) { state.track = v; refreshCount(); }, function (t) { return trackNames[t] || t; });
+      body.appendChild(wizField('Series', seriesSel));
+      body.appendChild(wizField('Class', classSel));
+      body.appendChild(wizField('Track', trackSel));
+      var photoFile = el('input');
+      photoFile.type = 'file';
+      photoFile.accept = 'image/jpeg,image/png,image/webp';
+      body.appendChild(wizField('Picture', photoFile, 'A JPEG, PNG or WebP picture. It is shrunk to about 1000 px wide if it is bigger. Landscape pictures look best.'));
+      body.appendChild(countLine);
+      refreshCount();
+      var btnRow = el('div', 'display:flex;justify-content:flex-end;gap:8px;margin-top:16px;');
+      var saveBtn = el('button', 'rc-btn-primary rc-btn-sm', 'Save Picture');
+      saveBtn.type = 'button';
+      saveBtn.disabled = true;
+      photoFile.addEventListener('change', function () { saveBtn.disabled = !(photoFile.files && photoFile.files[0]); });
+      function toJpegBase64(file) {
+        return new Promise(function (resolve, reject) {
+          var url = URL.createObjectURL(file);
+          var img = new Image();
+          img.onload = function () {
+            var scale = Math.min(1, 1000 / img.naturalWidth);
+            var c = document.createElement('canvas');
+            c.width = Math.max(1, Math.round(img.naturalWidth * scale));
+            c.height = Math.max(1, Math.round(img.naturalHeight * scale));
+            var g = c.getContext('2d');
+            g.fillStyle = '#fff';
+            g.fillRect(0, 0, c.width, c.height);
+            g.drawImage(img, 0, 0, c.width, c.height);
+            URL.revokeObjectURL(url);
+            resolve(c.toDataURL('image/jpeg', 0.82).split(',')[1] || '');
+          };
+          img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('That picture could not be read. Choose a JPEG, PNG or WebP image.')); };
+          img.src = url;
+        });
+      }
+      function busy(on) { saveBtn.disabled = on || !(photoFile.files && photoFile.files[0]); seriesSel.disabled = classSel.disabled = trackSel.disabled = photoFile.disabled = on; }
+      saveBtn.addEventListener('click', function () {
+        if (!(photoFile.files && photoFile.files[0])) return;
+        busy(true);
+        saveBtn.textContent = 'Preparing...';
+        toJpegBase64(photoFile.files[0]).then(function (b64) {
+          saveBtn.textContent = 'Saving...';
+          rcWriteStarted_();
+          return fetchApi('adminSavePreviewPhoto', { method: 'POST', token: token, body: { series: state.series, cls: state.cls, track: state.track, imageBase64: b64 }, timeoutMs: RC_FETCH_TIMEOUT_MS_LONG }).then(function (data) {
+            rcWriteFinished_();
+            if (!data || !data.success) { saveBtn.textContent = 'Save Picture'; busy(false); showToast((data && data.message) || 'The picture could not be saved.', 'error'); return; }
+            showToast('Preview picture saved for ' + (trackNames[state.track] || state.track) + '.', 'success');
+            // Stay open so several pictures can be added: count it and clear the chooser.
+            var key = state.series.toLowerCase() + '|' + state.cls + '|' + plain(state.track);
+            res.counts = res.counts || {};
+            res.counts[key] = (res.counts[key] || 0) + 1;
+            photoFile.value = '';
+            saveBtn.textContent = 'Save Picture';
+            busy(false);
+            refreshCount();
+          });
+        }).catch(function (e) {
+          rcWriteFinished_();
+          saveBtn.textContent = 'Save Picture';
+          busy(false);
+          showToast((e && e.message && !/fetch|network|timeout|abort/i.test(e.message)) ? e.message : 'Could not reach the server. Try again.', 'error');
+        });
+      });
+      btnRow.appendChild(saveBtn);
+      body.appendChild(btnRow);
+    }).catch(function () {
+      body.innerHTML = '';
+      body.appendChild(el('p', 'margin:0;color:var(--rc-red);', 'Could not reach the server.'));
+    });
   }
 
   function openImportXmlModal(token, opts) {
