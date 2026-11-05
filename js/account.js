@@ -6401,7 +6401,7 @@
       wrap.appendChild(yearHead);
       byYear[year].forEach(function (it) {
         var postRow = el('div', 'rc-group-row');
-        postRow.style.cssText = 'display:flex;align-items:center;gap:12px;';
+        postRow.style.cssText = 'display:flex;align-items:flex-start;gap:12px;';
         if (it.story) {
           var st = it.row;
           postRow.appendChild(buildNewsBadge({ isStory: true, roundNum: st.kind === 'preview' ? 0 : st.roundNum }));

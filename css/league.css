@@ -1512,7 +1512,7 @@ body.rc-league-page:not(.rcc-page) .rcl-allresults-session-select { min-width: 1
 /* -------------------------------------------------------------------- */
 /* Grid: the badge sits beside the TITLE only (row 1, both vertically centered); the subtitle/meta line
    drops to row 2 under the title, so the badge is never centered against title + subtitle together. */
-.rcl-news-headrow { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 12px; align-items: center; }
+.rcl-news-headrow { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 12px; align-items: start; }
 .rcl-news-headtext { display: contents; }
 .rcl-news-badge-wrap { grid-column: 1; grid-row: 1; }
 .rcl-news-headrow .rcl-news-title { grid-column: 2; grid-row: 1; min-width: 0; }
@@ -1544,7 +1544,7 @@ body.rc-league-page:not(.rcc-page) .rcl-allresults-session-select { min-width: 1
 .rcl-news-badge-sm { width: 34px; height: 34px; }
 .rcl-news-badge-sm .rcl-news-badge-top { font-size: 9px; }
 .rcl-news-badge-sm .rcl-news-badge-bottom { margin-top: 3px; font-size: 14px; }
-.rcl-news-previous-title { display: flex; align-items: center; gap: 10px; }
+.rcl-news-previous-title { display: flex; align-items: flex-start; gap: 10px; }
 .rcl-news-previous-text { min-width: 0; }
 /* Thumbs on an AI story (drivers who raced that season only). */
 .rcl-story-vote { margin-top: 14px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
@@ -2327,7 +2327,7 @@ body.rcl-hub .rcl-news-continue { display: inline-block; margin-top: 14px; backg
 body.rcl-hub .rcl-news-continue:hover { color: var(--rc-red-dark); text-decoration: underline; }
 body.rcl-hub .rcl-news-previous { margin: 0; padding: 0 24px 0 0; border-top: 0; border-right: 1px solid var(--rc-silver); display: flex; flex-direction: column; gap: 12px; }
 body.rcl-hub .rcl-news-previous-head { color: var(--rc-steel); font-size: 12px; margin-bottom: 0; }
-body.rcl-hub .rcl-news-previous-title { align-items: center; }
+body.rcl-hub .rcl-news-previous-title { align-items: flex-start; }
 body.rcl-hub .rcl-news-previous-text { display: flex; flex-direction: column; gap: 3px; }
 body.rcl-hub .rcl-news-previous-name { font-size: 15px; font-weight: 700; color: var(--rc-carbon); }
 body.rcl-hub .rcl-news-previous-sub { font-family: var(--rc-font-heading); font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--rc-steel); }
