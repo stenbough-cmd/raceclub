@@ -2417,3 +2417,4 @@ body.rcl-hub .rcl-news-current-body, .rcl-modal-story .rcl-news-body { display: 
   .rcl-season-name { font-size: 26px; }
   .rcl-season-line { font-size: 14px; }
 }
+.rcl-main.rcc-only-message > .rcl-row-full { margin-top: 0; }   /* the message box has no top margin, so it sits exactly in the middle */

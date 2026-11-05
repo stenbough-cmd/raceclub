@@ -3278,6 +3278,7 @@ function _rclShowLoggedOut_() {
   var main = document.querySelector('.rcl-main');
   if (main) {
     Array.prototype.forEach.call(main.children, function (c) { c.style.display = 'none'; });
+    main.classList.add('rcc-only-message');   // centers the message between the link bar and the footer, same as the Championship page
     var box = document.createElement('div');
     box.className = 'rcl-panel rcl-row-full';
     box.id = 'rcl-signup-panel';
