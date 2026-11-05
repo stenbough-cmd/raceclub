@@ -3283,7 +3283,7 @@ button.rc-switch { display: inline-flex; align-items: center; gap: 12px; width: 
 .rc-collapsed > .rc-coll-body { display: none; }
 .rc-collapsed { gap: 0; }
 .rc-collapsed .rc-adm-head { margin-bottom: 0; }
-.rc-adm.rc-stw, .rc-adm.rc-hlm { --rc-adm-accent: #66849D; }
+.rc-adm.rc-stw, .rc-adm.rc-hlm, .rc-adm.rc-lgt { --rc-adm-accent: #66849D; }
 /* Helmet Designer: its first heading sits the same 18px under the description as Online seasons does in Administration. */
 .rc-hlm .rc-coll-body > .rc-adm-news:first-child { margin-top: 0; }
 .rc-adm-main .rc-coll-body > .rc-adm-news:first-child { margin-top: 0; }   /* Administration now starts with Data management (the seasons moved to League Tools) */
