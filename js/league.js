@@ -858,8 +858,8 @@ function _rclRenderLastRace_(hub) {
   if (!hasSeason) return;
 
   if (!hasLastRaceData) {
-    if (panel) panel.hidden = false;
-    _rclAppendSeasonFormatSections_(hub, body);
+    // Before the first race there is no separate Season Preview container any more: the season's details now sit at the end of the
+    // Season Preview story itself (_rclAppendStoryDetails_), so there is nothing to draw here.
     return;
   }
   _rclIndexLastRaceNames_(hub);
@@ -2751,6 +2751,21 @@ function _rclPlaceStoryPhotos(bodyEl, item, firstOnly) {
   });
 }
 
+// The end of a Season Preview story: a divider line, a "Season Details" subheading and the season's details (season details, points, race
+// rules). They are drawn from the season's current data every time the story opens, NOT saved inside the story, so a change to the season
+// shows here at once. Only the Season Preview story gets them; other stories and news posts are unchanged.
+function _rclAppendStoryDetails_(wrap, item) {
+  if (!item || !item.isStory || Number(item.roundNum) > 0) return;
+  var hub = _rclNavHub_;
+  if (!hub || !hub.hasSeason) return;
+  var box = _rclEl('div', 'rcl-story-details');
+  box.appendChild(_rclEl('div', 'rcl-story-details-title', 'Season Details'));
+  var inner = _rclEl('div', 'rcl-seasonfmt-modal-body rcl-story-details-body');
+  _rclAppendSeasonFormatSections_(hub, inner, { skipDetailsPill: true });
+  box.appendChild(inner);
+  wrap.appendChild(box);
+}
+
 // A story drawn in full (no truncation): used by the page's League News container and by the story popup.
 function _rclBuildStoryEl_(item) {
   var wrap = _rclEl('div', 'rcl-news-item rcl-modal-story');
@@ -2767,6 +2782,7 @@ function _rclBuildStoryEl_(item) {
   _rclRenderStoryBodyBlocks(bodyEl, item.body);
   _rclPlaceStoryPhotos(bodyEl, item);
   wrap.appendChild(bodyEl);
+  _rclAppendStoryDetails_(wrap, item);
   if (item.editNote) {
     var editLabel = _rclFormatDate(item.editedAt);
     var editText = 'Edited' + (editLabel ? ' ' + editLabel : '') + ' -- ' + item.editNote;
@@ -2815,6 +2831,7 @@ function _rclOpenStoryModal(startIndex, single) {
     _rclRenderStoryBodyBlocks(bodyEl, item.body);
     _rclPlaceStoryPhotos(bodyEl, item);
     wrap.appendChild(bodyEl);
+    _rclAppendStoryDetails_(wrap, item);
     if (item.editNote) {
       var editLabel = _rclFormatDate(item.editedAt);
       var editText = 'Edited' + (editLabel ? ' ' + editLabel : '') + ' -- ' + item.editNote;
@@ -2985,7 +3002,8 @@ function _rclBuildSeasonFormatBlocks_(hub) {
 // Builds the SEASON FORMAT content (Season Details / Championship Points / Race Rules pill-headed
 // sections) into `body`. Shared by the SEASON FORMAT popup (_rclOpenSeasonDetailsModal) and the
 // SEASON PREVIEW state of the LAST RACE panel so the two never drift apart.
-function _rclAppendSeasonFormatSections_(hub, body) {
+function _rclAppendSeasonFormatSections_(hub, body, opts) {
+  opts = opts || {};
   function buildRow(stat) {
     var html = '<span class="rcl-seasonfmt-row-label">' + _rclEscapeHtml(stat.label) + ':</span> ' +
       '<span class="rcl-seasonfmt-row-value">' + _rclEscapeHtml(stat.value) + '</span>';
@@ -3014,7 +3032,8 @@ function _rclAppendSeasonFormatSections_(hub, body) {
   if (sections.length) {
     sections.forEach(function (section) {
       var group = _rclEl('div', 'rcl-hero-stats-group');
-      group.appendChild(_rclEl('div', 'rcl-hero-stats-label', pillDisplayLabel_[section.pill] || section.pill));
+      var pillText_ = pillDisplayLabel_[section.pill] || section.pill;
+      if (!(opts.skipDetailsPill && pillText_ === 'Season Details')) group.appendChild(_rclEl('div', 'rcl-hero-stats-label', pillText_));
       var list = _rclEl('div', 'rcl-seasonfmt-list');
       if (section.blocks) {
         section.blocks.forEach(function (rows) {
