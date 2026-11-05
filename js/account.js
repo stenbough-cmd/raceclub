@@ -5769,10 +5769,8 @@
         capBox.placeholder = 'Caption (30 characters max)';
         capBox.value = sl.caption || '';
         capBox.disabled = !hasPhoto(sl);
-        var capCount = el('div', 'rc-hint', (capBox.value.length) + ' / 30');
-        capBox.addEventListener('input', function () { sl.caption = capBox.value; sl.changed = true; capCount.textContent = capBox.value.length + ' / 30'; refreshButtons(); });
+        capBox.addEventListener('input', function () { sl.caption = capBox.value; sl.changed = true; refreshButtons(); });
         right.appendChild(capBox);
-        right.appendChild(capCount);
         // Class and driver: what the picture is about, so the story can put it beside the matching part. None = the website picks the spot.
         var tagRow = el('div', 'display:flex;gap:10px;flex-wrap:wrap;');
         function tagField(label, sel) {
@@ -5906,7 +5904,7 @@
       }
       var seriesSel = wizSelect(res.series || ['WEC', 'ELMS'], state.series, function (v) { state.series = v; refreshCount(); });
       var classSel = wizSelect(res.classes || [], state.cls, function (v) { state.cls = v; refreshCount(); }, function (c) { return CLASS_LABELS[c] || c; });
-      var trackSel = wizSelect(trackOpts, state.track, function (v) { state.track = v; refreshCount(); }, function (t) { return trackNames[t] || t; });
+      var trackSel = wizSelect(trackOpts, state.track, function (v) { state.track = v; refreshCount(); }, function (t) { return (trackNames[t] || t) + ' (' + t + ')'; });
       body.appendChild(wizField('Series', seriesSel));
       body.appendChild(wizField('Class', classSel));
       body.appendChild(wizField('Track', trackSel));
