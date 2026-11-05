@@ -3234,7 +3234,7 @@
           ['People', 'Members', 'Accounts and roles.', function () { openMembersModal(token); }],
           ['Circuits', 'Tracks', 'Tracks and layouts.', function () { openTracksModal(token); }],
           ['Garage', 'Cars', 'Cars and team seats.', function () { openCarsModal(token); }],
-          ['Health', 'Integrity Check', 'Scan the current season.', function () { openIntegrityCheckModal(token); }]
+          ['Health', 'Integrity Check', 'Scan the season and the whole site.', function () { openIntegrityCheckModal(token); }]
         ]));
         // WEBSITE TOOLS: what the old Admin page held. Each tile runs the same action as the old button.
         var webTools = collectWebsiteTools(token);
@@ -6625,21 +6625,23 @@
     }, { label: 'Add Car', onClick: function (reload) { openAddCarModal(token, reload); } });
   }
 
-  // One finding row -- area label + a FIXED/FLAGGED status word, message underneath.
+  // One finding row -- area label + a FIXED / FLAGGED / OK status word, message underneath.
   function buildIntegrityFindingRow_(finding) {
     var row = el('div', 'padding:10px 0;border-bottom:1px solid var(--rc-offwhite);');
     var head = el('div', 'display:flex;align-items:center;justify-content:space-between;gap:10px;');
     head.appendChild(el('div', 'font-weight:700;font-size:13px;color:var(--rc-carbon);', escapeHtml(finding.area || '')));
-    var statusColor = finding.status === 'fixed' ? 'var(--rc-steel)' : 'var(--rc-red)';
-    var statusLabel = finding.status === 'fixed' ? 'FIXED' : 'FLAGGED';
+    var statusColor = finding.status === 'flagged' ? 'var(--rc-red)' : 'var(--rc-steel)';
+    var statusLabel = finding.status === 'fixed' ? 'FIXED' : (finding.status === 'ok' ? 'OK' : 'FLAGGED');
     head.appendChild(el('div', 'font-size:11px;font-weight:800;letter-spacing:0.04em;text-transform:uppercase;color:' + statusColor + ';flex:none;', statusLabel));
     row.appendChild(head);
     row.appendChild(el('div', 'font-size:13px;color:var(--rc-steel);margin-top:3px;', escapeHtml(finding.message || '')));
     return row;
   }
 
-  // INTEGRITY CHECK popup -- runs handleAdminIntegrityCheck (Seasons.gs) against the
-  // active/registration-open season and lists what it found.
+  // INTEGRITY CHECK popup -- runs handleAdminIntegrityCheck (Seasons.gs + IntegrityChecks.gs). The site-wide checks always run; the season checks
+  // only when a season is open. Findings that need attention (flagged, fixed) are listed first by area; the checks that passed are
+  // behind a gray "Show passed checks" button so the list stays short.
+  var RC_INTEGRITY_GROUP_ORDER_ = ['Current season', 'GitHub & data files', 'Website', 'Photos', 'Stories', 'Members', 'Reference data', 'Rounds & results', 'Helmets', 'Championship', 'Backups & setup'];
   function openIntegrityCheckModal(token) {
     var modal = showModal('Integrity Check', { wide: true });
     modal.body.appendChild(buildSpinner('RUNNING INTEGRITY CHECK...'));
@@ -6654,20 +6656,49 @@
         modal.body.appendChild(el('p', 'color:var(--rc-red);', 'Could not run the integrity check.'));
         return;
       }
-      if (!data.hasSeason) {
-        modal.body.appendChild(buildEmptyStatePanel('No Active Season', 'There\'s no season currently open or running to check.'));
-        return;
-      }
-      modal.body.appendChild(el('div', 'rc-hint', 'Season: ' + escapeHtml(data.seasonName || data.seasonId)));
-      var summary = (data.fixedCount || 0) + ' fixed · ' + (data.flaggedCount || 0) + ' flagged';
+      modal.body.appendChild(el('div', 'rc-hint', data.hasSeason ? 'Season: ' + escapeHtml(data.seasonName || data.seasonId) + ' · plus the whole site' : 'No season is open, so only the site-wide checks ran.'));
+      var summary = (data.flaggedCount || 0) + ' flagged · ' + (data.fixedCount || 0) + ' fixed · ' + (data.passedCount || 0) + ' passed';
       modal.body.appendChild(el('div', 'margin-top:6px;font-weight:800;font-size:14px;color:var(--rc-carbon);', summary));
-      if (!data.findings || !data.findings.length) {
+      var findings = data.findings || [];
+      if (!findings.length) {
         modal.body.appendChild(buildEmptyStatePanel('Nothing To Report', 'Everything checked out clean.'));
         return;
       }
-      var list = el('div', 'margin-top:14px;');
-      data.findings.forEach(function (finding) { list.appendChild(buildIntegrityFindingRow_(finding)); });
-      modal.body.appendChild(list);
+      function groupOf(f) { return f.group || 'Current season'; }
+      var groups = RC_INTEGRITY_GROUP_ORDER_.slice();
+      findings.forEach(function (f) { if (groups.indexOf(groupOf(f)) === -1) groups.push(groupOf(f)); });
+      var needs = el('div', 'margin-top:14px;');
+      var passedWrap = el('div', 'margin-top:10px;');
+      var passedCount = 0;
+      groups.forEach(function (name) {
+        var inGroup = findings.filter(function (f) { return groupOf(f) === name; });
+        var attention = inGroup.filter(function (f) { return f.status !== 'ok'; });
+        var passed = inGroup.filter(function (f) { return f.status === 'ok'; });
+        if (attention.length) {
+          needs.appendChild(el('div', 'margin-top:14px;font-size:12px;font-weight:800;letter-spacing:0.05em;text-transform:uppercase;color:var(--rc-carbon);border-bottom:2px solid var(--rc-red);padding-bottom:4px;', escapeHtml(name)));
+          attention.forEach(function (f) { needs.appendChild(buildIntegrityFindingRow_(f)); });
+        }
+        if (passed.length) {
+          passedCount += passed.length;
+          passedWrap.appendChild(el('div', 'margin-top:14px;font-size:12px;font-weight:800;letter-spacing:0.05em;text-transform:uppercase;color:var(--rc-steel);border-bottom:1px solid var(--rc-silver);padding-bottom:4px;', escapeHtml(name)));
+          passed.forEach(function (f) { passedWrap.appendChild(buildIntegrityFindingRow_(f)); });
+        }
+      });
+      if (needs.children.length) modal.body.appendChild(needs);
+      else modal.body.appendChild(buildEmptyStatePanel('Nothing Needs Attention', 'Every check passed.'));
+      if (passedCount) {
+        passedWrap.style.display = 'none';
+        var toggle = el('button', 'rc-btn-secondary rc-btn-sm', 'Show ' + passedCount + ' passed checks');
+        toggle.type = 'button';
+        toggle.style.marginTop = '16px';
+        toggle.addEventListener('click', function () {
+          var open = passedWrap.style.display === 'none';
+          passedWrap.style.display = open ? '' : 'none';
+          toggle.textContent = open ? 'Hide passed checks' : 'Show ' + passedCount + ' passed checks';
+        });
+        modal.body.appendChild(toggle);
+        modal.body.appendChild(passedWrap);
+      }
     }).catch(function () {
       if (modal.closeBtn) modal.closeBtn.disabled = false;
       modal.body.innerHTML = '';

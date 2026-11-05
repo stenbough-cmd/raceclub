@@ -3399,3 +3399,9 @@ button.rc-switch { display: inline-flex; align-items: center; gap: 12px; width: 
 .rc-ol-sub { margin: 8px 0 0; font-size: 14px; color: var(--rc-steel); }
 
 .rc-account-navbar-sub { font-weight: 400; margin-left: 10px; }
+
+/* Account page footer sits at the bottom of the window (Matt, 2026-11-05): the page is a column that is at least as tall as the window,
+   the shell takes the leftover height, so a short page no longer pushes the footer below the fold. */
+body.rc-account-page { min-height: 100vh; display: flex; flex-direction: column; }
+body.rc-account-page .rc-shell { flex: 1 0 auto; min-height: 0; }
+body.rc-account-page .rc-site-footer { flex: none; margin-top: 0; }
