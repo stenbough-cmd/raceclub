@@ -414,6 +414,29 @@ function rccRenderActionBar(page) {
   bar.appendChild(inner);
 }
 
+// Season title block above the first container (css/league.css, .rcl-season-title): eyebrow, "Season N: Name", and the date the
+// season was created plus its number of rounds.
+function rccRenderSeasonTitle(page) {
+  var el = document.getElementById('rcc-season-title');
+  if (!el) return;
+  el.innerHTML = '';
+  if (!page || !page.hasSeason) { el.hidden = true; return; }
+  var rec = (page.seasons || []).filter(function (s) { return s.seasonId === page.seasonId; })[0] || {};
+  var name = String(page.seasonName || rec.name || '').trim();
+  var n = page.seasonNumber || rec.seasonNumber;
+  var title = /^season\s*\d/i.test(name) ? name : ('Season ' + (n ? n : '') + (name ? (n ? ': ' : '') + name : '')).trim();
+  title = title.replace(/\s*[\u2014\u2013]\s*/g, ': ').replace(/\s+-\s+/g, ': ');
+  el.appendChild(_rccText('div', 'rcl-season-eyebrow', 'Single Player Championship'));
+  el.appendChild(_rccText('h1', 'rcl-season-name', title));
+  var bits = [];
+  var made = rec.createdAt ? new Date(rec.createdAt) : null;
+  if (made && !isNaN(made.getTime())) bits.push('Created ' + made.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }));
+  var rounds = Number(page.totalRounds) || 0;
+  if (rounds) bits.push(rounds + (rounds === 1 ? ' round' : ' rounds'));
+  if (bits.length) el.appendChild(_rccText('div', 'rcl-season-line', bits.join(' \u00B7 ')));
+  el.hidden = false;
+}
+
 function _rccSeasonLabel(s) {
   return s.seasonNumber ? 'Season ' + s.seasonNumber + (s.name ? ' - ' + s.name : '') : (s.name || s.seasonId);
 }
@@ -2600,6 +2623,7 @@ function rccRenderAll(page) {
   if (page && page.hasSeason && document.getElementById('rcc-noseason-panel')) { window.location.reload(); return; }
   if (page && page.success !== false && !page.hasSeason && !window.RCC_EMBEDDED && !RCC.viewSeasonId) { _rccShowNoSeason(); return; }
   rccRenderActionBar(page);
+  rccRenderSeasonTitle(page);
   rccRenderLastRace(page);
   rccRenderCarousel(page);
   rccRenderStandings(page);

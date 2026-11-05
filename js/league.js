@@ -3192,11 +3192,35 @@ function _rclSeasonLabel_(s) {
   var head = s.seasonNumber ? ('Season ' + s.seasonNumber + ' - ' + (s.name || '')) : (s.name || s.seasonId);
   return head + (range ? ' (' + range + ')' : '');
 }
+// "Season 01 - Name" (a dash in the season's name) is shown with a colon: "Season 01: Name".
+function _rclSeasonTitleText_(name) { return String(name || '').replace(/\s*[\u2014\u2013]\s*/g, ': ').replace(/\s+-\s+/g, ': '); }
+function _rclSeasonDateLine_(startUtc, endUtc) {
+  var a = startUtc ? new Date(startUtc) : null, b = endUtc ? new Date(endUtc) : null;
+  if (!a || isNaN(a.getTime())) return '';
+  var md = { month: 'long', day: 'numeric' }, mdy = { month: 'long', day: 'numeric', year: 'numeric' };
+  if (!b || isNaN(b.getTime()) || b.getTime() === a.getTime()) return a.toLocaleDateString('en-US', mdy);
+  if (a.getFullYear() === b.getFullYear()) return a.toLocaleDateString('en-US', md) + ' \u2013 ' + b.toLocaleDateString('en-US', mdy);
+  return a.toLocaleDateString('en-US', mdy) + ' \u2013 ' + b.toLocaleDateString('en-US', mdy);
+}
+function _rclRenderSeasonTitle_(hub) {
+  var el = document.getElementById('rcl-season-title');
+  if (!el) return;
+  el.innerHTML = '';
+  if (!hub || !hub.hasSeason || !hub.seasonName) { el.hidden = true; return; }
+  var yr = hub.seasonStartUtc ? new Date(hub.seasonStartUtc).getFullYear() : '';
+  el.appendChild(_rclEl('div', 'rcl-season-eyebrow', (yr ? yr + ' ' : '') + 'Championship'));
+  el.appendChild(_rclEl('h1', 'rcl-season-name', _rclSeasonTitleText_(hub.seasonName)));
+  var line = _rclSeasonDateLine_(hub.seasonStartUtc, hub.seasonEndUtc);
+  if (line) el.appendChild(_rclEl('div', 'rcl-season-line', line));
+  el.hidden = false;
+}
+
 function _rclRenderNavbar_(hub) {
   var nav = document.getElementById('rcl-navbar');
   if (!nav) return;
   // The links always open with the newest hub data, whichever draw they were built in.
   if (hub) _rclNavHub_ = hub;
+  _rclRenderSeasonTitle_(_rclNavHub_);
   nav.innerHTML = '';
   var inner = _rclEl('div', 'rcl-navbar-inner');
 

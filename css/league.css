@@ -2402,3 +2402,16 @@ body.rcl-hub .rcl-news-current-body, .rcl-modal-story .rcl-news-body { display: 
 /* End of a Season Preview story: divider line, "Season Details" subheading, then the details. */
 .rcl-story-details { margin-top: 32px; }
 .rcl-story-details-body { padding: 0; }
+
+/* ===== SEASON TITLE BLOCK (Matt, 2026-11-05) ===== */
+/* Sits straight on the page background above the first container (League Hub and Championship): a red-barred eyebrow, the season name and
+   one line under it (dates / created date and rounds). No line under it. */
+.rcl-season-title { margin: 0 0 24px; }
+.rcl-season-title[hidden] { display: none; }
+.rcl-season-eyebrow { border-left: 4px solid var(--rc-red); padding-left: 10px; font-family: var(--rc-font-heading); font-size: 14px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--rc-red); line-height: 1.2; margin-bottom: 10px; }
+.rcl-season-name { margin: 0; font-family: var(--rc-font-heading); font-size: 40px; font-weight: 800; letter-spacing: 0.01em; text-transform: uppercase; color: var(--rc-carbon); line-height: 1.1; text-wrap: balance; }
+.rcl-season-line { margin-top: 10px; font-family: var(--rc-font-heading); font-size: 18px; font-weight: 400; letter-spacing: 0.02em; text-transform: uppercase; color: var(--rc-steel); }
+@media (max-width: 640px) {
+  .rcl-season-name { font-size: 26px; }
+  .rcl-season-line { font-size: 14px; }
+}
