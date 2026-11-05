@@ -2808,12 +2808,14 @@
       metaRow.appendChild(calStat(ICON_UNLOCK, 'Password Override', 'This round overrides the season default password: ' + entry.passwordOverride));
     }
     // Race rules for this round: tires allowed, tire wear, fuel consumption and setups, in the same row as the other values.
-    var rsx = (raceSettings && raceSettings.rs) || {};
-    if (rsx.tireCount) metaRow.appendChild(calStat(ICON_TIRE, rsx.tireCount + ' Tires', 'Tires allowed for the race'));
-    if (rsx.tireWearMultiplier) metaRow.appendChild(calStat(ICON_TIRE_WEAR, 'Tire Wear ' + rsx.tireWearMultiplier, 'Tire wear'));
-    if (rsx.fuelMultiplier) metaRow.appendChild(calStat(ICON_FUEL, 'Fuel ' + rsx.fuelMultiplier, 'Fuel consumption'));
-    if (rsx.setupRules) metaRow.appendChild(calStat(ICON_SETUP, 'Setups ' + rsx.setupRules, 'Setup rules'));
     body.appendChild(metaRow);
+    var rsx = (raceSettings && raceSettings.rs) || {};
+    var rulesRow = el('div', 'rc-cal-race-meta');
+    if (rsx.tireCount) rulesRow.appendChild(calStat(ICON_TIRE, rsx.tireCount + ' Tires', 'Tires allowed for the race'));
+    if (rsx.tireWearMultiplier) rulesRow.appendChild(calStat(ICON_TIRE_WEAR, 'Tire Wear ' + rsx.tireWearMultiplier, 'Tire wear'));
+    if (rsx.fuelMultiplier) rulesRow.appendChild(calStat(ICON_FUEL, 'Fuel ' + rsx.fuelMultiplier, 'Fuel consumption'));
+    if (rsx.setupRules) rulesRow.appendChild(calStat(ICON_SETUP, 'Setups ' + rsx.setupRules, 'Setup rules'));
+    if (rulesRow.childNodes.length) body.appendChild(rulesRow);
 
     // Points for this race on their own row below: a bordered rectangle with the finishing points and any bonus points.
     // (Special events pay no championship points.)
@@ -2821,11 +2823,8 @@
     var racePts = tableForRace && tableForRace.points ? tableForRace.points : [];
     if (racePts.length) {
       var ptsText = racePts.map(function (v, idx) { return 'P' + (idx + 1) + ' ' + v; }).join(', ');
-      var bonusSrc = raceSettings.bonus || {};
-      var bonusLabelsRc = { pole: 'Pole', fastestLap: 'Fastest Lap', mostLapsLed: 'Most Laps Led' };
-      var bonusTxt = Object.keys(bonusLabelsRc).filter(function (k) { return Number(bonusSrc[k]) > 0; }).map(function (k) { return bonusLabelsRc[k] + ' +' + Number(bonusSrc[k]); }).join(', ');
       var ptsRow = el('div', 'rc-cal-race-meta');
-      ptsRow.appendChild(calStat(ICON_POINTS, ptsText + (bonusTxt ? ' · Bonus: ' + bonusTxt : ''), 'Championship points for this race', 'rc-cal-stat-points'));
+      ptsRow.appendChild(calStat(ICON_POINTS, ptsText, 'Championship points for this race', 'rc-cal-stat-points'));
       body.appendChild(ptsRow);
     }
 
