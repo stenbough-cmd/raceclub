@@ -443,10 +443,12 @@ function _rcFetchOnce_(url, fetchOpts, timeoutMs) {
 //     first such request for a file also carries republish=1 so Apps Script writes the file for the next visitor.
 //   - Add ?source=api to any page address to skip files and use Apps Script only (for checking a page).
 var RC_DATA_BASE_URL = 'https://stenbough-cmd.github.io/race-club-data/website/data/';
-// Web address of a story photo. "spa/spa_061.jpg" is a track photo on the website itself (assets/tracks/); "user/RND-0007_123.jpg" is a
-// picture an organizer chose in Upload Results, kept in the data repo (website/images/tracks/user/).
+// Web address of a story photo. "spa/spa_061.jpg" is a track photo on the website itself (assets/tracks/); a picture an organizer uploaded lives in the
+// data repo: "stories/RND-0007_123_1.jpg" in website/images/stories/ (since 2026-11-05), "user/..." in website/images/tracks/user/ (older ones) and
+// "userpreview/..." in website/images/tracks/userpreview/ (Season Preview pictures added from the website).
 function rcStoryPhotoUrl(file) {
   var enc = String(file || '').split('/').map(encodeURIComponent).join('/');
+  if (/^stories\//.test(file)) return RC_DATA_BASE_URL.replace(/data\/$/, 'images/') + enc;
   if (/^(user|userpreview)\//.test(file)) return RC_DATA_BASE_URL.replace(/data\/$/, 'images/tracks/') + enc;
   return 'assets/tracks/' + enc;
 }

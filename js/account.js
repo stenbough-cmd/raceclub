@@ -7059,9 +7059,96 @@
     }, { waitForWrite: true });
   }
 
+  // NEWS IMAGE (ECO chat, 2026-11-05): one optional picture for a new League News post. The image button at the top of the New Post popup opens this
+  // small popup; the picture is only held in the New Post popup until Publish Post, which sends it with the post. It is saved in the data repo
+  // at website/images/news/ and shown above the post on the League Hub.
+  var ICON_IMAGE = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"></rect><circle cx="9" cy="10" r="1.6"></circle><path d="M21 16l-5-5-8 9"></path></svg>';
+  function rcNewsImageToJpeg_(file) {
+    return new Promise(function (resolve, reject) {
+      var url = URL.createObjectURL(file);
+      var img = new Image();
+      img.onload = function () {
+        var scale = Math.min(1, 1200 / img.naturalWidth);
+        var c = document.createElement('canvas');
+        c.width = Math.max(1, Math.round(img.naturalWidth * scale));
+        c.height = Math.max(1, Math.round(img.naturalHeight * scale));
+        var g = c.getContext('2d');
+        g.fillStyle = '#fff';
+        g.fillRect(0, 0, c.width, c.height);
+        g.drawImage(img, 0, 0, c.width, c.height);
+        URL.revokeObjectURL(url);
+        resolve({ base64: c.toDataURL('image/jpeg', 0.82).split(',')[1] || '', dataUrl: c.toDataURL('image/jpeg', 0.5) });
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('That picture could not be read. Choose a JPEG, PNG or WebP image.')); };
+      img.src = url;
+    });
+  }
+  // current = { base64, dataUrl, name } or null; onDone(newValueOrNull) is called when the popup is closed with a choice.
+  function openNewsImageModal(current, onDone) {
+    var modal = showModal('News Image', { wide: false });
+    var chosen = current || null;
+    modal.body.appendChild(el('div', 'rc-hint', 'One picture for this post. It is shown above the post on the League Hub. It is saved when you publish the post.'));
+    var file = el('input');
+    file.type = 'file';
+    file.accept = 'image/jpeg,image/png,image/webp';
+    modal.body.appendChild(wizField('Picture', file, 'A JPEG, PNG or WebP picture. Wide pictures look best. Bigger ones are shrunk to about 1200 px wide.'));
+    var prev = el('div', 'margin-top:10px;');
+    modal.body.appendChild(prev);
+    var btnRow = el('div', 'display:flex;justify-content:flex-end;gap:8px;margin-top:16px;');
+    var removeBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'Remove Picture');
+    removeBtn.type = 'button';
+    var cancelBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'Cancel');
+    cancelBtn.type = 'button';
+    var useBtn = el('button', 'rc-btn-secondary rc-btn-sm', 'Use This Picture');
+    useBtn.type = 'button';
+    btnRow.appendChild(removeBtn); btnRow.appendChild(cancelBtn); btnRow.appendChild(useBtn);
+    modal.body.appendChild(btnRow);
+    function draw() {
+      prev.innerHTML = '';
+      if (chosen) {
+        var im = document.createElement('img');
+        im.src = chosen.dataUrl; im.alt = '';
+        im.style.cssText = 'display:block;max-width:100%;max-height:220px;border:1px solid var(--rc-silver);border-radius:4px;';
+        prev.appendChild(im);
+      }
+      removeBtn.style.display = chosen ? '' : 'none';
+      useBtn.disabled = !chosen;
+    }
+    draw();
+    file.addEventListener('change', function () {
+      if (!file.files || !file.files[0]) return;
+      var f = file.files[0];
+      useBtn.disabled = true;
+      rcNewsImageToJpeg_(f).then(function (r) { chosen = { base64: r.base64, dataUrl: r.dataUrl, name: f.name }; draw(); })
+        .catch(function (e) { showToast((e && e.message) || 'That picture could not be read.', 'error'); draw(); });
+    });
+    removeBtn.addEventListener('click', function () { chosen = null; file.value = ''; draw(); onDone(null); modal.close(); });
+    cancelBtn.addEventListener('click', function () { modal.close(); });
+    useBtn.addEventListener('click', function () { if (chosen) { onDone(chosen); modal.close(); } });
+  }
+
   function openNewsPostModal(token, reload) {
     var body = el('div');
     var form = el('form');
+
+    // Image button at the top: opens the News Image popup. The picture is held here until Publish Post.
+    var newsImage = null;
+    var imageRow = el('div', 'display:flex;align-items:center;gap:10px;margin-bottom:6px;');
+    var imageBtn = el('button', 'rc-icon-btn', ICON_IMAGE);
+    imageBtn.type = 'button';
+    imageBtn.setAttribute('aria-label', 'Add an image to this post');
+    withTooltip(imageBtn, 'Add an image to this post');
+    var imageNote = el('div', 'font-size:12px;color:var(--rc-steel);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;', 'No image');
+    imageRow.appendChild(imageBtn);
+    imageRow.appendChild(imageNote);
+    form.appendChild(imageRow);
+    imageBtn.addEventListener('click', function () {
+      openNewsImageModal(newsImage, function (v) {
+        newsImage = v;
+        imageNote.textContent = v ? 'Image: ' + (v.name || 'picture') : 'No image';
+        imageNote.style.color = v ? 'var(--rc-carbon)' : 'var(--rc-steel)';
+      });
+    });
 
     form.appendChild(el('label', 'margin-top:0;', 'Title'));
     var title = el('input'); title.type = 'text'; title.required = true;
@@ -7102,6 +7189,7 @@
       saveBtn.textContent = 'Saving...';
 
       var reqBody = { title: title.value.trim(), body: post.value.trim() };
+      if (newsImage) reqBody.imageBase64 = newsImage.base64;
 
       // Long timeout budget -- same root cause and same fix as createSeason/updateSeason's own
       // timeoutMs override (see RC_FETCH_TIMEOUT_MS_LONG in js/api.js): the client aborting at 20s
