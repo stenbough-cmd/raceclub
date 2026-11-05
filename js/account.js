@@ -816,14 +816,13 @@
         box.classList.remove('rc-collapsed');
         try { box.dispatchEvent(new CustomEvent('rcaccopen')); } catch (e) { /* older browsers: the container just stays as is */ }
         syncLabel();
-        // Opened container sits 15px under the title bar.
+        // Opened container sits 15px under the title bar, or as close as the page lets it.
         var bar = document.getElementById('rc-account-navbar');
         var barBottom = bar ? bar.getBoundingClientRect().bottom : 0;
         var wantTop = Math.max(0, docTop(box) - barBottom - 15);
-        // A short page cannot scroll that far: add just enough space under it so the container can sit 15px under the bar.
+        // The footer stays anchored at the bottom (Matt, 2026-11-05): no space is added under a short page to reach the 15px spot, so the
+        // container only rises as high as the page allows (the browser stops the scroll at the end of the page).
         document.body.style.paddingBottom = '';
-        var shortBy = wantTop + window.innerHeight - document.documentElement.scrollHeight;
-        if (shortBy > 0) document.body.style.paddingBottom = shortBy + 'px';
         window.scrollTo({ top: wantTop, behavior: 'smooth' });
       } else if (ev.target.closest('.rc-ol-head, .rcd-head, .rc-adm-head')) {
         box.classList.add('rc-collapsed');
