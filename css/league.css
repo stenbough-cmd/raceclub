@@ -1438,7 +1438,7 @@ body.rc-league-page:not(.rcc-page) .rcl-allresults-session-select { min-width: 1
 .rcl-news-hero { display: block; width: 100%; max-height: 220px; object-fit: cover; margin-bottom: 12px; border: 1px solid var(--rcl-line); }
 .rcl-news-title { font-family: var(--rc-font-heading); font-size: 16px; font-weight: 800; letter-spacing: 0.01em; color: var(--rcl-ink); line-height: 1.25; }
 /* Story titles inside the read-story popup: ALL CAPS and a notch larger than the ## headers (17px). */
-.rcl-modal-story .rcl-news-title { font-size: 20px; text-transform: uppercase; letter-spacing: 0.03em; }
+.rcl-modal-story .rcl-news-title { font-size: 28px; text-transform: uppercase; letter-spacing: 0.03em; }
 .rcl-news-meta { margin-top: 4px; font-size: 12px; color: var(--rcl-ink-faint); text-transform: uppercase; letter-spacing: 0.04em; }
 .rcl-news-body { margin-top: 10px; font-size: 14px; line-height: 1.6; color: var(--rcl-ink-dim); }
 .rcl-news-body p { margin: 0 0 0.8em; }
@@ -1644,9 +1644,6 @@ body.rc-league-page:not(.rcc-page) .rcl-allresults-session-select { min-width: 1
   text-transform: uppercase;
   color: var(--rcl-ink);
 }
-/* League News / Season Stories popup titles: 28px (the old preview-title size; the story titles are 18px). */
-.rcl-story-dialog .rcl-modal-title, .rcc-story-dialog .rcl-modal-title { font-size: 28px; }
-@media (max-width: 640px) { .rcl-story-dialog .rcl-modal-title, .rcc-story-dialog .rcl-modal-title { font-size: 22px; } }
 .rcl-modal-close {
   flex: none;
   width: 30px;
@@ -2044,7 +2041,7 @@ body.rc-league-page { --rcl-bonus: #7fa8d4; }
 .rcl-news-badge-sm.rcl-news-badge-pre .rcl-news-badge-top { font-size: 12px; }
 
 /* League News preview: the headline story's title is ALL CAPS. */
-.rcl-news-current .rcl-news-title { text-transform: uppercase; font-size: 18px; letter-spacing: 0.02em; }
+.rcl-news-current .rcl-news-title { text-transform: uppercase; font-size: 28px; line-height: 1.15; letter-spacing: 0.02em; }
 
 /* Subheadings inside the League News preview story only (the read-story popup keeps 17px). */
 .rcl-news-current-body .rcl-news-h { font-size: 15px; }
@@ -2327,7 +2324,7 @@ body.rcl-hub .rcl-news-layout .rcl-news-previous { grid-column: 1; grid-row: 1; 
 body.rcl-hub .rcl-news-layout:not(:has(.rcl-news-previous)) { grid-template-columns: minmax(0, 1fr); }
 body.rcl-hub .rcl-news-layout:not(:has(.rcl-news-previous)) .rcl-news-current { grid-column: 1; }
 body.rcl-hub .rcl-news-current { min-width: 0; }
-body.rcl-hub .rcl-news-current .rcl-news-title { font-size: 18px; line-height: 1.15; letter-spacing: 0.02em; }
+body.rcl-hub .rcl-news-current .rcl-news-title { font-size: 28px; line-height: 1.15; letter-spacing: 0.02em; }
 body.rcl-hub .rcl-news-current-body { font-size: 15px; line-height: 1.65; margin-top: 14px; }
 body.rcl-hub .rcl-news-continue { display: inline-block; margin-top: 14px; background: none; border: 0; padding: 0; cursor: pointer; font-family: var(--rc-font-heading); font-size: 13px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--rc-red); }
 body.rcl-hub .rcl-news-continue:hover { color: var(--rc-red-dark); text-decoration: underline; }
@@ -2343,7 +2340,7 @@ body.rcl-hub .rcl-news-previous-title:hover .rcl-news-previous-name { text-decor
   body.rcl-hub .rcl-news-layout .rcl-news-current, body.rcl-hub .rcl-news-layout .rcl-news-previous { grid-column: 1; }
   body.rcl-hub .rcl-news-layout .rcl-news-previous { grid-row: 2; padding: 18px 0 0; border-right: 0; border-top: 1px solid var(--rc-silver); }
 }
-@media (max-width: 640px) { body.rcl-hub .rcl-news-current .rcl-news-title { font-size: 18px; } }
+@media (max-width: 640px) { .rcl-news-current .rcl-news-title, body.rcl-hub .rcl-news-current .rcl-news-title, .rcl-modal-story .rcl-news-title { font-size: 22px; } }
 body.rcl-hub .rcl-main { padding-top: 24px; }
 /* Manufacturers' Standings and Team Endurance Standings: no container, straight on the page background, headings centered. */
 body.rcl-hub .rcl-mfr-standings, body.rcl-hub .rcl-tt { background: none; border: 0; box-shadow: none; border-radius: 0; padding: 8px 0 12px; }
