@@ -345,9 +345,19 @@
       }
       var row = mk('div');
       row.style.cssText = 'display:flex;justify-content:flex-end;margin-top:18px;';
-      var ok = mk('button', 'rc-btn-dark', 'I Understand');
+      var ok = mk('button', 'rc-btn-dark', '5...');
       ok.type = 'button';
-      ok.addEventListener('click', function () { m.close(true); });
+      ok.disabled = true;   // 5...4...3...2...1... gives time to read the notice (and the dashboard time to refresh) before it can be dismissed
+      var left = 5;
+      var tick = setInterval(function () {
+        if (!ok.isConnected) { clearInterval(tick); return; }   // the popup was closed another way
+        left--;
+        if (left > 0) { ok.textContent = left + '...'; return; }
+        clearInterval(tick);
+        ok.textContent = 'I Understand';
+        ok.disabled = false;
+      }, 1000);
+      ok.addEventListener('click', function () { if (!ok.disabled) m.close(true); });
       row.appendChild(ok);
       body.appendChild(row);
       return m;

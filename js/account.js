@@ -5158,7 +5158,6 @@
       function drawSlot(i) {
         var sl = slots[i], row = rows[i];
         row.innerHTML = '';
-        row.appendChild(el('div', 'font-size:12px;font-weight:800;letter-spacing:0.05em;text-transform:uppercase;color:var(--rc-carbon);margin-bottom:6px;', 'Picture ' + (i + 1)));
         var line = el('div', 'display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap;');
         var thumb = el('div', 'width:120px;height:80px;border:1px solid var(--rc-silver);border-radius:4px;background:var(--rc-offwhite);overflow:hidden;flex:none;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--rc-steel);', hasPhoto(sl) ? '' : 'No picture');
         if (hasPhoto(sl)) {
@@ -5171,6 +5170,7 @@
         }
         line.appendChild(thumb);
         var right = el('div', 'flex:1 1 220px;min-width:0;display:flex;flex-direction:column;gap:6px;');
+        right.appendChild(el('div', 'font-size:11px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:var(--rc-steel);', 'Picture ' + (i + 1)));
         var chooser = el('input');
         chooser.type = 'file';
         chooser.accept = 'image/jpeg,image/png,image/webp';
