@@ -6325,19 +6325,27 @@
   // The two-line box beside each item: RD over the round number (01, 02...; the season preview is 00)
   // for an AI Season Story, NE over WS in a different color for a regular news post. Same look as
   // league.html's League News boxes.
+  var RC_BADGE_FLAG_SVG = '<svg class="rc-news-badge-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 21V4"/><path d="M5 4h13l-2.5 4 2.5 4H5"/><path d="M9 4v8M13 4v8" stroke-width="1.4"/></svg>';
+  var RC_BADGE_PAPER_SVG = '<svg class="rc-news-badge-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h12v14H6a2 2 0 0 1-2-2V5z"/><path d="M16 9h4v8a2 2 0 0 1-2 2h-2"/><path d="M7 9h6M7 12.5h6M7 16h3"/></svg>';
   function buildNewsBadge(item) {
     var isStory = !!(item && item.isStory);
     if (isStory && !(Number(item.roundNum) > 0)) {
-      var pre = el('span', 'rc-news-badge rc-news-badge-rd');
-      pre.appendChild(el('span', 'rc-news-badge-top', 'PRE'));
+      var pre = el('span', 'rc-news-badge rc-news-badge-rd rc-news-badge-pre');
+      pre.innerHTML = RC_BADGE_FLAG_SVG;
+      pre.title = 'Season preview';
       return pre;
     }
-    var top = isStory ? 'RD' : 'NE';
-    var bottom = isStory ? (Number(item.roundNum) < 10 ? '0' + Number(item.roundNum || 0) : String(item.roundNum)) : 'WS';
-    var b = el('span', 'rc-news-badge ' + (isStory ? 'rc-news-badge-rd' : 'rc-news-badge-ne'));
-    b.appendChild(el('span', 'rc-news-badge-top', top));
-    b.appendChild(el('span', 'rc-news-badge-bottom', bottom));
-    return b;
+    if (isStory) {
+      var n = Number(item.roundNum) || 0;
+      var b = el('span', 'rc-news-badge rc-news-badge-rd');
+      b.appendChild(el('span', 'rc-news-badge-top', 'RD'));
+      b.appendChild(el('span', 'rc-news-badge-bottom', n < 10 ? '0' + n : String(n)));
+      return b;
+    }
+    var ne = el('span', 'rc-news-badge rc-news-badge-ne');
+    ne.innerHTML = RC_BADGE_PAPER_SVG;
+    ne.title = 'League news';
+    return ne;
   }
 
   // Posts and AI Season Stories in one list, newest first.

@@ -427,27 +427,31 @@ p { margin: 0 0 0.75em; }
 .rc-dm-status-pill-active { background: var(--rc-positive-bg); color: var(--rc-positive); }
 .rc-dm-status-pill-inactive { background: var(--rc-offwhite); color: var(--rc-steel); }
 
-/* League News / AI Season Story badges on Account > League Tools (same look as league.html):
-   RD over the round number on a story, NE over WS in a different color on a news post. */
+/* League News / AI Season Story tiles on Account > League Tools: same look as the League Hub (css/league.css .rcl-news-badge).
+   Story = navy tile, checkered strip, small RD over the round number; season preview = flag icon; news post = red tile, racing
+   stripes, newspaper icon. */
 .rc-news-badge {
-  display: inline-flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  flex: none;
-  box-sizing: border-box;
-  width: 46px;
-  height: 46px;
-  color: #fff;
-  font-family: var(--rc-font-heading);
-  line-height: 1;
+  position: relative; overflow: hidden;
+  display: inline-flex; flex-direction: column; align-items: center; justify-content: center;
+  flex: none; box-sizing: border-box; width: 46px; height: 46px; border-radius: 4px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.16);
+  color: #fff; font-family: var(--rc-font-heading); line-height: 1;
 }
-/* Same colors and size as the League Hub's League News boxes (css/league.css .rcl-news-badge): navy with a red
-   bottom edge for a story, red with a darker red bottom edge for a news post. */
-.rc-news-badge-rd { background: var(--rc-balanced); box-shadow: inset 0 -3px 0 var(--rc-red); }
-.rc-news-badge-ne { background: var(--rc-red); box-shadow: inset 0 -3px 0 var(--rc-red-dark); }
-.rc-news-badge-top, .rc-news-badge-bottom { font-size: 16px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; font-variant-numeric: tabular-nums; }
-.rc-news-badge-bottom { margin-top: 2px; }
+.rc-news-badge-rd { background: linear-gradient(160deg, #1d3a63 0%, var(--rc-balanced) 70%); }
+.rc-news-badge-ne { background: linear-gradient(160deg, #e0172f 0%, var(--rc-red-dark) 100%); }
+.rc-news-badge-rd::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 6px;
+  background: repeating-conic-gradient(#fff 0% 25%, rgba(255, 255, 255, 0.14) 0% 50%) 0 0 / 6px 6px;
+  opacity: 0.85;
+}
+.rc-news-badge-pre::before { display: none; }
+.rc-news-badge-ne::before {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(135deg, transparent 0 56%, rgba(255, 255, 255, 0.3) 56% 62%, transparent 62% 69%, rgba(255, 255, 255, 0.3) 69% 75%, transparent 75%);
+}
+.rc-news-badge-top { margin-top: 6px; font-size: 9px; font-weight: 700; letter-spacing: 0.2em; padding-left: 0.2em; text-transform: uppercase; opacity: 0.7; }
+.rc-news-badge-bottom { margin-top: 2px; font-size: 20px; font-weight: 800; letter-spacing: 0.04em; font-variant-numeric: tabular-nums; }
+.rc-news-badge-icon { position: relative; z-index: 1; width: 26px; height: 26px; }
 
 /* Add-a-layout row -- text input + Add button, sits under the list. */
 .rc-dm-add-row { display: flex; gap: 8px; margin-top: 10px; }
