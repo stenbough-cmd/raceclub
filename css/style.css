@@ -3286,6 +3286,7 @@ button.rc-switch { display: inline-flex; align-items: center; gap: 12px; width: 
 .rc-adm.rc-stw, .rc-adm.rc-hlm { --rc-adm-accent: #66849D; }
 /* Helmet Designer: its first heading sits the same 18px under the description as Online seasons does in Administration. */
 .rc-hlm .rc-coll-body > .rc-adm-news:first-child { margin-top: 0; }
+.rc-adm-main .rc-coll-body > .rc-adm-news:first-child { margin-top: 0; }   /* Administration now starts with Data management (the seasons moved to League Tools) */
 
 /* Accordion look: a collapsed container is a clickable rounded rectangle that lifts on hover. */
 .rc-acc { transition: transform 0.15s ease, box-shadow 0.15s ease; }

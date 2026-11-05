@@ -604,6 +604,7 @@
     try { if (typeof rcPrefetchChampionshipPage === 'function') rcPrefetchChampionshipPage({ token: token, spinner: buildSpinner }, profile.profileId); } catch (preErr) { /* ignore */ }
     var champHost = el('div', 'margin-top:20px;'); champHost.id = 'rc-champ-host';
     var admHost = el('div', 'margin-top:20px;'); admHost.id = 'rc-adm-host';
+    var lgtHost = el('div', 'margin-top:20px;'); lgtHost.id = 'rc-lgt-host';
     var stwHost = el('div', 'margin-top:20px;'); stwHost.id = 'rc-stw-host';
     var hlmHost = el('div', 'margin-top:20px;'); hlmHost.id = 'rc-hlm-host';
     var champBody = el('div', '');
@@ -687,7 +688,8 @@
     // 15px under the bar.
     function accName(box) {
       if (box.closest('#rc-stw-host')) return 'Protest Docket';
-      if (box.closest('#rc-adm-host')) return 'League Tools';
+      if (box.closest('#rc-lgt-host')) return 'League Tools';
+      if (box.closest('#rc-adm-host')) return 'Administration';
       if (box.closest('#rc-hlm-host')) return 'Helmet Designer';
       if (box.closest('#rc-champ-host')) return 'Single Player Championship';
       return 'Online League';
@@ -745,8 +747,8 @@
     }).then(function () {
       champHost.style.display = '';
       if (profile.role === 'Admin' || profile.role === 'Organizer' || profile.role === 'Steward') { currentProfile = currentProfile || profile; section.appendChild(stwHost); renderStewardingSection(token); }
-      if (profile.role === 'Admin') { section.appendChild(hlmHost); currentProfile = currentProfile || profile; renderHelmetDesignerSection(token); }
-      if (profile.role === 'Admin') { section.appendChild(admHost); currentProfile = currentProfile || profile; renderLeagueManagementSection(token); }
+      // Order: Protest Docket, League Tools, Helmet Studio, Administration.
+      if (profile.role === 'Admin') { section.appendChild(lgtHost); section.appendChild(hlmHost); section.appendChild(admHost); currentProfile = currentProfile || profile; renderLeagueManagementSection(token); renderHelmetDesignerSection(token); }
       syncLabel();
     });
   }
@@ -2587,17 +2589,25 @@
     return wrap;
   }
 
-  // ADMINISTRATION container on the Dashboard (Admin only; Organizers no longer see it, Matt 2026-11-03). It holds what used to be the League Tools page: the
-  // seasons (with their race calendars) and League News. Same container look as Online League / Single Player, graphite accent.
+  // Two Admin-only containers on the Dashboard (Organizers do not see them, Matt 2026-11-03), same look as Online League / Single Player,
+  // graphite accent. LEAGUE TOOLS (2026-11-05) holds the online seasons with their race calendars and League News; ADMINISTRATION holds
+  // Data management and the Website tiles. LEAGUE TOOLS sits above the Helmet Studio, ADMINISTRATION below it.
+  // renderLeagueManagementSection redraws both (every season edit calls it as its reload).
   function renderLeagueManagementSection(token) {
-    var host = document.getElementById('rc-adm-host');
+    renderLeagueToolsSection(token);
+    renderAdministrationSection(token);
+  }
+
+  function renderLeagueToolsSection(token) {
+    var host = document.getElementById('rc-lgt-host');
     if (!host) return;
     if (!(currentProfile && currentProfile.role === 'Admin')) { host.innerHTML = ''; return; }
+    var wasOpen = !!host.querySelector('.rc-lgt:not(.rc-collapsed)');
     host.innerHTML = '';
-    var box = el('div', 'rc-ol-section rc-adm rc-acc rc-collapsed');
+    var box = el('div', 'rc-ol-section rc-adm rc-acc rc-lgt' + (wasOpen ? '' : ' rc-collapsed'));
     var head = el('div', 'rc-adm-head');
     var ht = el('div', '');
-    ht.appendChild(el('div', 'rc-adm-eyebrow', 'Administration'));
+    ht.appendChild(el('div', 'rc-adm-eyebrow', 'Season Control'));
     ht.appendChild(el('div', 'rc-adm-title', 'League tools.'));
     // Loads collapsed; the Dashboard's accordion opens it when the container is clicked.
     var subRow = el('div', 'rc-coll-sub');
@@ -2638,43 +2648,62 @@
         if (home) (newsBySeason[home.seasonId] = newsBySeason[home.seasonId] || []).push(n);
       });
       body.appendChild(buildSeasonsPanel(seasons, data.racesBySeasonId || {}, token, reload, currentProfile.role === 'Admin', newsBySeason, storiesBySeason));
-
-      // DATA MANAGEMENT and WEBSITE (Admin only): short tiles that open the same popups the Admin page uses. No descriptions here,
-      // just a title and one short line; the full explanations stay on the Admin page.
-      if (currentProfile.role === 'Admin') {
-        function toolTiles(title, tiles) { return rcToolTiles_(token, title, tiles); }
-        body.appendChild(toolTiles('Data management', [
-          ['People', 'Members', 'Accounts and roles.', function () { openMembersModal(token); }],
-          ['Circuits', 'Tracks', 'Tracks and layouts.', function () { openTracksModal(token); }],
-          ['Garage', 'Cars', 'Cars and team seats.', function () { openCarsModal(token); }],
-          ['Photos', 'Add Preview Photo', 'Pictures for Season Previews.', function () { openPreviewPhotoModal(token); }],
-          ['Health', 'Integrity Check', 'Scan the season and the whole site.', function () { openIntegrityCheckModal(token); }, { corner: 'Run →' }]
-        ]));
-        // WEBSITE TOOLS: what the old Admin page held. Each tile runs the same action as the old button.
-        var webTools = collectWebsiteTools(token);
-        var webSpecs = [];
-        webTools.forEach(function (t) {
-          if (t.staged) return;
-          var meta = { 'Update Home Page Helmets': ['Update', 'Home Page Helmets', 'Choose the four showcase helmets.'], 'Update Home Page Grid': ['Update', 'Home Page Grid', 'Refresh Meet The Grid.'], 'Weekly Backup': ['Safety', 'Weekly Backup', 'Copy the whole Sheet to Drive each week.'] }[t.label] || ['Website', t.label, ''];
-          var stampKey = { 'Update Home Page Helmets': 'helmets', 'Update Home Page Grid': 'grid', 'Weekly Backup': 'backup' }[t.label] || '';
-          var cornerTxt = t.label === 'Update Home Page Grid' ? 'Run →' : 'Open →';
-          var tileOpts = { corner: cornerTxt, stamp: stampKey };
-          if (t.label === 'Weekly Backup') tileOpts = { stamp: stampKey, pill: 'status', statusKey: 'weeklyOn' };
-          webSpecs.push([meta[0], meta[1], meta[2], t.onClick, tileOpts]);
-        });
-        var webSection = toolTiles('Website', webSpecs.map(function (x) { return [x[0], x[1], x[2], x[3], x[4]]; }).concat([['Preview', 'Staged League Hub', rcStagedHubOn() ? 'On in this browser.' : 'Off in this browser.', function () {
-          var turningOn = !rcStagedHubOn();
-          rcSetStagedHub(turningOn);
-          showToast(turningOn ? 'Staged League Hub is ON in this browser. Open the League Hub to see it.' : 'Staged League Hub is OFF. The League Hub shows the real league again.', 'success');
-          this.querySelector('.rc-ol-tile-sub').textContent = turningOn ? 'On in this browser.' : 'Off in this browser.';
-          this.setState(turningOn);
-        }, { pill: rcStagedHubOn() ? 'on' : 'off' }]]));
-        body.appendChild(webSection);
-      }
     }).catch(function () {
       body.innerHTML = '';
       body.appendChild(el('p', 'color:var(--rc-red);', 'Could not reach the server.'));
     });
+  }
+
+  function renderAdministrationSection(token) {
+    var host = document.getElementById('rc-adm-host');
+    if (!host) return;
+    if (!(currentProfile && currentProfile.role === 'Admin')) { host.innerHTML = ''; return; }
+    var wasOpen = !!host.querySelector('.rc-adm-main:not(.rc-collapsed)');
+    host.innerHTML = '';
+    var box = el('div', 'rc-ol-section rc-adm rc-acc rc-adm-main' + (wasOpen ? '' : ' rc-collapsed'));
+    var head = el('div', 'rc-adm-head');
+    var ht = el('div', '');
+    ht.appendChild(el('div', 'rc-adm-eyebrow', 'Administration'));
+    ht.appendChild(el('div', 'rc-adm-title', 'Site tools.'));
+    var subRow = el('div', 'rc-coll-sub');
+    subRow.appendChild(el('p', 'rc-adm-sub', 'Manage members, tracks, cars and the website.'));
+    ht.appendChild(subRow);
+    head.appendChild(ht);
+    head.appendChild(el('div', 'rc-adm-icon', ICON_LEAGUE.replace('width="16" height="16"', 'width="26" height="26"')));
+    box.appendChild(head);
+    var body = el('div', 'rc-coll-body');
+    box.appendChild(body);
+    host.appendChild(box);
+    if (currentProfile.role === 'Admin') {
+      function toolTiles(title, tiles) { return rcToolTiles_(token, title, tiles); }
+      body.appendChild(toolTiles('Data management', [
+        ['People', 'Members', 'Accounts and roles.', function () { openMembersModal(token); }],
+        ['Circuits', 'Tracks', 'Tracks and layouts.', function () { openTracksModal(token); }],
+        ['Garage', 'Cars', 'Cars and team seats.', function () { openCarsModal(token); }],
+        ['Photos', 'Add Preview Photo', 'Pictures for Season Previews.', function () { openPreviewPhotoModal(token); }],
+        ['Health', 'Integrity Check', 'Scan the season and the whole site.', function () { openIntegrityCheckModal(token); }, { corner: 'Run →' }]
+      ]));
+      // WEBSITE TOOLS: what the old Admin page held. Each tile runs the same action as the old button.
+      var webTools = collectWebsiteTools(token);
+      var webSpecs = [];
+      webTools.forEach(function (t) {
+        if (t.staged) return;
+        var meta = { 'Update Home Page Helmets': ['Update', 'Home Page Helmets', 'Choose the four showcase helmets.'], 'Update Home Page Grid': ['Update', 'Home Page Grid', 'Refresh Meet The Grid.'], 'Weekly Backup': ['Safety', 'Weekly Backup', 'Copy the whole Sheet to Drive each week.'] }[t.label] || ['Website', t.label, ''];
+        var stampKey = { 'Update Home Page Helmets': 'helmets', 'Update Home Page Grid': 'grid', 'Weekly Backup': 'backup' }[t.label] || '';
+        var cornerTxt = t.label === 'Update Home Page Grid' ? 'Run →' : 'Open →';
+        var tileOpts = { corner: cornerTxt, stamp: stampKey };
+        if (t.label === 'Weekly Backup') tileOpts = { stamp: stampKey, pill: 'status', statusKey: 'weeklyOn' };
+        webSpecs.push([meta[0], meta[1], meta[2], t.onClick, tileOpts]);
+      });
+      var webSection = toolTiles('Website', webSpecs.map(function (x) { return [x[0], x[1], x[2], x[3], x[4]]; }).concat([['Preview', 'Staged League Hub', rcStagedHubOn() ? 'On in this browser.' : 'Off in this browser.', function () {
+        var turningOn = !rcStagedHubOn();
+        rcSetStagedHub(turningOn);
+        showToast(turningOn ? 'Staged League Hub is ON in this browser. Open the League Hub to see it.' : 'Staged League Hub is OFF. The League Hub shows the real league again.', 'success');
+        this.querySelector('.rc-ol-tile-sub').textContent = turningOn ? 'On in this browser.' : 'Off in this browser.';
+        this.setState(turningOn);
+      }, { pill: rcStagedHubOn() ? 'on' : 'off' }]]));
+      body.appendChild(webSection);
+    }
   }
 
   // ---------------------------------------------------------------------
