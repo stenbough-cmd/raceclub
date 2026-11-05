@@ -3207,8 +3207,7 @@ function _rclRenderSeasonTitle_(hub) {
   if (!el) return;
   el.innerHTML = '';
   if (!hub || !hub.hasSeason || !hub.seasonName) { el.hidden = true; return; }
-  var yr = hub.seasonStartUtc ? new Date(hub.seasonStartUtc).getFullYear() : '';
-  el.appendChild(_rclEl('div', 'rcl-season-eyebrow', (yr ? yr + ' ' : '') + 'Championship'));
+  el.appendChild(_rclEl('div', 'rcl-season-eyebrow', hub.seasonNumber ? 'Season ' + hub.seasonNumber : 'Season'));
   el.appendChild(_rclEl('h1', 'rcl-season-name', _rclSeasonTitleText_(hub.seasonName)));
   var line = _rclSeasonDateLine_(hub.seasonStartUtc, hub.seasonEndUtc);
   if (line) el.appendChild(_rclEl('div', 'rcl-season-line', line));

@@ -424,9 +424,10 @@ function rccRenderSeasonTitle(page) {
   var rec = (page.seasons || []).filter(function (s) { return s.seasonId === page.seasonId; })[0] || {};
   var name = String(page.seasonName || rec.name || '').trim();
   var n = page.seasonNumber || rec.seasonNumber;
-  var title = /^season\s*\d/i.test(name) ? name : ('Season ' + (n ? n : '') + (name ? (n ? ': ' : '') + name : '')).trim();
+  var title = name;
+  if (!title) title = n ? 'Season ' + n : 'Season';
   title = title.replace(/\s*[\u2014\u2013]\s*/g, ': ').replace(/\s+-\s+/g, ': ');
-  el.appendChild(_rccText('div', 'rcl-season-eyebrow', 'Single Player Championship'));
+  el.appendChild(_rccText('div', 'rcl-season-eyebrow', n ? 'Season ' + n : 'Season'));
   el.appendChild(_rccText('h1', 'rcl-season-name', title));
   var bits = [];
   var made = rec.createdAt ? new Date(rec.createdAt) : null;
