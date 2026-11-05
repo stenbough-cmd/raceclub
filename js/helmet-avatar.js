@@ -75,8 +75,10 @@
   function defaultRecipe() { return (assets && assets.def) ? assets.def : window.RCHelmet.defaultRecipe(); }
 
   // Throws away every drawn helmet and draws them again (used when the design list or default helmet changed).
+  var drawGen = 0;
   function redrawAll() {
     try { Object.keys(sessionStorage).forEach(function (k) { if (k.indexOf('rch') === 0) sessionStorage.removeItem(k); }); } catch (e) {}
+    drawGen++;   // any helmet still being drawn from the old list is thrown away when it finishes
     Array.prototype.forEach.call(document.querySelectorAll('[data-rc-helmet]'), function (n) { n.removeAttribute('data-rc-done'); n.innerHTML = ''; });
     hydrate(document);
   }
@@ -114,12 +116,14 @@
   function hydrate(root) {
     var nodes = Array.prototype.slice.call((root || document).querySelectorAll('[data-rc-helmet]:not([data-rc-done])'));
     if (!nodes.length) return Promise.resolve();
+    var gen = drawGen;
     nodes.forEach(function (n) { n.setAttribute('data-rc-done', '1'); });
     return ensure().then(function (H) {
       return Promise.all(nodes.map(function (n) {
         var value = n.getAttribute('data-rc-helmet'), w = parseInt(n.getAttribute('data-w'), 10) || 60;
         var rec = liveRecipe(recipeOf(value)) || defaultRecipe();
         return H.render(rec, { width: w * 2 }).then(function (cv) {
+          if (gen !== drawGen) return;   // the design list changed while this was drawing: redrawAll draws it again
           cv.style.width = w + 'px'; cv.style.height = 'auto';
           n.innerHTML = ''; n.appendChild(cv);
           try { sessionStorage.setItem(rcHelmetCacheKey_(value, w), cv.toDataURL('image/png')); } catch (e) {}

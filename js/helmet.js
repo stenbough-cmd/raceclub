@@ -823,7 +823,7 @@ var cfg = { designs: [], manufacturers: [], logos: [] };   // designs: [{slot, n
       var m2 = scaledData('m2', eng[2], Wt, Ht, CROP).data;
       // the pattern PNG covers the same 1254x1254 area as the helmet, whatever pixel size it was saved at
       var pk = pat ? pat.naturalWidth / 1254 : 1;
-      var pd = pat ? scaledData('pat:' + recipe.d, pat, Wt, Ht, { x: CROP.x * pk, y: CROP.y * pk, w: CROP.w * pk, h: CROP.h * pk }).data : null;
+      var pd = pat ? scaledData('pat:' + patUrl, pat, Wt, Ht, { x: CROP.x * pk, y: CROP.y * pk, w: CROP.w * pk, h: CROP.h * pk }).data : null;
 
       var cB = hexRgb(recipe.b[0]), cA1 = hexRgb(recipe.a1[0]), cA2 = hexRgb(recipe.a2[0]);
       var kB = recipe.b[1], kA1 = recipe.a1[1], kA2 = recipe.a2[1];
