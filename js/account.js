@@ -5909,7 +5909,7 @@
 
   // ADD PREVIEW PHOTO (ECO chat, 2026-11-05) -- Admin > Website. Adds a picture to the pool the Season Preview story picks from.
   // Pick a series, a class and a track, choose a picture; it is shrunk to a JPEG about 1000 px wide and saved by Apps Script into the
-  // data repo (website/images/tracks/userpreview/series_class_track_time.jpg). The preview picker reads that folder with the site's own.
+  // data repo (website/images/previews/series_class_track_time.jpg). The preview picker reads that folder with the site's own.
   function openPreviewPhotoModal(token) {
     var modal = showModal('Add Preview Photo', { wide: true });
     var body = modal.body;
