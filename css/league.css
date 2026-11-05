@@ -2379,4 +2379,6 @@ html:has(body.rc-league-page.rc-modal-scroll-locked) { overflow: hidden; scrollb
 .rcl-story-photo figcaption { margin-top: 6px; font-size: 12px; line-height: 1.35; font-style: italic; color: var(--rc-steel); }
 .rcl-story-photo-side { float: left; width: 33%; margin: 4px 20px 8px 0; }
 body.rcl-hub .rcl-news-current-body, .rcl-modal-story .rcl-news-body { display: flow-root; }
+/* In the story popups the photo takes half the width. */
+.rcl-modal-story .rcl-story-photo-side { width: 50%; }
 @media (max-width: 640px) { .rcl-story-photo-side { float: none; width: 100%; margin: 0 0 14px; } }
