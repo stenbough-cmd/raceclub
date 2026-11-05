@@ -3408,3 +3408,9 @@ body.rc-account-page .rc-site-footer { flex: none; margin-top: 0; }
 
 /* The step pills at the top of the Create/Edit Season popup are dimmed and ignore clicks while the season is saving (Matt, 2026-11-05). */
 .rc-wizard-steps-saving .rc-wizard-step { opacity: 0.35; pointer-events: none; cursor: not-allowed; }
+
+/* Sign-in style pages (login, register, reset password, verify): the form area fills the window above the footer instead of being a full
+   window tall by itself, so the footer sits at the bottom of the window rather than below the fold (Matt, 2026-11-05). */
+body:has(> .rc-auth-page):has(> .rc-site-footer) { min-height: 100vh; display: flex; flex-direction: column; }
+body:has(> .rc-auth-page) > .rc-auth-page { min-height: 0; flex: 1 0 auto; }
+body:has(> .rc-auth-page) > .rc-site-footer { flex: none; }
