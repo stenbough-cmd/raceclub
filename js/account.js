@@ -2154,7 +2154,7 @@
     var nameEl = el('div', 'rcd-season-name');
     nameEl.appendChild(el('span', '', escapeHtml((seasonRowNum ? ('Season ' + seasonRowNum) : (s.seasonId || 'Season')) + (s.name ? (': ' + s.name) : ''))));
     nameEl.appendChild(el('span', 'rc-badge-chip rc-badge-graphite', escapeHtml(s.createdAt ? String(s.createdAt).slice(0, 4) : 'Unknown Year')));
-    container.appendChild(nameEl);
+    top.insertBefore(nameEl, top.firstChild);   // season name + year at the top-left, the status pill at the top-right, one row
     var done = (races || []).filter(function (r) { return r.hasResults; }).length;
     var metaParts = [];
     metaParts.push(isCurrent && done ? (done + (done === 1 ? ' round completed' : ' rounds completed')) : (s.raceCount + (s.raceCount === 1 ? ' round' : ' rounds')));
@@ -2217,9 +2217,9 @@
       btnGroup.appendChild(recomputeBtn);
     }
 
-    if (!isCurrent) {
+    {
       // Opens the League Hub with this season already picked in its season dropdown, where its news is read.
-      var viewLink = el('a', 'rc-btn-primary rc-btn-row rcd-view-btn', 'View Season →');
+      var viewLink = el('a', 'rc-btn-primary rc-btn-row rcd-view-btn rcd-btn-black', 'View Season →');
       viewLink.href = 'league.html?season=' + encodeURIComponent(s.seasonId);
       btnGroup.appendChild(viewLink);
     }
@@ -2255,7 +2255,7 @@
     // Button section above the list: a line above, the NEW LEAGUE POST button, and (the list's own top line) a line below. A post is
     // filed under the season that is running when it is published, so the button is only live on a season that has not ended.
     var bar = el('div', 'rcd-season-actions rc-adm-news-actions');
-    var newPostBtn = el('button', 'rc-btn-secondary rc-btn-row', 'New League Post');
+    var newPostBtn = el('button', 'rc-btn-secondary rc-btn-row rcd-btn-black', 'New League Post');
     newPostBtn.type = 'button';
     if (isEnded) {
       newPostBtn.disabled = true;

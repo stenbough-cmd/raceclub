@@ -237,7 +237,7 @@
         var nameEl = mk('div', 'rcd-season-name');
         nameEl.appendChild(mk('span', '', (s.seasonNumber ? 'Season ' + s.seasonNumber : 'Season') + (s.name ? ': ' + s.name : '')));
         nameEl.appendChild(mk('span', 'rc-badge-chip rc-badge-graphite', year));
-        container.appendChild(nameEl);
+        top.insertBefore(nameEl, top.firstChild);   // season name + year top-left, status pill top-right, one row
         var meta = [];
         if (isCurrent && cal.length) meta.push(cal.filter(function (c) { return c.hasResults; }).length + ' rounds completed');
         else if (s.raceCount != null) meta.push(s.raceCount + (s.raceCount === 1 ? ' round' : ' rounds'));
@@ -282,7 +282,7 @@
           });
           bg.appendChild(pvBtn);
         }
-        var open = mk('a', 'rc-btn-primary rc-btn-row rcd-view-btn', 'View Season →');
+        var open = mk('a', 'rc-btn-primary rc-btn-row rcd-view-btn rcd-btn-black', 'View Season →');
         open.href = 'championship.html?id=' + encodeURIComponent(opts.profile.profileId) + '&season=' + encodeURIComponent(s.seasonId);
         bg.appendChild(open);
         container.appendChild(bg);
