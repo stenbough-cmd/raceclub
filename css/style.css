@@ -580,62 +580,10 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 .rc-auth-footer { text-align: center; font-size: 13px; margin-top: 16px; }
 
 /* -------------------------------------------------------------------- */
-/* Authenticated shell (Account.html) — sidebar + main content */
+/* Authenticated shell (Account.html) — main content */
 /* -------------------------------------------------------------------- */
 .rc-shell { display: flex; min-height: 100vh; position: relative; }
 
-.rc-sidebar {
-  width: 220px;
-  flex: none;
-  background: var(--rc-carbon);
-  color: var(--rc-white);
-  display: flex;
-  flex-direction: column;
-  padding: 24px 16px;
-}
-.rc-sidebar-nav { margin-top: 4px; display: flex; flex-direction: column; gap: 4px; }
-/* Shown the instant the page loads, before the profile fetch resolves, so the sidebar never sits
-   there blank while "Loading account information..." spins in the main content area. Removed at
-   that point, not before. */
-.rc-sidebar-nav.rc-nav-loading { pointer-events: none; opacity: 0.55; }
-.rc-nav-divider { border: none; border-top: 1px solid #3a3a3a; margin: 12px 4px; }
-.rc-nav-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-  border-radius: 4px;
-  color: var(--rc-silver);
-  text-decoration: none;
-  font-family: var(--rc-font-heading);
-  font-size: 13px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  cursor: pointer;
-  border: none;
-  background: none;
-  width: 100%;
-  text-align: left;
-}
-.rc-nav-item svg { flex: none; }
-/* Small arrow marking a sidebar link that leaves this page; small gray label above a group of links. */
-.rc-nav-item .rc-nav-ext { margin-left: auto; opacity: 0.55; }
-.rc-nav-group-label { padding: 2px 12px 4px; font-family: var(--rc-font-heading); font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #8a9199; }
-/* Discord's own PNG logo used as this nav item's icon, sized to match every other 16x16 nav icon on
-   the site -- see .rc-nav-item svg above; object-fit: contain keeps a non-square source PNG from
-   stretching to fill that box. */
-.rc-nav-item img { flex: none; width: 16px; height: 16px; object-fit: contain; }
-.rc-nav-item:hover { background: #262626; color: var(--rc-white); }
-/* Discord row -- hovers to Discord's own Blurple instead of the generic dark hover every other
-   sidebar row gets, since this is the one link that leaves the site for Discord itself. */
-.rc-nav-item-discord:hover { background: #5865F2; color: var(--rc-white); }
-.rc-nav-item.rc-nav-active { background: var(--rc-red); color: var(--rc-white); }
-/* Admin/League Tools/Stewarding now always render in the sidebar instead of being hidden from a
-   role that can't use them -- this is that disabled state: dimmed, no pointer, hover suppressed so
-   it doesn't look clickable. */
-.rc-nav-item:disabled { opacity: 0.4; cursor: not-allowed; }
-.rc-nav-item:disabled:hover { background: none; color: var(--rc-silver); }
 .rc-main {
   flex: 1;
   min-width: 0;
@@ -643,36 +591,10 @@ td { padding: 6px 4px; border-bottom: 1px solid var(--rc-silver); }
 }
 .rc-main h2 { font-size: 20px; }
 
-.rc-topbar {
-  display: none;
-  align-items: center;
-  justify-content: flex-start; /* hamburger-only now -- logo removed, was redundant with the fixed site header above it */
-  background: var(--rc-carbon);
-  padding: 10px 16px;
-}
-.rc-hamburger {
-  background: none;
-  border: none;
-  color: var(--rc-white);
-  font-size: 22px;
-  cursor: pointer;
-  padding: 4px 8px;
-}
-
-/* The black sidebar is hidden on phones AND on any screen taller than it is wide (tablets held upright, narrow browser windows): the
-   dashboard body then fills the whole page and the avatar menu in the header carries every link the sidebar had (Matt, 2026-11-02). */
+/* On phones and any screen taller than it is wide the dashboard body fills the whole page. */
 @media (orientation: portrait) {
   .rc-shell { flex-direction: column; }
   /* .rc-shell's own padding-top:70px (below, sitewide) is what clears the fixed site header now. */
-  .rc-sidebar { display: none; }
-  .rc-topbar { display: none; }
-  /* Applied to <body> via JS (openMobileMenu()/closeMobileMenu() in Account.html) while the mobile
-     menu is open. */
-  body.rc-scroll-locked {
-    overflow: hidden;
-    position: fixed;
-    width: 100%;
-  }
   /* Top padding now matches the left/right side padding (16px) so the gap above the dashboard card
      reads as even on all sides, same as the gap on its left/right edges. */
   .rc-main { padding: 16px 16px 48px; }
@@ -1487,7 +1409,7 @@ canvas.rc-helmet { display: block; max-width: 100%; height: auto; filter: drop-s
    its background/color win on hover. */
 .rc-header-menu-item-discord:hover { background: #5865F2; color: var(--rc-white); }
 /* Divider between menu items -- light theme equivalent of Account.html's dark-sidebar
-   .rc-nav-divider. */
+   the old sidebar divider. */
 .rc-header-menu-divider { border: none; border-top: 1px solid var(--rc-silver); margin: 6px 4px; }
 
 /* 480px -> 821px -- same unification as the League Hub badge above; this rule now only matters
@@ -3175,11 +3097,6 @@ button.rc-switch { display: inline-flex; align-items: center; gap: 12px; width: 
 /* Class pill beside a popup title (Choose Your Team): no taller than the title text, centered on it. */
 .rc-modal-title .rc-badge-chip, .rcl-modal-title .rc-badge-chip { font-size: 11px; line-height: 1; height: 16px; padding: 0 8px; box-sizing: border-box; flex: none; }
 
-/* ===== ACCOUNT PAGE: sidebar removed (Matt, 2026-11-02) ===== */
-/* The black sidebar is gone on every screen size; the three page links sit in the navbar under the header and every
-   other section is in the avatar menu. The sidebar element stays in the page (hidden) because the section code
-   still builds its buttons. */
-.rc-sidebar { display: none !important; }
 @media (orientation: landscape) { .rc-modal-backdrop { padding-left: 24px; } }
 
 /* Tall portrait (phones): the header's account button is just the helmet and the menu arrow in its light gray box; the name and membership tier are

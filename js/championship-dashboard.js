@@ -86,7 +86,8 @@
     if (typeof window.showToast !== 'function' && opts.showToast) window.showToast = opts.showToast;
     if (loading) return loading;
     CSS_FILES.forEach(loadCss);
-    loading = JS_FILES.reduce(function (p, src) { return p.then(function () { return loadScript(src); }); }, Promise.resolve());
+    // All three are requested at once (they download side by side); rcLoadScript keeps them running in this order.
+    loading = Promise.all(JS_FILES.map(loadScript));
     loading.catch(function () { loading = null; });
     return loading;
   }

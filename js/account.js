@@ -14,45 +14,8 @@
   var token = redirectIfNoToken();
   if (!token) return; // already redirected to login.html
 
-  // Called by the Logout nav item built in buildSidebarNav() below. Clears the local token and
-  // redirects immediately, without waiting on the server-side logout call to finish -- if it never
-  // completes, the token just sits unused until its normal 7-day expiry, harmless.
-  function doLogout() {
-    fetchApi('logout', { method: 'POST', token: token, quick: true }).catch(function () {});
-    clearToken();
-    window.location.href = 'login.html';
-  }
-
-  // Mobile menu open/close. While open, the page itself can't scroll (see .rc-scroll-locked in
-  // style.css).
-  var scrollYBeforeLock = 0;
-  function openMobileMenu() {
-    document.getElementById('rc-sidebar').classList.add('rc-sidebar-open');
-    scrollYBeforeLock = window.scrollY || window.pageYOffset || 0;
-    document.body.style.top = '-' + scrollYBeforeLock + 'px';
-    document.body.classList.add('rc-scroll-locked');
-  }
-  function closeMobileMenu() {
-    document.getElementById('rc-sidebar').classList.remove('rc-sidebar-open');
-    document.body.classList.remove('rc-scroll-locked');
-    document.body.style.top = '';
-    window.scrollTo(0, scrollYBeforeLock);
-  }
-  document.getElementById('rc-hamburger').addEventListener('click', function (evt) {
-    evt.stopPropagation();
-    var sidebar = document.getElementById('rc-sidebar');
-    if (sidebar.classList.contains('rc-sidebar-open')) closeMobileMenu();
-    else openMobileMenu();
-  });
-  document.addEventListener('click', function (evt) {
-    var sidebar = document.getElementById('rc-sidebar');
-    if (!sidebar.classList.contains('rc-sidebar-open')) return;
-    if (sidebar.contains(evt.target)) return; // click was on a nav link/inside the menu -- let it do its own thing
-    closeMobileMenu();
-  });
-
   // NOTE: the actual profile-loading code is at the very bottom of this script, not here --
-  // renderProfile()/buildFullProfileUI() below touch `var`s (NAV_ITEMS, the ICON_* constants) whose
+  // renderProfile()/buildFullProfileUI() below touch `var`s (the ICON_* constants) whose
   // VALUE ASSIGNMENTS aren't hoisted, so calling them this early (before those assignments have
   // run, on the synchronous fresh-login path) would throw partway through.
 
@@ -179,14 +142,11 @@
 
   // Flat, stroke-based icons (no emoji) -- one per sidebar item, unchanged
   // from v0.4.0.
-  var ICON_PROFILE = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"></path></svg>';
-  var ICON_DASHBOARD = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="8" rx="1"></rect><rect x="13" y="3" width="8" height="8" rx="1"></rect><rect x="3" y="13" width="8" height="8" rx="1"></rect><rect x="13" y="13" width="8" height="8" rx="1"></rect></svg>';
   var ICON_CALENDAR = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>';
   var ICON_NAV_STAR = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15 9 22 9.5 17 14.5 18.5 22 12 18 5.5 22 7 14.5 2 9.5 9 9"></polygon></svg>';
   // Disclosure triangle -- a plain down-chevron, same 24x24/stroke-1.8 family as every other icon
   // here.
   var ICON_CHEVRON_DOWN = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>';
-  var ICON_SETTINGS = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1z"></path></svg>';
   var ICON_LEAGUE = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"></rect><path d="M9 3v2h6V3"></path><line x1="8" y1="11" x2="16" y2="11"></line><line x1="8" y1="15" x2="16" y2="15"></line></svg>';
   var ICON_LOCK = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>';
   // Radiation trefoil -- the site's one deliberately filled, non-nav icon, used exactly once, for
@@ -199,18 +159,14 @@
     '<path d="M14.8,10.4 L21.4,6.6 A10.8,10.8 0 0,1 21.4,17.4 L14.8,13.6 A3.2,3.2 0 0,0 14.8,10.4 Z" fill="#e0483c" transform="rotate(240 12 12)"></path>' +
     '<circle cx="12" cy="12" r="2.6" fill="#e0483c"></circle>' +
     '</svg>';
-  var ICON_LOGOUT = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>';
-  var ICON_HELP = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M9.2 9a2.8 2.8 0 0 1 5.4 1c0 1.8-2.6 2-2.6 3.6"></path><line x1="12" y1="17" x2="12" y2="17.2"></line></svg>';
   // Feedback nav item icon -- a speech bubble, matching this file's icon convention (16x16,
   // stroke-only) same as every other sidebar glyph above.
-  var ICON_FEEDBACK = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-8 8H7l-4 3 1-4.2A8 8 0 1 1 21 12Z"></path><line x1="8" y1="11" x2="16" y2="11"></line><line x1="8" y1="14" x2="13" y2="14"></line></svg>';
   var ICON_MAIL = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"></rect><path d="M3 7l9 6 9-6"></path></svg>';
 
   var ICON_SUN = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><line x1="12" y1="2" x2="12" y2="4"></line><line x1="12" y1="20" x2="12" y2="22"></line><line x1="4.2" y1="4.2" x2="5.6" y2="5.6"></line><line x1="18.4" y1="18.4" x2="19.8" y2="19.8"></line><line x1="2" y1="12" x2="4" y2="12"></line><line x1="20" y1="12" x2="22" y2="12"></line><line x1="4.2" y1="19.8" x2="5.6" y2="18.4"></line><line x1="18.4" y1="5.6" x2="19.8" y2="4.2"></line></svg>';
   var ICON_CLOUD = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18h10a4 4 0 0 0 0-8 5.5 5.5 0 0 0-10.7-1.6A4.5 4.5 0 0 0 7 18z"></path></svg>';
   var ICON_RAIN = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 15h9a4 4 0 0 0 0-8 5.5 5.5 0 0 0-10.4-1.4A4 4 0 0 0 6.5 15z"></path><line x1="8" y1="18" x2="7" y2="21"></line><line x1="12" y1="18" x2="11" y2="21"></line><line x1="16" y1="18" x2="15" y2="21"></line></svg>';
   var ICON_UNLOCK = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 7.4-2"></path></svg>';
-  var ICON_EXTERNAL = '<svg class="rc-nav-ext" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7"></path><path d="M8 7h9v9"></path></svg>';
   // Race stat icons (calendar chips): tires, tire wear, fuel, setups, points.
   var ICON_TIRE = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="3.5"></circle><line x1="12" y1="3" x2="12" y2="8.5"></line><line x1="12" y1="15.5" x2="12" y2="21"></line><line x1="3" y1="12" x2="8.5" y2="12"></line><line x1="15.5" y1="12" x2="21" y2="12"></line></svg>';
   var ICON_TIRE_WEAR = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17a8 8 0 1 1 16 0"></path><line x1="12" y1="17" x2="16" y2="11"></line><circle cx="12" cy="17" r="1"></circle></svg>';
@@ -226,21 +182,13 @@
   // reusing the Protests caution triangle.
   var ICON_STEWARDING = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z"></path><path d="M9 12l2 2 4-4"></path></svg>';
 
-  // Same 10-item primary nav, same order, as v0.4.0. League Management, Admin, and Data Management
-  // are appended separately in buildSidebarNav below since they're permission-gated rather than
-  // always shown.
-  var NAV_ITEMS = [
-    { id: 'dashboard', label: 'Dashboard', icon: ICON_DASHBOARD },
-    { id: 'settings', label: 'Edit Profile', icon: ICON_SETTINGS }
-  ];
-
   // Every section is a placeholder for now (see renderPlaceholderSections below) -- this list is
   // what drives both the placeholder panels and their headings. Order doesn't matter here, only
   // section IDs and labels.
   var PLACEHOLDER_LABELS = {};
 
   // Set once, in buildFullProfileUI() -- lets the Edit Profile/Help nav button handlers (built
-  // earlier, in buildSidebarNav(), before profile/ token exist yet) reach live data at click-time.
+  // earlier, before profile/ token exist yet) reach live data at click-time.
   var currentProfile = null;
   var currentToken = null;
 
@@ -274,106 +222,14 @@
   }
 
   // ---------------------------------------------------------------------
-  // SIDEBAR NAV + SECTION SWITCHING
+  // SECTION SWITCHING
   // ---------------------------------------------------------------------
-  function makeNavButton(id, label, icon, elId, hiddenByDefault, onClick) {
-    var btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'rc-nav-item';
-    btn.dataset.section = id;
-    if (elId) btn.id = elId;
-    if (hiddenByDefault) btn.style.display = 'none';
-    btn.innerHTML = icon + '<span>' + escapeHtml(label) + '</span>';
-    btn.addEventListener('click', onClick || function () { showSection(id); });
-    return btn;
-  }
-
-  function navDivider(elId) {
-    var hr = document.createElement('hr');
-    hr.className = 'rc-nav-divider';
-    if (elId) hr.id = elId;
-    return hr;
-  }
-
-  // Uses the official Discord-Symbol-White.svg mark. Sized to roughly match this file's 16x16 icon
-  // convention (see .rc-nav-item img, style.css), but width is scaled to the mark's real ~1.32:1
-  // aspect ratio instead of forcing it square.
-  function buildDiscordNavLink() {
-    var link = document.createElement('a');
-    // rc-nav-item-discord -- hovers to Discord's own Blurple (#5865F2, .rc-nav-item-discord:hover,
-    // style.css) instead of the generic dark hover every other sidebar row gets, since this is the
-    // one link that leaves the site for Discord.
-    link.className = 'rc-nav-item rc-nav-item-discord';
-    link.href = 'https://discord.com/channels/1538292330870611968/1551231154353479730';
-    link.target = '_blank';
-    link.rel = 'noopener noreferrer';
-    // Label shortened to just "Discord".
-    link.innerHTML = '<img src="assets/images/Discord-Symbol-White.svg" alt="" width="21" height="16">' + '<span>Discord</span>';
-    return link;
-  }
-
-  // Order: the 10 general section links, a divider, Admin/Data Management/League Management (only
-  // if this user's permissions unlock them), a second divider, then Help, Settings, Log Out --
-  // identical order to v0.4.0.
-  function buildSidebarNav() {
-    var nav = document.getElementById('rc-sidebar-nav');
-    nav.innerHTML = '';
-    // Small arrow on the two links that leave this page for another page.
-    function markExternal(id) { var b = document.getElementById(id); if (b) b.insertAdjacentHTML('beforeend', ICON_EXTERNAL); }
-    // ORDER (reorganized 2026-10-17): 1) Me: Dashboard, My Profile Page, Settings. 2) The league (these two leave
-    // this page, marked with a small arrow): League Hub, Championship. 3) Staff: League Tools, Stewarding, Admin
-    // (always shown, grayed for roles that cannot use them). 4) Help and community: League Help, Feedback, Discord.
-    // Then Log Out on its own at the bottom.
-    nav.appendChild(makeNavButton('dashboard', 'Dashboard', ICON_DASHBOARD, 'rc-nav-dashboard'));
-    nav.appendChild(makeNavButton('myprofile', 'My Profile Page', ICON_PROFILE, 'rc-nav-myprofile', false, function () {
-      if (currentProfile && currentProfile.profileId) window.location.href = 'profile.html?id=' + encodeURIComponent(currentProfile.profileId);
-    }));
-    var settingsItem = NAV_ITEMS[NAV_ITEMS.length - 1];
-    nav.appendChild(makeNavButton(settingsItem.id, settingsItem.label, settingsItem.icon, null, false, function () { openEditProfileModal(currentProfile, currentToken); }));
-    nav.appendChild(navDivider());
-    // Links off-page to the public league.html, not another in-page section, so it navigates
-    // directly instead of going through showSection/ showLazySection.
-    nav.appendChild(makeNavButton('leaguehub', 'League Hub', ICON_FLAG, 'rc-nav-leaguehub', false, function () {
-      window.location.href = 'league.html';
-    }));
-    // Championship (CHAMP chat, 2026-10-08) -- off-page link to this driver's own offline
-    // championship (championship.html?id=...). Admin-only for now: setNavAccess below grays it out
-    // for everyone else instead of hiding it.
-    nav.appendChild(makeNavButton('championship', 'Championship',
-      '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3h8v5a4 4 0 0 1-8 0V3z"></path><path d="M8 4H4a3 3 0 0 0 3 5"></path><path d="M16 4h4a3 3 0 0 1-3 5"></path><path d="M12 12v4"></path><path d="M9 20h6"></path><path d="M10 20v-2.5"></path><path d="M14 20v-2.5"></path></svg>',
-      'rc-nav-championship', false, function () {
-        if (currentProfile && currentProfile.profileId) window.location.href = 'championship.html?id=' + encodeURIComponent(currentProfile.profileId);
-      }));
-    markExternal('rc-nav-leaguehub');
-    markExternal('rc-nav-championship');
-    
-    nav.appendChild(navDivider());
-    // Help is an ordinary in-page section again (see renderHelpSection()) -- it briefly lived on
-    // its own page (help.html) so the Rulebook would have room to grow, but that meant losing the
-    // sidebar/nav chrome, which read as leaving the site rather than part of the account.
-    nav.appendChild(makeNavButton('help', 'Help', ICON_HELP, 'rc-nav-help', false, function () { openHelpModal(); }));
-    // Feedback -- opens the same page-agnostic popup the header dropdown's Feedback item opens
-    // (_rcOpenFeedbackModal, js/header.js, loaded on this page before this script -- see the
-    // <script src="js/header.js?v=0.9.0"> tag in <head>), not an in-page section.
-    nav.appendChild(makeNavButton('feedback', 'Feedback', ICON_FEEDBACK, 'rc-nav-feedback', false, function () { _rcOpenFeedbackModal(); }));
-    // Discord link, right under Feedback, opening in a new tab so a driver never loses their place
-    // on the site.
-    nav.appendChild(buildDiscordNavLink());
-    nav.appendChild(navDivider());
-    nav.appendChild(makeNavButton('logout', 'Log Out', ICON_LOGOUT, 'rc-nav-logout', false, doLogout));
-  }
-
-  // Shows exactly one .rc-content-section and marks the matching sidebar
-  // item active.
+  // Shows exactly one .rc-content-section.
   function showSection(id) {
     document.body.style.paddingBottom = '';
     document.querySelectorAll('.rc-content-section').forEach(function (s) { s.style.display = 'none'; });
     var target = document.getElementById('rc-section-' + id);
     if (target) target.style.display = 'block';
-    document.querySelectorAll('.rc-nav-item').forEach(function (btn) {
-      btn.classList.toggle('rc-nav-active', btn.dataset.section === id);
-    });
-    closeMobileMenu();
     // Only track real sections (a matching .rc-content-section actually exists) --
     // rcReloadAfterSave() reads this to return a popup save to the same page it was opened from
     // instead of always Dashboard.
@@ -387,9 +243,7 @@
     var barTitle = document.getElementById('rc-account-navbar-title');
     if (!barTitle) return;
     var id = rcActiveSectionId;
-    var navBtn = document.querySelector('.rc-nav-item[data-section="' + id + '"]');
-    var label = navBtn ? navBtn.textContent.replace(/\s+/g, ' ').trim() : '';
-    barTitle.textContent = label || (id.charAt(0).toUpperCase() + id.slice(1));
+    barTitle.textContent = id.charAt(0).toUpperCase() + id.slice(1);
     if (id === 'dashboard' && rcDashOpenLabel) barTitle.appendChild(el('span', 'rc-account-navbar-sub', rcDashOpenLabel));
   }
 
@@ -416,22 +270,59 @@
   // ONE combined call instead of 8 separate ones.
   // Every card still gets its own promise, exactly as before -- they all just resolve (or reject)
   // together off that one underlying fetch, instead of off 8 independent ones.
-  function fetchDashboardData(token) {
+  // fullRank: the rare fallback. Normally the server leaves the season position and points of the Current Seat to this page,
+  // which reads them from the League Hub data file (the same numbers the League Hub shows); fullRank asks the server to work them out.
+  function fetchDashboardData(token, fullRank) {
     // A dropped connection or timeout is marked error NETWORK so the page can tell it apart from a
     // real "session expired" answer (NOT_AUTHENTICATED) and from "no data".
-    var combined = fetchApi('getDashboardData', { token: token }).catch(function () { return { success: false, error: 'NETWORK' }; });
+    var combined = fetchApi('getDashboardData', { token: token, params: fullRank ? { fullRank: '1' } : undefined }).catch(function () { return { success: false, error: 'NETWORK' }; });
+    // The League Hub file is requested at the same moment (a plain file, never Apps Script). Nothing is kept when it is missing or old.
+    var hubFileP = Promise.resolve(null);
+    try {
+      if (!fullRank && typeof _rcDataFile_ === 'function' && RC_DATA_SOURCE === 'files') {
+        hubFileP = _rcDataFile_('league/hub.json').then(function (f) { return rcPatchHubTimeFields(_rcDataStrip_(f)); }).catch(function () { return null; });
+      }
+    } catch (hubErr) { hubFileP = Promise.resolve(null); }
     function slice(key) {
       return combined.then(function (data) {
         if (data && data.success && data[key]) return data[key];
         return { success: false, error: (data && data.error) || 'LOAD_FAILED' };
       });
     }
+    // Current Seat: season position, field size and points come from the hub file; if that cannot answer, ask the server for the full numbers.
+    function seatFromHub(seat, hub, profileId) {
+      if (!hub || !hub.hasSeason || !profileId || String(hub.seasonId || '') !== String(seat.rankSeasonId || '')) return null;
+      var block = (hub.standings || []).filter(function (b) { return b.className === seat.carClass; })[0];
+      if (!block) return null;
+      var list = block.standings || [], idx = -1;
+      list.forEach(function (r, i) { if (r.profileId === profileId) idx = i; });
+      if (idx === -1) return null;
+      var out = {};
+      Object.keys(seat).forEach(function (k) { out[k] = seat[k]; });
+      out.position = idx + 1;
+      out.positionOutOf = list.length;
+      out.points = Number(list[idx].championshipPoints) || 0;
+      out.rankFromHub = false;
+      return out;
+    }
+    var seatPromise = combined.then(function (data) {
+      var seat = (data && data.success && data.currentSeat) ? data.currentSeat : { success: false, error: (data && data.error) || 'LOAD_FAILED' };
+      if (!(seat.success && seat.hasSeat && seat.rankFromHub)) return seat;
+      var pid = (data.profile && data.profile.profile && data.profile.profile.profileId) || '';
+      return hubFileP.then(function (hub) {
+        var patched = seatFromHub(seat, hub, pid);
+        if (patched) return patched;
+        return fetchApi('getDashboardData', { token: token, params: { fullRank: '1' } }).then(function (full) {
+          return (full && full.success && full.currentSeat) ? full.currentSeat : seat;
+        }).catch(function () { return seat; });
+      });
+    });
     return {
       // combinedPromise -- exposes the raw getDashboardData response itself, not just a per-card
       // slice of it.
       combinedPromise: combined,
       activeSeasonPromise: slice('activeSeason'),
-      currentSeatPromise: slice('currentSeat'),
+      currentSeatPromise: seatPromise,
       nextRacePromise: slice('nextRace'),
       myProtestsPromise: slice('myProtests'),
       // Single Player Championship slice: { success, enabled:false } while the member's switch is off, else the championship page.
@@ -473,7 +364,8 @@
 
     function safe(promise) { return Promise.resolve(promise).catch(function () { return { success: false }; }); }
 
-    Promise.all([safe(dashboardData.activeSeasonPromise), safe(dashboardData.currentSeatPromise),
+    // box.rcOlReady resolves once the container is completely drawn (the dashboard waits on it before showing the page).
+    box.rcOlReady = Promise.all([safe(dashboardData.activeSeasonPromise), safe(dashboardData.currentSeatPromise),
                  safe(dashboardData.nextRacePromise), safe(dashboardData.myProtestsPromise)]).then(function (r) {
       try { fill(r[0] || {}, r[1] || {}, r[2] || {}, r[3] || {}); }
       catch (err) {
@@ -690,7 +582,10 @@
     ]);
   }
 
-  function renderDashboardSection(profile, token, dashboardData) {
+  // opts.outerSpinner: the page's own "Loading your account..." spinner is already showing, so no second one is drawn here;
+  // opts.onReady is called the moment the Online League container is completely drawn (images included).
+  function renderDashboardSection(profile, token, dashboardData, opts) {
+    opts = opts || {};
     var section = document.getElementById('rc-section-dashboard');
     if (!section) return;
     section.innerHTML = '';
@@ -699,8 +594,8 @@
 
     // Two rows of cards: Row 1: Registration Status, Current Seat Row 2: Next Race, Protest (last 3
     // filed protests, same asyncDashCard treatment as every other data-driven card)
-    var spinner = buildPageSpinner('Loading your dashboard...');
-    section.appendChild(spinner);
+    var spinner = opts.outerSpinner ? null : buildPageSpinner('Loading your dashboard...');
+    if (spinner) section.appendChild(spinner);
 
     // SINGLE PLAYER CHAMPIONSHIP (ECO chat, 2026-11-01): its own header and one container under the league cards, for every member.
     // The championship tools themselves live in js/championship-dashboard.js (they reuse js/championship.js).
@@ -713,6 +608,9 @@
     var hlmHost = el('div', 'margin-top:20px;'); hlmHost.id = 'rc-hlm-host';
     var champBody = el('div', '');
     champHost.appendChild(champBody);
+    // The championship container joins the page after the Online League is showing (it appears just below it when it is ready).
+    champHost.style.display = 'none';
+    section.appendChild(champHost);
     function buildChampPanel(page) {
       try {
         if (typeof rcBuildChampionshipDashboard === 'function') {
@@ -825,13 +723,30 @@
     });
     section._rcAccWired = true;
 
-    Promise.all([_rcDashboardAllSettled_(dashboardData), champReady.catch(function () {})]).then(function () {
-      spinner.remove();
-      section.appendChild(champHost);
+    // The page stays on its spinner until the Online League container is completely drawn, car picture and logos included
+    // (waiting no longer than 3 seconds for the pictures). Everything else joins after it.
+    function picturesLoaded(root, maxMs) {
+      var imgs = Array.prototype.filter.call(root.querySelectorAll('img'), function (im) { return !im.complete; });
+      if (!imgs.length) return Promise.resolve();
+      return Promise.race([
+        Promise.all(imgs.map(function (im) { return new Promise(function (done) { im.addEventListener('load', done); im.addEventListener('error', done); }); })),
+        new Promise(function (done) { setTimeout(done, maxMs); })
+      ]);
+    }
+    _rcDashboardAllSettled_(dashboardData).catch(function () {}).then(function () {
+      rows = paintRows(dashboardData, onRegisteredRebuild);
+      syncLabel();
+      var ol = rows.topRow.querySelector('.rc-ol-section');
+      return ol && ol.rcOlReady ? ol.rcOlReady.catch(function () {}).then(function () { return picturesLoaded(ol, 3000); }) : null;
+    }).then(function () {
+      if (spinner) spinner.remove();
+      if (opts.onReady) opts.onReady();
+      return champReady.catch(function () {});
+    }).then(function () {
+      champHost.style.display = '';
       if (profile.role === 'Admin' || profile.role === 'Organizer' || profile.role === 'Steward') { currentProfile = currentProfile || profile; section.appendChild(stwHost); renderStewardingSection(token); }
       if (profile.role === 'Admin') { section.appendChild(hlmHost); currentProfile = currentProfile || profile; renderHelmetDesignerSection(token); }
       if (profile.role === 'Admin') { section.appendChild(admHost); currentProfile = currentProfile || profile; renderLeagueManagementSection(token); }
-      rows = paintRows(dashboardData, onRegisteredRebuild);
       syncLabel();
     });
   }
@@ -2583,8 +2498,12 @@
     box.appendChild(body);
     host.appendChild(box);
     function openDesigner(opts) {
-      if (!window.RCHelmetEditor) { showToast('The helmet designer did not load. Refresh the page and try again.', 'error'); return; }
-      window.RCHelmetEditor.openDesigner({ token: token, fetchApi: fetchApi, showModal: showModal, showToast: showToast }, opts);
+      // The designer files are big and only Admins use them, so they are loaded here, the first time one is opened.
+      var ready = window.RCHelmetEditor ? Promise.resolve() : rcLoadScript(rcAsset('js/helmet.js')).then(function () { return rcLoadScript(rcAsset('js/helmet-editor.js')); });
+      ready.then(function () {
+        if (!window.RCHelmetEditor) throw new Error('missing');
+        window.RCHelmetEditor.openDesigner({ token: token, fetchApi: fetchApi, showModal: showModal, showToast: showToast }, opts);
+      }).catch(function () { showToast('The helmet designer did not load. Refresh the page and try again.', 'error'); });
     }
     body.appendChild(rcToolTiles_(token, 'Helmet designer', [
       ['Design', 'Helmet Designer', 'Create and edit helmets.', function () { openDesigner(); }],
@@ -8313,7 +8232,7 @@
   // ---------------------------------------------------------------------
   // TOP-LEVEL RENDER
   // ---------------------------------------------------------------------
-  function buildFullProfileUI(profile, token, dashboardData) {
+  function buildFullProfileUI(profile, token, dashboardData, dashOpts) {
     currentProfile = profile;
     currentToken = token;
 
@@ -8342,26 +8261,9 @@
       openEditProfileModal(currentProfile, currentToken);
     }
 
-    buildSidebarNav();
-    document.getElementById('rc-sidebar-nav').classList.remove('rc-nav-loading');
     renderPlaceholderSections();
 
-    // Cumulative access hierarchy (race-club-v03-system-map.html, Section 0): Driver < Steward <
-    // Organizer < Admin. Protests is no longer gated here -- filing one is an ordinary Driver
-    // action, moved into the main nav list above; only RULING on one (League Management's EDIT
-    // popup) stays Steward-and-above, enforced server-side.
-    // These three items always render now; this block only decides which ones are clickable for
-    // this driver, via disabled + a tooltip explaining why, instead of removing them from the
-    // sidebar.
-    // Stewarding -- Steward and above (cumulative hierarchy: Steward < Organizer < Admin), same
-    // level Protests RULING already requires server-side (Protests.gs).
-    // Championship: only Admins and accounts with the + see this link at all (Matt, 2026-10-24); it starts hidden so nobody sees it flash.
-    var champNav = document.getElementById('rc-nav-championship');
-    if (champNav) champNav.style.display = '';   // everyone sees the link (Matt, 2026-10-25)
-    // Divider above these three is always visible from initial sidebar render now (see
-    // navDivider('rc-nav-divider-upper') in buildSidebarNav) -- nothing left to do here.
-
-    renderDashboardSection(profile, token, dashboardData);
+    renderDashboardSection(profile, token, dashboardData, dashOpts);
 
     // No more background prefetching of Calendar/Results/Protests after the Dashboard loads.
 
@@ -8369,8 +8271,7 @@
     var restoreSectionId = 'dashboard';
     var hashSectionId = (window.location.hash || '').replace(/^#/, '');
     if (hashSectionId && document.getElementById('rc-section-' + hashSectionId)) {
-      var hashNavBtn = document.getElementById('rc-nav-' + hashSectionId);
-      if (!hashNavBtn || hashNavBtn.style.display !== 'none') restoreSectionId = hashSectionId;
+      restoreSectionId = hashSectionId;
     }
     if (RC_LAZY_SECTION_RENDERERS[restoreSectionId]) {
       rcLoadedLazySections[restoreSectionId] = true;
@@ -8393,10 +8294,9 @@
   // The MutationObserver below is dead code left in place as a harmless fallback (it would only
   // ever fire if something removed `box` from the DOM without a reload following) rather than
   // ripped out for a change this narrow.
-  function renderProfile(profile, token, dashboardData) {
+  function renderProfile(profile, token, dashboardData, dashOpts) {
     if (profile.mustChangePassword) {
-      document.getElementById('rc-sidebar').style.display = 'none';
-      document.getElementById('rc-topbar').style.display = 'none';
+      if (dashOpts && dashOpts.onReady) dashOpts.onReady();   // the password screen replaces the page spinner
 
       var lockWrap = document.getElementById('rc-forced-password');
       lockWrap.style.display = 'block';
@@ -8412,8 +8312,6 @@
         if (!document.body.contains(box)) {
           observer.disconnect();
           lockWrap.style.display = 'none';
-          document.getElementById('rc-sidebar').style.display = '';
-          document.getElementById('rc-topbar').style.display = '';
           profile.mustChangePassword = false;
           buildFullProfileUI(profile, token, dashboardData);
         }
@@ -8422,7 +8320,7 @@
       return;
     }
 
-    buildFullProfileUI(profile, token, dashboardData);
+    buildFullProfileUI(profile, token, dashboardData, dashOpts);
   }
 
   // ---------------------------------------------------------------------
@@ -8431,8 +8329,6 @@
   // the token first.
   // ---------------------------------------------------------------------
   function showSessionExpiredLock() {
-    document.getElementById('rc-sidebar').style.display = 'none';
-    document.getElementById('rc-topbar').style.display = 'none';
     document.getElementById('rc-profile-root').style.display = 'none';
 
     var lockWrap = document.getElementById('rc-session-locked');
@@ -8458,9 +8354,6 @@
   // own response already IS a full profile payload, stashed in sessionStorage under
   // 'raceclub_fresh_profile' right before redirecting here.
   // ---------------------------------------------------------------------
-  document.getElementById('rc-sidebar-nav').classList.add('rc-nav-loading');
-  buildSidebarNav();
-
   // Dashboard cards never show their own loading state -- every card fetch is fired here,
   // immediately, in parallel with the profile load itself.
   // All of the dashboard's data now rides in as ONE combined getDashboardData call
@@ -8482,11 +8375,21 @@
     try { freshProfile = JSON.parse(freshProfileRaw); } catch (err) { freshProfile = null; }
   }
 
-  if (freshProfile && freshProfile.success) {
-    renderHeader();
+  // The "Loading your account..." spinner stays up until the Online League container is completely drawn; the page is built
+  // out of sight meanwhile and shown all at once. (If something goes wrong while drawing, it is shown anyway after 25 seconds.)
+  var pageShown = false;
+  function showPage() {
+    if (pageShown) return;
+    pageShown = true;
     document.getElementById('rc-loading').style.display = 'none';
     document.getElementById('rc-profile-root').style.display = 'block';
-    renderProfile(freshProfile.profile, token, dashboardData);
+  }
+  var pageOpts = { outerSpinner: true, onReady: showPage };
+  function startPage(profile) { setTimeout(showPage, 25000); renderProfile(profile, token, dashboardData, pageOpts); }
+
+  if (freshProfile && freshProfile.success) {
+    renderHeader();
+    startPage(freshProfile.profile);
   } else {
     // Reads the session/profile confirmation straight off the SAME getDashboardData response every
     // dashboard card already waits on, instead of firing a second, separate getProfile call.
@@ -8520,9 +8423,7 @@
       }
       setProfileCache(profileResult.profile); // keeps the header avatar current on every other page too
       renderHeader(); // confirmed by the API -- safe to show as logged in
-      document.getElementById('rc-loading').style.display = 'none';
-      document.getElementById('rc-profile-root').style.display = 'block';
-      renderProfile(profileResult.profile, token, dashboardData);
+      startPage(profileResult.profile);
     }).catch(function () {
       // Couldn't even REACH the server -- unlike the branch above, this says nothing about whether
       // the token itself is still good (see the long-standing comment on renderHeader's

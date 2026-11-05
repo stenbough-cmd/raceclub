@@ -8,19 +8,15 @@
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="assets/images/favicon-32.png">
 <link rel="apple-touch-icon" href="assets/images/apple-touch-icon.png">
-<link rel="stylesheet" href="css/style.css?v=0.10.44">
-<link rel="stylesheet" href="css/helmet.css?v=0.10.44">
-<script src="js/version.js?v=0.10.44"></script>
-<script src="js/footer-stick.js?v=0.10.44" defer></script>
-<script src="js/img-loader.js?v=0.10.44"></script>
-<script src="js/api.js?v=0.10.44"></script>
-<script src="js/auth.js?v=0.10.44"></script>
-<script src="js/reference-data.js?v=0.10.44"></script>
-<script src="js/rulebook-content.js?v=0.10.44"></script>
-<script src="js/header.js?v=0.10.44"></script>
-<script src="js/helmet.js?v=0.10.44"></script>
-<script src="js/helmet-editor.js?v=0.10.44"></script>
-<script src="js/championship-dashboard.js?v=0.10.44"></script>
+<link rel="stylesheet" href="css/style.css?v=0.10.45">
+<link rel="stylesheet" href="css/helmet.css?v=0.10.45">
+<script src="js/version.js?v=0.10.45"></script>
+<script src="js/footer-stick.js?v=0.10.45" defer></script>
+<script src="js/img-loader.js?v=0.10.45"></script>
+<script src="js/api.js?v=0.10.45"></script>
+<script src="js/auth.js?v=0.10.45"></script>
+<script src="js/reference-data.js?v=0.10.45"></script>
+<script src="js/header.js?v=0.10.45"></script>
 </head>
 <body class="rc-account-page">
 
@@ -29,7 +25,8 @@
 <!-- Paint the header immediately from whatever's already cached in localStorage -- same
      renderHeader() index.html already calls on load, so navigating here from anywhere else shows
      the same avatar without a blank flash while the real check happens in the background. -->
-<script>renderHeader();</script>
+<!-- This page reads the profile itself (in the same call as the dashboard) and redraws the header from it, so the header's own separate profile check is switched off here. -->
+<script>window._rcProfileFreshChecked_ = true; renderHeader();</script>
 
 <!-- Title bar parked under the header, same look as the League Hub / Championship / Driver Profile bars. The title follows the
      section that is open (Dashboard, League Tools, Stewarding...), set by showSection() in js/account.js. -->
@@ -37,17 +34,7 @@
   <div class="rc-account-navbar-inner"><div class="rc-account-navbar-title" id="rc-account-navbar-title">Dashboard</div></div>
 </nav>
 
-<!-- Mobile-only topbar. -->
-<div class="rc-topbar" id="rc-topbar">
-  <button class="rc-hamburger" id="rc-hamburger" aria-label="Menu">&#9776;</button>
-</div>
-
 <div class="rc-shell">
-  <aside class="rc-sidebar" id="rc-sidebar">
-    <!-- Filled in by buildSidebarNav() below. -->
-    <nav class="rc-sidebar-nav" id="rc-sidebar-nav"></nav>
-  </aside>
-
   <main class="rc-main">
     <div id="rc-loading" class="rc-inline-spinner-wrap rc-inline-spinner-page">
       <div class="rc-startlights" aria-hidden="true">
@@ -92,8 +79,11 @@
 </footer>
 <script>rcWireFooterLegalLink();</script>
 
-<script src="js/edit-profile.js?v=0.10.44"></script>
-<script src="js/car-picker.js?v=0.10.44"></script>
-<script src="js/account.js?v=0.10.44"></script>
+<!-- These load after the page is drawn (defer), in this order. The helmet designer files (js/helmet.js, js/helmet-editor.js) load only when an Admin opens the designer. -->
+<script src="js/rulebook-content.js?v=0.10.45" defer></script>
+<script src="js/championship-dashboard.js?v=0.10.45" defer></script>
+<script src="js/edit-profile.js?v=0.10.45" defer></script>
+<script src="js/car-picker.js?v=0.10.45" defer></script>
+<script src="js/account.js?v=0.10.45" defer></script>
 </body>
 </html>
