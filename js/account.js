@@ -593,9 +593,32 @@
       var hasSeat = !!(registered && seat.success && seat.hasSeat);
       var seatTile = tile('Current seat', hasSeat ? seat.carClass : '', hasSeat ? function () { openCurrentSeatInfoModal(token, profile.profileId); } : null);
       if (hasSeat) {
+        // The car they drive, above the team name (hidden when there is no picture for it).
+        if (seat.carYear && seat.carNumber && typeof rcCarImageSrc === 'function') {
+          var seatPic = el('div', 'rc-ol-tile-car');
+          var seatPicImg = document.createElement('img');
+          seatPicImg.alt = '';
+          seatPicImg.onerror = function () { seatPic.style.display = 'none'; };
+          seatPicImg.src = rcCarImageSrc(seat.carYear, seat.carNumber, seat.carSeries);
+          seatPic.appendChild(seatPicImg);
+          seatTile.appendChild(seatPic);
+        }
         line(seatTile, 'rc-ol-tile-value', (seat.team || 'Team') + (seat.carNumber ? ' #' + seat.carNumber : ''));
-        var carLine = [seat.manufacturer, seat.carModel].filter(Boolean).join(' ');
-        if (carLine) line(seatTile, 'rc-ol-tile-sub', carLine);
+        var carLineText = [seat.manufacturer, seat.carModel].filter(Boolean).join(' ');
+        if (carLineText) {
+          // small manufacturer logo in front of the car name (same 50x24 limit as the Current Seat Info popup)
+          var carLineRow = el('div', 'rc-ol-tile-sub rc-ol-tile-carline');
+          if (seat.manufacturer && typeof manufacturerLogoSrc === 'function') {
+            var seatMaker = document.createElement('img');
+            seatMaker.className = 'rc-cs-maker-logo';
+            seatMaker.alt = seat.manufacturer;
+            seatMaker.src = manufacturerLogoSrc(seat.manufacturer, 'black');
+            manufacturerLogoFallback(seatMaker, seat.manufacturer, function () { seatMaker.style.display = 'none'; });
+            carLineRow.appendChild(seatMaker);
+          }
+          carLineRow.appendChild(el('span', null, escapeHtml(seat.carModel || seat.manufacturer)));
+          seatTile.appendChild(carLineRow);
+        }
         if (seat.statsKnown) {
           var pos = seat.position ? ('P' + seat.position + (seat.positionOutOf ? '/' + seat.positionOutOf : '')) : '—';
           line(seatTile, 'rc-ol-tile-sub', pos + ' · ' + (seat.points || 0) + ' pts · ' + (seat.podiums || 0) + ((seat.podiums || 0) === 1 ? ' podium' : ' podiums'));
