@@ -2581,8 +2581,7 @@ function _rclRenderNews(hub) {
   current.appendChild(curHead);
   var pv = _rclStoryPreviewHtml(cur.body, 1000);
   var curBody = _rclEl('div', 'rcl-news-current-body', pv.html);
-  var curPhoto = _rclStoryPhotoEl(cur, 'side');
-  if (curPhoto) curBody.insertBefore(curPhoto, curBody.firstChild);
+  _rclPlaceStoryPhotos(curBody, cur);
   current.appendChild(curBody);
   var cont = _rclEl('button', 'rcl-news-continue', 'Continue Reading');
   cont.type = 'button';
@@ -2606,26 +2605,40 @@ function _rclRenderNews(hub) {
   body.appendChild(layout);
 }
 
-// Track photo for a story (League News round stories): <figure> with the photo and an italic caption (long track name, country).
-// Floated left at about a third of the width, with the story text wrapping around it (on the page and in the popup).
-// No photo, or a photo that fails to load, and the figure is simply not there.
-function _rclStoryPhotoEl(item, mode) {
+// Track photos for a story. A round story has one photo; a Season Preview has two (photoFile "a|b", photoCaption "ca|cb").
+// _rclStoryPhotoEl(item, i) draws photo number i as a <figure> with an italic caption (long track name, country), floated at
+// about a third of the width (half in the popup, see css). A photo that fails to load simply is not there.
+function _rclStoryPhotoEl(item, i, right) {
   if (!item || !item.photoFile) return null;
+  var file = String(item.photoFile).split('|')[i || 0];
+  if (!file) return null;
   var fig = document.createElement('figure');
-  fig.className = 'rcl-story-photo rcl-story-photo-' + mode;
+  fig.className = 'rcl-story-photo rcl-story-photo-side' + (right ? ' rcl-story-photo-right' : '');
   var img = document.createElement('img');
-  img.alt = item.photoCaption || '';
+  var caption = String(item.photoCaption || '').split('|')[i || 0] || '';
+  img.alt = caption;
   img.decoding = 'async';
-  if (mode === 'side') img.loading = 'lazy';
+  img.loading = 'lazy';
   img.addEventListener('error', function () { if (fig.parentNode) fig.parentNode.removeChild(fig); });
-  img.src = 'assets/tracks/' + String(item.photoFile).split('/').map(encodeURIComponent).join('/');
+  img.src = 'assets/tracks/' + file.split('/').map(encodeURIComponent).join('/');
   fig.appendChild(img);
-  if (item.photoCaption) {
+  if (caption) {
     var cap = document.createElement('figcaption');
-    cap.textContent = item.photoCaption;
+    cap.textContent = caption;
     fig.appendChild(cap);
   }
   return fig;
+}
+// Puts the story's photos into a story body: the first at the top left, the second (Season Previews) midway through the text, to the right.
+function _rclPlaceStoryPhotos(bodyEl, item) {
+  var first = _rclStoryPhotoEl(item, 0, false);
+  var second = _rclStoryPhotoEl(item, 1, true);
+  var blocks = [].slice.call(bodyEl.children);
+  if (second) {
+    var at = Math.ceil(blocks.length / 2);
+    if (blocks[at]) bodyEl.insertBefore(second, blocks[at]); else bodyEl.appendChild(second);
+  }
+  if (first) bodyEl.insertBefore(first, bodyEl.firstChild);
 }
 
 // A story drawn in full (no truncation): used by the page's League News container and by the story popup.
@@ -2641,9 +2654,8 @@ function _rclBuildStoryEl_(item) {
   }
   wrap.appendChild(_rclNewsHeadRow(item));
   var bodyEl = _rclEl('div', 'rcl-news-body');
-  var fullPhoto = _rclStoryPhotoEl(item, 'side');
-  if (fullPhoto) bodyEl.appendChild(fullPhoto);
   _rclRenderStoryBodyBlocks(bodyEl, item.body);
+  _rclPlaceStoryPhotos(bodyEl, item);
   wrap.appendChild(bodyEl);
   if (item.editNote) {
     var editLabel = _rclFormatDate(item.editedAt);
@@ -2690,9 +2702,8 @@ function _rclOpenStoryModal(startIndex, single) {
     }
     wrap.appendChild(_rclNewsHeadRow(item));
     var bodyEl = _rclEl('div', 'rcl-news-body');
-    var popPhoto = _rclStoryPhotoEl(item, 'side');
-    if (popPhoto) bodyEl.appendChild(popPhoto);
     _rclRenderStoryBodyBlocks(bodyEl, item.body);
+    _rclPlaceStoryPhotos(bodyEl, item);
     wrap.appendChild(bodyEl);
     if (item.editNote) {
       var editLabel = _rclFormatDate(item.editedAt);

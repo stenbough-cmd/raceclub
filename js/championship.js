@@ -2740,26 +2740,40 @@ function _rccStoryPreview(raw, limit) {
   _rccStoryBlocks(box, cut);
   return { el: box, truncated: truncated };
 }
-// Track photo for a Race Story or Season Finale: photo plus italic caption (long track name, country).
-// Floated left at about a third of the width, with the story text wrapping around it (on the page and in the popup).
-// No photo, or one that fails to load, and the figure is simply not there. Season Previews have none.
-function _rccStoryPhotoEl(s, mode) {
+// Track photos for a story. A Race Story or Season Finale has one photo; a Season Preview has two (photoFile "a|b", photoCaption "ca|cb").
+// Photo number i is a <figure> with an italic caption (long track name, country), floated at about a third of the width (half in the
+// popup, see league.css). A photo that fails to load simply is not there.
+function _rccStoryPhotoEl(s, i, right) {
   if (!s || !s.photoFile) return null;
+  var file = String(s.photoFile).split('|')[i || 0];
+  if (!file) return null;
   var fig = document.createElement('figure');
-  fig.className = 'rcl-story-photo rcl-story-photo-' + mode;
+  fig.className = 'rcl-story-photo rcl-story-photo-side' + (right ? ' rcl-story-photo-right' : '');
   var img = document.createElement('img');
-  img.alt = s.photoCaption || '';
+  var caption = String(s.photoCaption || '').split('|')[i || 0] || '';
+  img.alt = caption;
   img.decoding = 'async';
-  if (mode === 'side') img.loading = 'lazy';
+  img.loading = 'lazy';
   img.addEventListener('error', function () { if (fig.parentNode) fig.parentNode.removeChild(fig); });
-  img.src = 'assets/tracks/' + String(s.photoFile).split('/').map(encodeURIComponent).join('/');
+  img.src = 'assets/tracks/' + file.split('/').map(encodeURIComponent).join('/');
   fig.appendChild(img);
-  if (s.photoCaption) {
+  if (caption) {
     var cap = document.createElement('figcaption');
-    cap.textContent = s.photoCaption;
+    cap.textContent = caption;
     fig.appendChild(cap);
   }
   return fig;
+}
+// First photo at the top left of the story body, second (Season Previews) midway through the text, to the right.
+function _rccPlaceStoryPhotos(bodyEl, s) {
+  var first = _rccStoryPhotoEl(s, 0, false);
+  var second = _rccStoryPhotoEl(s, 1, true);
+  var blocks = [].slice.call(bodyEl.children);
+  if (second) {
+    var at = Math.ceil(blocks.length / 2);
+    if (blocks[at]) bodyEl.insertBefore(second, blocks[at]); else bodyEl.appendChild(second);
+  }
+  if (first) bodyEl.insertBefore(first, bodyEl.firstChild);
 }
 function _rccStoryMeta(s, noAuthor) {
   // Every story is written by Race Club Press (Matt, 2026-10-14). The kind (Season Preview, Race Story,
@@ -2840,8 +2854,7 @@ function rccRenderStories(page) {
   curTitle.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); rccOpenStory(0); } });
   wrap.appendChild(curHead);
   var pv = _rccStoryPreview(cur.body, RCC_STORY_PREVIEW_CHARS);
-  var curPhoto = _rccStoryPhotoEl(cur, 'side');
-  if (curPhoto) pv.el.insertBefore(curPhoto, pv.el.firstChild);
+  _rccPlaceStoryPhotos(pv.el, cur);
   wrap.appendChild(pv.el);
   var more = _rccText('button', 'rcl-news-continue', 'Continue Reading');
   more.type = 'button';
@@ -2948,9 +2961,8 @@ function rccOpenStory(startIndex) {
     w.appendChild(_rccStoryHeadRow(s));
     if (s.standfirst) w.appendChild(_rccText('p', 'rcc-story-standfirst', s.standfirst));
     var b = _rccEl('div', 'rcl-news-body');
-    var popPhoto = _rccStoryPhotoEl(s, 'side');
-    if (popPhoto) b.appendChild(popPhoto);
     _rccStoryBlocks(b, s.body);
+    _rccPlaceStoryPhotos(b, s);
     w.appendChild(b);
     w.appendChild(_rccStoryVote(s));
     m.body.appendChild(w);
