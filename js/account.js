@@ -5104,8 +5104,12 @@
     var modal = showModal('Race Photos', { wide: true });
     var body = modal.body;
     var roundNo = opts.roundNumber ? 'Round ' + opts.roundNumber : (opts.roundLabel || roundId);
-    body.appendChild(wizField(roundNo, el('div', 'font-size:14px;font-weight:700;color:var(--rc-carbon);padding:2px 0 2px;', escapeHtml(opts.eventLabel || ''))));
-    body.appendChild(el('div', 'rc-hint', 'Add up to ' + MAX_PHOTOS + ' pictures to this round\'s League News story instead of a random track photo. For each one you can pick a class and/or a driver: the story then shows the picture beside the part that talks about them (a Hypercar picture is never put beside a GT3 paragraph). Choose None to let the website pick the spot. If the story is already written, it changes right away.'));
+    var roundField = wizField(roundNo, el('div', 'font-size:14px;font-weight:700;color:var(--rc-carbon);padding:2px 0 2px;', escapeHtml(opts.eventLabel || '')));
+    roundField.style.marginBottom = '0';   // the notice sits right under the round info
+    body.appendChild(roundField);
+    var photoHint = el('div', 'rc-hint', 'Add up to ' + MAX_PHOTOS + ' pictures to this round\'s League News story instead of a random track photo. For each one you can pick a class and/or a driver: the story then shows the picture beside the part that talks about them (a Hypercar picture is never put beside a GT3 paragraph). Choose None to let the website pick the spot. If the story is already written, it changes right away.');
+    photoHint.style.marginBottom = '16px';   // space between the notice and the line below it
+    body.appendChild(photoHint);
     var slotsWrap = el('div');
     body.appendChild(slotsWrap);
     slotsWrap.appendChild(buildSpinner('Loading pictures...'));
