@@ -3160,15 +3160,15 @@ function _rccSgHeader(scr, x) {
   var c = x.round || {};
   var r = x.reg || {};
   var flagSrc = (c.country && typeof countryFlagSrc === 'function') ? countryFlagSrc(c.country) : '';
-  if (flagSrc) scr.items.push({ kind: 'ov', x: 338, y: 152, w: 109, h: 82, build: function (b) {
+  if (flagSrc) scr.items.push({ kind: 'ov', x: 338, y: 153, w: 150, h: 92, build: function (b) {
     var im = document.createElement('img'); im.src = flagSrc; im.alt = c.country; im.className = 'rcc-sg-ov-flag'; b.appendChild(im);
   } });
   var tn = String(c.trackName || c.track || '').toUpperCase();
-  if (tn) scr.items.push({ kind: 'ov', x: 470, y: 140, w: 980, h: 110, build: function (b) {
+  if (tn) scr.items.push({ kind: 'ov', x: 506, y: 140, w: 960, h: 110, build: function (b) {
     var t = _rccEl('span', 'rcc-sg-ov-title'); _rccSgSqueeze(t, tn, 6.6); b.appendChild(t);
   } });
   var place = [c.region, c.country].filter(Boolean).join(', ').toUpperCase();
-  if (place) scr.items.push({ kind: 'ov', x: 340, y: 250, w: 1110, h: 70, build: function (b) {
+  if (place) scr.items.push({ kind: 'ov', x: 340, y: 270, w: 1110, h: 70, build: function (b) {
     var t = _rccEl('span', 'rcc-sg-ov-place'); _rccSgSqueeze(t, place, 2.6); b.appendChild(t);
   } });
   if (r.teamName) {
