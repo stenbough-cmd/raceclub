@@ -2987,8 +2987,8 @@ function _rclBuildSeasonFormatBlocks_(hub) {
   // same style as "Season Format"/"Championship Points" above it.
   var block4 = [];
   if (rs.setupRules) block4.push({ label: 'Setups', value: rs.setupRules });
-  if (rs.tireWearMultiplier) block4.push({ label: 'Tire Wear', value: rs.tireWearMultiplier });
-  if (rs.tireCount) block4.push({ label: 'Tires Allowed', value: String(rs.tireCount) });
+  if (rs.tireWearMultiplier) block4.push({ label: 'Tyre Wear', value: rs.tireWearMultiplier });
+  if (rs.tireCount) block4.push({ label: 'Tyres Allowed', value: String(rs.tireCount) });
   if (rs.fuelMultiplier) block4.push({ label: 'Fuel Multiplier', value: rs.fuelMultiplier });
   if (rs.pitStopReq) block4.push({ label: 'Pitstop Reqs', value: rs.pitStopReq });
   if (hub.trackLimitsPreset) block4.push({ label: 'Track Limits', value: hub.trackLimitsPreset });

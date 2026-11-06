@@ -148,6 +148,12 @@ function _rccFormatDate(iso) {
 // In-game race start (Matt, 2026-10-09): one of RCC_RACE_STARTS. Older rounds stored a clock time
 // ("14:00"), which maps to the matching part of the day.
 var RCC_RACE_STARTS = ['Morning', 'Midday', 'Afternoon', 'Evening', 'Night'];
+// The in-game clock time that goes with each part of the day (Matt, 2026-11-06). Easy to change here.
+var RCC_START_CLOCK = { Morning: '9:00 AM', Midday: '12:00 PM', Afternoon: '3:00 PM', Evening: '6:00 PM', Night: '10:00 PM' };
+function _rccStartLabel(v) {
+  var t = _rccTimeOfDay(v);
+  return t ? t + ' (' + RCC_START_CLOCK[t] + ')' : '';
+}
 function _rccTimeOfDay(v) {
   if (RCC_RACE_STARTS.indexOf(String(v || '')) !== -1) return String(v);
   var h = parseInt(String(v || '').split(':')[0], 10);
@@ -580,18 +586,18 @@ function _rccSeasonFormat(page, body) {
   // Same two groups as the season wizard (LMU's Difficulty and Advanced tabs).
   var diff = [], adv = [];
   if (rs.damage) diff.push(row('Damage Simulation', rs.damage));
-  if (rs.tireWearMultiplier) diff.push(row('Tire Wear', rs.tireWearMultiplier));
-  if (rs.tireWarmers) diff.push(row('Tire Warmers', rs.tireWarmers));
-  if (rs.tireCount) diff.push(row('Available Tires', String(rs.tireCount)));
-  if (rs.fuelMultiplier) diff.push(row('Fuel Usage', rs.fuelMultiplier));
-  if (rs.timeScale) adv.push(row('Time Scale', rs.timeScale));
+  if (rs.tireWearMultiplier) diff.push(row('Tyre Wear', _rccMultLabel(rs.tireWearMultiplier)));
+  if (rs.tireWarmers) diff.push(row('Tyre Warmers', rs.tireWarmers));
+  if (rs.tireCount) diff.push(row('Available Tyres', String(rs.tireCount)));
+  if (rs.fuelMultiplier) diff.push(row('Fuel Usage', _rccMultLabel(rs.fuelMultiplier)));
+  if (rs.timeScale) adv.push(row('Time Scale', _rccTimeScaleLabel(rs.timeScale)));
   if (rs.flagRules) adv.push(row('Flag Rules', rs.flagRules));
   if (d.trackLimitsPreset) adv.push(row('Track Limits Rules', d.trackLimitsPreset));
   if (rs.mechanicalFailures) adv.push(row('Mechanical Failures', rs.mechanicalFailures));
   if (rs.trackLimitPoints) adv.push(row('Track Limits Points', String(rs.trackLimitPoints)));
   var sessionRows = [];
   if (rs.raceStart) sessionRows.push(row('Start', rs.raceStart === 'Fast' ? 'Fast Rolling' : rs.raceStart));
-  if (rs.realRoadTimeScale) sessionRows.push(row('RealRoad Time Scale', rs.realRoadTimeScale));
+  if (rs.realRoadTimeScale) sessionRows.push(row('RealRoad Time Scale', _rccTimeScaleLabel(rs.realRoadTimeScale)));
   sessionRows.push(row('Qualifying Session', rs.qualifying === 'No' ? 'No (Random start)' : 'Yes'));
   var rules = diff.concat(adv, sessionRows);
   group('Race Rules', [rules]);
@@ -726,7 +732,7 @@ function rccRenderCarousel(page) {
 
     var hero = _rccEl('div', 'rcl-carousel-hero');
     var lines = [];
-    var tod = _rccTimeOfDay(entry.igRaceStart);
+    var tod = _rccStartLabel(entry.igRaceStart);
     var len = entry.raceLengthMinutes ? _rccDur(entry.raceLengthMinutes) + ' Long' : '';
     var session = (tod ? tod + ' Race' : '') + (len ? (tod ? ', ' : '') + len : '');
     if (session) lines.push(session);
@@ -1466,7 +1472,7 @@ function _rccMyLapsBody(result, el) {
     w.appendChild(_rccText('div', 'rcc-laps-summary', sum));
     var table = _rccEl('div', 'rcc-laps-table');
     var head = _rccEl('div', 'rcc-laps-row rcc-laps-head');
-    ['Lap', 'Pos', 'Lap Time', 'S1', 'S2', 'S3', 'Top Speed', 'Fuel', 'Tires (FL FR RL RR)', 'Compound'].forEach(function (t) { head.appendChild(_rccText('div', null, t)); });
+    ['Lap', 'Pos', 'Lap Time', 'S1', 'S2', 'S3', 'Top Speed', 'Fuel', 'Tyres (FL FR RL RR)', 'Compound'].forEach(function (t) { head.appendChild(_rccText('div', null, t)); });
     table.appendChild(head);
     var best = Infinity;
     s.laps.forEach(function (l) { var t = Number(l.lapTime); if (t > 0 && t < best) best = t; });
@@ -1668,7 +1674,15 @@ function rccOpenDropOut() {
 // ---------------------------------------------------------------------
 // SEASON WIZARD -- Create / Edit (one popup, all sections on one scrolling form)
 // ---------------------------------------------------------------------
-var RCC_MULTIPLIERS = ['Off', 'Realistic', '2x', '3x'];
+// Stored values stay Off / Realistic / 2x / 3x; the screen shows what LMU shows (Matt, 2026-11-06).
+var RCC_MULTIPLIERS = [{ label: 'OFF', value: 'Off' }, { label: 'REAL', value: 'Realistic' }, { label: 'X2', value: '2x' }, { label: 'X3', value: '3x' }];
+function _rccMultLabel(v) {
+  var m = { off: 'OFF', realistic: 'REAL', real: 'REAL' };
+  var k = String(v).toLowerCase();
+  if (m[k]) return m[k];
+  return /^\d+x$/i.test(String(v)) ? String(v).toUpperCase() : String(v);
+}
+function _rccTimeScaleLabel(v) { return /^x\d+$/i.test(String(v)) ? String(v).toUpperCase() : String(v); }
 var RCC_SERIES = ['WEC', 'ELMS'];
 var RCC_DAMAGE = ['Off', 'Low', 'Medium', 'High', 'Realistic'];
 var RCC_TRACK_LIMITS = ['None', 'Relaxed', 'Default', 'Strict'];
@@ -1682,19 +1696,23 @@ function _rccClassKey(raw) { var k = String(raw || '').trim().replace(/_ELMS$/i,
 // only keeps which preset was planned.
 var RCC_WEATHER_PRESETS = ['Sunny', 'Cloudy', 'Rainy', 'Real World'];
 // LMU Advanced > Time Scale, and Sessions > RealRoad Time Scale (default Normal on both).
-var RCC_TIME_SCALES = ['None', 'Normal'];
-for (var _rccT = 2; _rccT <= 60; _rccT++) RCC_TIME_SCALES.push('x' + _rccT);
+var RCC_TIME_SCALES = ['None', 'Normal'];  // plus X2..X60 below
+for (var _rccT = 2; _rccT <= 60; _rccT++) RCC_TIME_SCALES.push({ label: 'X' + _rccT, value: 'x' + _rccT });
 RCC_TIME_SCALES.push('Use Race %');
 var RCC_REALROAD_SCALES = ['Normal'];
 for (var _rccQ = 2; _rccQ <= 15; _rccQ++) RCC_REALROAD_SCALES.push(_rccQ + 'x');
 RCC_REALROAD_SCALES.push('Session %', 'Static');
 
+// LMU's AI Skill names by percentage (Matt, 2026-11-06).
 function _rccSkillLevel(pct) {
   pct = Number(pct);
-  if (pct >= 101) return 'Expert';
-  if (pct >= 91) return 'Pro';
-  if (pct >= 81) return 'Intermediate';
-  return 'Rookie';
+  if (pct >= 105) return 'Alien';
+  if (pct >= 100) return 'Professional';
+  if (pct >= 95) return 'Advanced';
+  if (pct >= 90) return 'Intermediate';
+  if (pct >= 85) return 'Amateur';
+  if (pct >= 80) return 'Novice';
+  return 'Beginner';
 }
 
 function _rccDefaultDetails() {
@@ -1951,9 +1969,9 @@ function _rccBuildWizard(m, tracks, cars, edit) {
   if (RCC_TRACK_LIMITS.indexOf(state.details.trackLimitsPreset) === -1) state.details.trackLimitsPreset = 'Default';
   g3.appendChild(_rccField('AI Difficulty', _rccSelect(diffOptions, rs.aiDifficulty || 90, function (v) { rs.aiDifficulty = Number(v); })));
   g3.appendChild(_rccField('Damage Simulation', _rccSelect(RCC_DAMAGE, rs.damage, function (v) { rs.damage = v; })));
-  g3.appendChild(_rccField('Tire Wear', _rccSelect(RCC_MULTIPLIERS, rs.tireWearMultiplier, function (v) { rs.tireWearMultiplier = v; })));
-  g3.appendChild(_rccField('Tire Warmers', _rccSelect(['On', 'Off'], rs.tireWarmers, function (v) { rs.tireWarmers = v; })));
-  g3.appendChild(_rccField('Available Tires', _rccNumber(rs.tireCount, function (v) { rs.tireCount = v; }, 0)));
+  g3.appendChild(_rccField('Tyre Wear', _rccSelect(RCC_MULTIPLIERS, rs.tireWearMultiplier, function (v) { rs.tireWearMultiplier = v; })));
+  g3.appendChild(_rccField('Tyre Warmers', _rccSelect(['On', 'Off'], rs.tireWarmers, function (v) { rs.tireWarmers = v; })));
+  g3.appendChild(_rccField('Available Tyres', _rccNumber(rs.tireCount, function (v) { rs.tireCount = v; }, 0)));
   g3.appendChild(_rccField('Fuel Usage', _rccSelect(RCC_MULTIPLIERS, rs.fuelMultiplier, function (v) { rs.fuelMultiplier = v; })));
   sec3.appendChild(g3);
   form.appendChild(sec3);
@@ -2101,7 +2119,7 @@ function _rccBuildWizard(m, tracks, cars, edit) {
       // Second row: the session's own settings.
       g = _rccEl('div', 'rcc-field-grid rcc-round-row2');
       g.appendChild(_rccField('Weather Preset', _rccSelect(RCC_WEATHER_PRESETS, r.weatherPreset || 'Sunny', function (v) { r.weatherPreset = v; })));
-      g.appendChild(_rccField('In-Game Race Start', _rccSelect(RCC_RACE_STARTS, r.igRaceStart || 'Midday', function (v) { r.igRaceStart = v; })));
+      g.appendChild(_rccField('In-Game Race Start', _rccSelect(RCC_RACE_STARTS.map(function (t) { return { label: _rccStartLabel(t), value: t }; }), r.igRaceStart || 'Midday', function (v) { r.igRaceStart = v; })));
       card.appendChild(g);
       roundsWrap.appendChild(card);
     });
@@ -2438,6 +2456,14 @@ function rccOpenSeasonPreview() {
   _rccSeasonFormat(page, m.body);
   var g = _rccEl('div', 'rcl-hero-stats-group');
   g.appendChild(_rccText('div', 'rcl-hero-stats-label', 'Rounds'));
+  // Race Setup Guide: the game's screens with this season's values on them. Opens on the next unraced round.
+  var guideBtn = _rccText('button', 'rc-btn-secondary rc-btn-sm rcc-sg-open', 'Open Race Setup Guide');
+  guideBtn.type = 'button';
+  guideBtn.addEventListener('click', function () {
+    var next = (page.calendar || []).filter(function (c) { return !c.hasResults; })[0] || (page.calendar || [])[0];
+    rccOpenSetupGuide(next ? next.roundNum : 0);
+  });
+  g.appendChild(guideBtn);
   var list = _rccEl('div', 'rcl-seasonfmt-list rcc-preview-rounds');
   (page.calendar || []).forEach(function (c) {
     var bits = [c.track + (c.layout ? ': ' + c.layout : '')];
@@ -2445,7 +2471,7 @@ function rccOpenSeasonPreview() {
     var len = c.raceLengthAsRaced ? _rccDur(c.plannedRaceLengthMinutes) + ' (' + c.plannedRaceLengthTier + ', raced ' + _rccDur(c.raceLengthMinutes) + ')'
       : (c.raceLengthMinutes ? _rccDur(c.raceLengthMinutes) + ' (' + c.raceLengthTier + ')' : '');
     if (len) bits.push(len);
-    if (_rccTimeOfDay(c.igRaceStart)) bits.push(_rccTimeOfDay(c.igRaceStart) + ' Start');
+    if (_rccTimeOfDay(c.igRaceStart)) bits.push(_rccStartLabel(c.igRaceStart) + ' Start');
     if (c.weatherText) bits.push(c.weatherText);
     if (c.hasResults) bits.push('Raced');
     list.appendChild(_rccEl('div', 'rcl-seasonfmt-row', '<span class="rcl-seasonfmt-row-label">Round ' + c.roundNum + ' · ' + _rccEsc(c.eventName) + ':</span> <span class="rcl-seasonfmt-row-value">' + _rccEsc(bits.join(' · ')) + '</span>'));
@@ -3053,4 +3079,238 @@ function _rccWatchStory(page, item, until) {
       RCC.storyWriting = null; RCC.storyFailed = item; RCC.storyFailedWhy = 'No answer from the server.'; rccRenderStories(page);
     });
   }, 20000);
+}
+
+// ---------------------------------------------------------------------
+// RACE SETUP GUIDE (Matt, 2026-11-06). Shows each Le Mans Ultimate screen (assets/championship_help/)
+// with the player's own season and round values laid over the game's values, so they can match 1:1.
+// Colours: red = must match or the upload is refused, blue = should match for accurate records,
+// grey = the driver's choice. Item boxes are in the screenshots' displayed pixel space (W x H below)
+// and converted to percentages, so they scale with the picture.
+// ---------------------------------------------------------------------
+var RCC_SG_LEVEL = {
+  must: { cls: 'rcc-sg-must', name: 'Must match or the upload is refused' },
+  should: { cls: 'rcc-sg-should', name: 'Should match for accurate records' },
+  free: { cls: 'rcc-sg-free', name: 'Your choice' }
+};
+var RCC_SG_IMG = 'assets/championship_help/';
+
+function _rccSgClock(min) {
+  var h = Math.floor(min / 60), m = min % 60;
+  return h + (m ? ' hrs ' + m + ' mins' : ' hrs');
+}
+function _rccSgPreset(p) {
+  var s = String(p || 'Sunny').toLowerCase();
+  if (s.indexOf('real') !== -1) return 3;
+  if (s.indexOf('rain') !== -1) return 2;
+  if (s.indexOf('cloud') !== -1) return 1;
+  return 0;
+}
+
+// Values the guide needs, from the season and the chosen round.
+function _rccSgContext(page, c) {
+  var d = page.seasonDetails || {};
+  var rs = d.raceSettings || {};
+  var classes = Object.keys(d.classes || {}).filter(function (k) { return d.classes[k]; });
+  var yr = d.seasonYear || (classes.length ? (d.classSeasons || {})[classes[0]] : '');
+  var mins = Number(c.raceLengthAsRaced ? c.plannedRaceLengthMinutes : c.raceLengthMinutes) || 0;
+  var tod = _rccTimeOfDay(c.igRaceStart) || 'Midday';
+  return {
+    d: d, rs: rs, classes: _rccSortClasses(classes, function (k) { return k; }), year: yr, series: d.series || 'WEC',
+    mins: mins, h: Math.floor(mins / 60), m: mins % 60, tod: tod, clock: RCC_START_CLOCK[tod],
+    preset: _rccSgPreset(c.weatherPreset), presetName: c.weatherPreset || 'Sunny',
+    qual: rs.qualifying !== 'No', rolling: rs.raceStart === 'Fast' ? 'Fast Rolling' : 'Rolling'
+  };
+}
+
+// One screen: { img, W, H, title, intro, items: [{ x, y, w, h, kind, level, text, label, value }] }.
+// kind 'chip' covers the game's value with ours, 'box' only outlines, 'slider' draws the difficulty slider.
+function _rccSgScreens(x) {
+  var rs = x.rs, d = x.d;
+  var wearTxt = _rccMultLabel(rs.tireWearMultiplier), fuelTxt = _rccMultLabel(rs.fuelMultiplier);
+  var timeTxt = _rccTimeScaleLabel(rs.timeScale), rrTxt = _rccTimeScaleLabel(rs.realRoadTimeScale || 'Normal');
+  var pct = Number(rs.aiDifficulty) || 0;
+  var lenShort = (x.h ? x.h + 'H' : '') + (x.m ? (x.h ? ' ' : '') + x.m + 'M' : '');
+  var startShort = x.rolling === 'Rolling' ? 'ROLLING' : 'FAST';
+  var seasonTab = (x.year ? x.year + ' ' : '') + 'SEASON';
+  var screens = [];
+
+  // 05 Event Settings
+  var s5 = { img: '05.jpg', W: 2000, H: 1123, title: 'Event Settings', intro: 'This is the first screen you see after choosing your track and car. Match the red and blue values, then open Difficulty, Sessions, Weather and Advanced with the buttons at the top of the game screen.', items: [] };
+  s5.items.push({ kind: 'box', level: 'free', x: 167, y: 462, w: 376, h: 198, label: 'Practice', value: 'Your choice. Practice is never uploaded.' });
+  s5.items.push({ kind: 'box', level: x.qual ? 'free' : 'should', x: 565, y: 462, w: 375, h: 198, label: 'Qualifying', value: x.qual ? 'On. The length is your choice.' : 'Off. Untick Qualifying so the race starts from a random grid.' });
+  if (lenShort) s5.items.push({ kind: 'chip', level: 'must', x: 1198, y: 606, w: 74, h: 40, text: lenShort, label: 'Race Length', value: _rccSgClock(x.mins) + ' or longer' });
+  s5.items.push({ kind: 'chip', level: 'should', x: 1022, y: 606, w: 96, h: 40, text: startShort, label: 'Race Start', value: x.rolling });
+  s5.items.push({ kind: 'chip', level: 'must', x: 343, y: 693, w: 120, h: 40, small: true, text: seasonTab, label: 'Starting Grid', value: (x.year ? x.year + ' Season' : 'Your season') + '. Never Fill Grid.' });
+  s5.items.push({ kind: 'box', level: 'must', x: 163, y: 744, w: 470, h: 130, label: 'Classes on the grid', value: 'Tick only ' + (x.classes.join(', ') || 'your season’s classes') });
+  if (d.trackLimitsPreset) s5.items.push({ kind: 'chip', level: 'should', x: 368, y: 957, w: 136, h: 46, text: String(d.trackLimitsPreset).toUpperCase(), label: 'Rules', value: d.trackLimitsPreset });
+  if (rs.fuelMultiplier) s5.items.push({ kind: 'chip', level: 'should', x: 580, y: 957, w: 84, h: 46, text: fuelTxt, label: 'Fuel Usage', value: fuelTxt });
+  if (rs.tireWearMultiplier) s5.items.push({ kind: 'chip', level: 'should', x: 732, y: 957, w: 84, h: 46, text: wearTxt, label: 'Tyre Wear', value: wearTxt });
+  if (rs.tireWarmers) s5.items.push({ kind: 'chip', level: 'should', x: 888, y: 957, w: 84, h: 46, text: String(rs.tireWarmers).toUpperCase(), label: 'Tyre Warmers', value: String(rs.tireWarmers).toUpperCase() });
+  if (rs.tireCount) s5.items.push({ kind: 'chip', level: 'should', x: 1048, y: 957, w: 60, h: 46, text: String(rs.tireCount), label: 'Available Tyres', value: String(rs.tireCount) });
+  screens.push(s5);
+
+  // 09 Difficulty
+  var s9 = { img: '09.jpg', W: 2000, H: 1123, title: 'Difficulty', intro: 'Use the arrows on each row until the game shows the same value.', items: [] };
+  if (pct) s9.items.push({ kind: 'slider', level: 'should', x: 1040, y: 323, w: 458, h: 40, pct: pct, text: _rccSkillLevel(pct) + ' (' + pct + '%)', label: 'Opponent Difficulty', value: _rccSkillLevel(pct) + ' (' + pct + '%)' });
+  if (rs.damage) s9.items.push({ kind: 'chip', level: 'should', x: 1352, y: 372, w: 156, h: 34, text: rs.damage, drop: true, label: 'Damage Simulation', value: rs.damage });
+  [['Tyre Wear', rs.tireWearMultiplier, wearTxt, 418], ['Tyre Warmers', rs.tireWarmers, rs.tireWarmers, 464], ['Available Tyres', rs.tireCount, String(rs.tireCount), 510], ['Fuel Usage', rs.fuelMultiplier, fuelTxt, 556]].forEach(function (r) {
+    if (r[1]) s9.items.push({ kind: 'chip', level: 'should', x: 1330, y: r[3], w: 122, h: 34, text: r[2], label: r[0], value: r[2] });
+  });
+  s9.items.push({ kind: 'box', level: 'free', x: 492, y: 640, w: 1026, h: 335, label: 'Your Assists', value: 'Your choice. The assists you use appear in your race recap.' });
+  screens.push(s9);
+
+  // 06 Sessions
+  var s6 = { img: '06.jpg', W: 2000, H: 1581, title: 'Sessions', intro: 'Scroll down in the game to reach the Race section. The Race Time is the one that must match.', items: [] };
+  s6.items.push({ kind: 'box', level: 'free', x: 492, y: 255, w: 996, h: 392, label: 'Practice', value: 'Your choice. Practice is never uploaded.' });
+  s6.items.push({ kind: 'chip', level: 'should', x: 1330, y: 600, w: 90, h: 36, text: rrTxt, label: 'Practice RealRoad Time Scale', value: rrTxt });
+  s6.items.push({ kind: 'box', level: 'free', x: 492, y: 676, w: 996, h: 344, label: 'Qualifying', value: 'The length, start time and grip are your choice.' });
+  s6.items.push({ kind: 'chip', level: x.qual ? 'should' : 'should', x: 1384, y: 748, w: 104, h: 36, text: x.qual ? 'On' : 'Off', label: 'Qualifying', value: x.qual ? 'On' : 'Off' });
+  s6.items.push({ kind: 'chip', level: 'must', x: 1190, y: 1166, w: 66, h: 36, text: x.h + ' hrs', label: 'Race Time (hours)', value: x.h + ' hrs' });
+  s6.items.push({ kind: 'chip', level: 'must', x: 1330, y: 1166, w: 90, h: 36, text: x.m + ' mins', label: 'Race Time (minutes)', value: x.m + ' mins' });
+  s6.items.push({ kind: 'chip', level: 'should', x: 1316, y: 1212, w: 104, h: 36, text: x.clock, label: 'Race Start Time (' + x.tod + ')', value: x.clock });
+  s6.items.push({ kind: 'chip', level: 'should', x: 1290, y: 1258, w: 130, h: 36, text: x.rolling, label: 'Race Start Type', value: x.rolling });
+  if (!x.qual) s6.items.push({ kind: 'chip', level: 'should', x: 1330, y: 1303, w: 90, h: 36, text: 'Random', label: 'Grid Position', value: 'Random' });
+  s6.items.push({ kind: 'box', level: 'free', x: 492, y: 1346, w: 996, h: 92, label: 'Race Starting Grip and RealRoad Wet', value: 'Your choice.' });
+  s6.items.push({ kind: 'chip', level: 'should', x: 1330, y: 1440, w: 90, h: 36, text: rrTxt, label: 'Race RealRoad Time Scale', value: rrTxt });
+  screens.push(s6);
+
+  // 07 Weather
+  var s7 = { img: '07.jpg', W: 2000, H: 1267, title: 'Weather', intro: 'Click the same preset button in Practice, Qualifying and Race. The game fills in the sky, rain chance and temperature for you, so the preset buttons are the only part to match.', items: [] };
+  var px = [278, 345, 412, 480];
+  [['Practice', 321], ['Qualifying', 649], ['Race', 985]].forEach(function (r) {
+    s7.items.push({ kind: 'box', level: 'should', x: px[x.preset] - 27, y: r[1] - 27, w: 54, h: 54, label: r[0] + ' preset', value: x.presetName });
+  });
+  screens.push(s7);
+
+  // 08 Advanced
+  var s8 = { img: '08.jpg', W: 2000, H: 1124, title: 'Advanced', intro: 'Use the arrows on each row until the game shows the same value.', items: [] };
+  [['Time Scale', rs.timeScale ? timeTxt : '', 343], ['Flag Rules', rs.flagRules, 389], ['Track Limits Rules', d.trackLimitsPreset, 435], ['Mechanical Failures', rs.mechanicalFailures, 481], ['AI Aggression', rs.aiAggression, 527], ['Track Limits Points Allowed', rs.trackLimitPoints, 573]].forEach(function (r) {
+    if (r[1] === '' || r[1] === undefined || r[1] === null) return;
+    s8.items.push({ kind: 'chip', level: 'should', x: 1290, y: r[2] - 17, w: 158, h: 34, text: String(r[1]), label: r[0], value: String(r[1]) });
+  });
+  screens.push(s8);
+  return screens;
+}
+
+function _rccSgPct(v, total) { return (v / total * 100).toFixed(3) + '%'; }
+
+function _rccSgFigure(scr) {
+  var fig = _rccEl('div', 'rcc-sg-fig');
+  var scroll = _rccEl('div', 'rcc-sg-scroll');
+  var shot = _rccEl('div', 'rcc-sg-shot');
+  var img = document.createElement('img');
+  img.src = RCC_SG_IMG + scr.img;
+  img.alt = 'Le Mans Ultimate ' + scr.title + ' screen';
+  img.loading = 'lazy';
+  shot.appendChild(img);
+  scr.items.forEach(function (it) {
+    var lvl = RCC_SG_LEVEL[it.level];
+    var box = _rccEl('div', 'rcc-sg-item rcc-sg-' + it.kind + ' ' + lvl.cls);
+    box.style.left = _rccSgPct(it.x, scr.W);
+    box.style.top = _rccSgPct(it.y, scr.H);
+    box.style.width = _rccSgPct(it.w, scr.W);
+    box.style.height = _rccSgPct(it.h, scr.H);
+    if (it.kind === 'chip') {
+      var t = _rccText('span', 'rcc-sg-chip-text' + (it.small ? ' rcc-sg-small' : ''), it.text);
+      box.appendChild(t);
+      if (it.drop) box.appendChild(_rccEl('span', 'rcc-sg-chip-caret', '&#9662;'));
+    } else if (it.kind === 'slider') {
+      box.appendChild(_rccText('span', 'rcc-sg-slider-text', it.text));
+      var track = _rccEl('span', 'rcc-sg-slider-track');
+      var handle = _rccEl('span', 'rcc-sg-slider-handle');
+      handle.style.left = (((it.pct - 75) / 30) * 100).toFixed(1) + '%';
+      track.appendChild(handle);
+      box.appendChild(track);
+    }
+    shot.appendChild(box);
+  });
+  scroll.appendChild(shot);
+  fig.appendChild(scroll);
+  var legend = _rccEl('ul', 'rcc-sg-legend');
+  scr.items.forEach(function (it) {
+    if (!it.label) return;
+    legend.appendChild(_rccEl('li', 'rcc-sg-legend-row ' + RCC_SG_LEVEL[it.level].cls, '<span class="rcc-sg-dot"></span><span class="rcc-sg-legend-label">' + _rccEsc(it.label) + '</span><span class="rcc-sg-legend-value">' + _rccEsc(it.value) + '</span>'));
+  });
+  fig.appendChild(legend);
+  return fig;
+}
+
+// The two menu screens cannot be simulated, so they get a highlighted box and a reminder.
+function _rccSgMenuFigure(img, W, H, boxes, caption) {
+  var fig = _rccEl('div', 'rcc-sg-fig rcc-sg-fig-small');
+  var shot = _rccEl('div', 'rcc-sg-shot');
+  var im = document.createElement('img');
+  im.src = RCC_SG_IMG + img;
+  im.alt = caption;
+  im.loading = 'lazy';
+  shot.appendChild(im);
+  boxes.forEach(function (b) {
+    var box = _rccEl('div', 'rcc-sg-item rcc-sg-box rcc-sg-must');
+    box.style.left = _rccSgPct(b[0], W); box.style.top = _rccSgPct(b[1], H);
+    box.style.width = _rccSgPct(b[2], W); box.style.height = _rccSgPct(b[3], H);
+    shot.appendChild(box);
+  });
+  fig.appendChild(shot);
+  return fig;
+}
+
+function rccOpenSetupGuide(roundNum) {
+  var page = RCC.page;
+  var cal = page.calendar || [];
+  if (!cal.length) { _rccToast('This season has no rounds yet.', 'error'); return; }
+  var current = cal[0];
+  cal.forEach(function (c) { if (roundNum && Number(c.roundNum) === Number(roundNum)) current = c; });
+  var m = rccOpenModal('Race Setup Guide', { wide: true });
+  m.body.classList.add('rcc-sg-body');
+
+  var top = _rccEl('div', 'rcc-sg-top');
+  var sel = _rccSelect(cal.map(function (c) { return { label: 'Round ' + c.roundNum + ' · ' + c.eventName + ' (' + c.track + ')', value: String(c.roundNum) }; }), String(current.roundNum), function (v) {
+    cal.forEach(function (c) { if (String(c.roundNum) === String(v)) current = c; });
+    render();
+  });
+  top.appendChild(_rccField('Round', sel));
+  var key = _rccEl('div', 'rcc-sg-key');
+  ['must', 'should', 'free'].forEach(function (k) {
+    key.appendChild(_rccEl('span', 'rcc-sg-key-item ' + RCC_SG_LEVEL[k].cls, '<span class="rcc-sg-dot"></span>' + _rccEsc(RCC_SG_LEVEL[k].name)));
+  });
+  top.appendChild(key);
+  m.body.appendChild(top);
+  var holder = _rccEl('div', 'rcc-sg-holder');
+  m.body.appendChild(holder);
+
+  function section(title, text) {
+    var s = _rccEl('div', 'rcc-sg-section');
+    s.appendChild(_rccText('div', 'rcc-sg-section-title', title));
+    if (text) s.appendChild(_rccText('p', 'rcc-sg-section-text', text));
+    return s;
+  }
+  function render() {
+    holder.innerHTML = '';
+    var x = _rccSgContext(page, current);
+
+    var s0 = section('Before the Settings', 'Two quick steps in the game. These screens cannot be copied here, so check them yourself.');
+    var pair = _rccEl('div', 'rcc-sg-pair');
+    var a = _rccEl('div', 'rcc-sg-pair-item');
+    a.appendChild(_rccText('div', 'rcc-sg-step', '1. Choose RACE WEEKEND'));
+    a.appendChild(_rccSgMenuFigure('00.jpg', 2000, 1124, [[56, 274, 436, 115]], 'Le Mans Ultimate main menu'));
+    pair.appendChild(a);
+    var b = _rccEl('div', 'rcc-sg-pair-item');
+    var yrs = { WEC: { 2026: [624, 830, 60, 44], 2025: [696, 830, 60, 44], 2024: [768, 830, 62, 44], 2023: [841, 830, 62, 44] }, ELMS: { 2026: [1297, 570, 62, 44], 2025: [1369, 570, 62, 44] } };
+    var ser = String(x.series).toUpperCase() === 'ELMS' ? 'ELMS' : 'WEC';
+    var yb = (yrs[ser] || {})[x.year];
+    b.appendChild(_rccText('div', 'rcc-sg-step', '2. Choose ' + ser + (x.year ? ' ' + x.year : '')));
+    b.appendChild(_rccSgMenuFigure('01.jpg', 2000, 1122, yb ? [yb] : [], 'Le Mans Ultimate series picker'));
+    pair.appendChild(b);
+    s0.appendChild(pair);
+    s0.appendChild(_rccText('p', 'rcc-sg-section-text', 'Then pick the round’s track (' + current.track + (current.layout ? ', ' + current.layout : '') + ') on the Circuit tab and your team’s car on the Car tab. If the track is missing, switch the filter to All.'));
+    holder.appendChild(s0);
+
+    _rccSgScreens(x).forEach(function (scr, i) {
+      var s = section((i + 1) + '. ' + scr.title, scr.intro);
+      s.appendChild(_rccSgFigure(scr));
+      holder.appendChild(s);
+    });
+  }
+  render();
 }

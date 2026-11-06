@@ -890,8 +890,8 @@
     // above it.
     var block4 = [];
     if (rs.setupRules) block4.push({ label: 'Setups', value: rs.setupRules });
-    if (rs.tireWearMultiplier) block4.push({ label: 'Tire Wear', value: rs.tireWearMultiplier });
-    if (rs.tireCount) block4.push({ label: 'Tires Allowed', value: String(rs.tireCount) });
+    if (rs.tireWearMultiplier) block4.push({ label: 'Tyre Wear', value: rs.tireWearMultiplier });
+    if (rs.tireCount) block4.push({ label: 'Tyres Allowed', value: String(rs.tireCount) });
     if (rs.fuelMultiplier) block4.push({ label: 'Fuel Multiplier', value: rs.fuelMultiplier });
     if (rs.pitStopReq) block4.push({ label: 'Pitstop Reqs', value: rs.pitStopReq });
     if (hub.trackLimitsPreset) block4.push({ label: 'Track Limits', value: hub.trackLimitsPreset });
@@ -2839,8 +2839,8 @@
     body.appendChild(metaRow);
     var rsx = (raceSettings && raceSettings.rs) || {};
     var rulesRow = el('div', 'rc-cal-race-meta');
-    if (rsx.tireCount) rulesRow.appendChild(calStat(ICON_TIRE, rsx.tireCount + ' Tires', 'Tires allowed for the race'));
-    if (rsx.tireWearMultiplier) rulesRow.appendChild(calStat(ICON_TIRE_WEAR, 'Tire Wear ' + rsx.tireWearMultiplier, 'Tire wear'));
+    if (rsx.tireCount) rulesRow.appendChild(calStat(ICON_TIRE, rsx.tireCount + ' Tyres', 'Tyres allowed for the race'));
+    if (rsx.tireWearMultiplier) rulesRow.appendChild(calStat(ICON_TIRE_WEAR, 'Tyre Wear ' + rsx.tireWearMultiplier, 'Tyre wear'));
     if (rsx.fuelMultiplier) rulesRow.appendChild(calStat(ICON_FUEL, 'Fuel ' + rsx.fuelMultiplier, 'Fuel consumption'));
     if (rsx.setupRules) rulesRow.appendChild(calStat(ICON_SETUP, 'Setups ' + rsx.setupRules, 'Setup rules'));
     if (rulesRow.childNodes.length) body.appendChild(rulesRow);
@@ -4065,12 +4065,12 @@
     ));
     var fuelInput = wizSelect(RACE_SETTINGS_MULTIPLIER_OPTIONS, state.raceSettings.fuelMultiplier, function (v) { state.raceSettings.fuelMultiplier = v; });
     var tireWearInput = wizSelect(RACE_SETTINGS_MULTIPLIER_OPTIONS, state.raceSettings.tireWearMultiplier, function (v) { state.raceSettings.tireWearMultiplier = v; });
-    container.appendChild(fieldPairRow('Fuel Consumption Multiplier', fuelInput, 'Tire Wear Multiplier', tireWearInput));
+    container.appendChild(fieldPairRow('Fuel Consumption Multiplier', fuelInput, 'Tyre Wear Multiplier', tireWearInput));
     autoTireCount(state);
     var tireCountInput = wizNumberInput(state.raceSettings.tireCount, function (v) { state.raceSettings.tireCount = v; state.tireCountTouched = true; }, { min: 4 }); requireField(tireCountInput, requiredEls);
     wizTireCountInputEl = tireCountInput;
     var trackLimitInput = wizNumberInput(state.raceSettings.trackLimitPoints, function (v) { state.raceSettings.trackLimitPoints = v; }, { min: 0 }); requireField(trackLimitInput, requiredEls);
-    container.appendChild(fieldPairRow('Tire Count Allowed', tireCountInput, 'Track Limit Points Before DT', trackLimitInput));
+    container.appendChild(fieldPairRow('Tyre Count Allowed', tireCountInput, 'Track Limit Points Before DT', trackLimitInput));
     var practiceLenInput = wizNumberInput(state.raceSettings.practiceLengthMin, function (v) { state.raceSettings.practiceLengthMin = v; }, { min: 0 }); requireField(practiceLenInput, requiredEls);
     var qualifyLenInput = wizNumberInput(state.raceSettings.qualifyLengthMin, function (v) { state.raceSettings.qualifyLengthMin = v; }, { min: 0 }); requireField(qualifyLenInput, requiredEls);
     container.appendChild(fieldPairRow('Practice Length (min)', practiceLenInput, 'Qualifying Length (min)', qualifyLenInput));
@@ -4431,8 +4431,8 @@
     settingsPanel.appendChild(el('h4', 'margin-top:0;color:var(--rc-red);', 'Race Settings'));
     settingsPanel.appendChild(previewLine('Setup / Pit Stops', state.raceSettings.setupRules + ' / ' + state.raceSettings.pitStopReq));
     settingsPanel.appendChild(previewLine('Damage / Time Scale', state.raceSettings.damageMultiplier + ' / ' + state.raceSettings.timeScale));
-    settingsPanel.appendChild(previewLine('Fuel / Tire Wear', state.raceSettings.fuelMultiplier + ' / ' + state.raceSettings.tireWearMultiplier));
-    settingsPanel.appendChild(previewLine('Tire Count / Track Limit Points', state.raceSettings.tireCount + ' / ' + state.raceSettings.trackLimitPoints));
+    settingsPanel.appendChild(previewLine('Fuel / Tyre Wear', state.raceSettings.fuelMultiplier + ' / ' + state.raceSettings.tireWearMultiplier));
+    settingsPanel.appendChild(previewLine('Tyre Count / Track Limit Points', state.raceSettings.tireCount + ' / ' + state.raceSettings.trackLimitPoints));
     settingsPanel.appendChild(previewLine('Practice / Qualifying Length', state.raceSettings.practiceLengthMin + ' min / ' + state.raceSettings.qualifyLengthMin + ' min'));
     container.appendChild(settingsPanel);
 
@@ -5069,7 +5069,7 @@
       paint();
       item.appendChild(sw);
       [
-        'Switches the League Hub in this browser to a made-up season: every driver is a made-up person, with their own pit stops, fuel use and tire wear. It covers the League Hub, every Race Recap page, the Driver Reports and driver profile pages, so you can take snapshots of every screen.',
+        'Switches the League Hub in this browser to a made-up season: every driver is a made-up person, with their own pit stops, fuel use and tyre wear. It covers the League Hub, every Race Recap page, the Driver Reports and driver profile pages, so you can take snapshots of every screen.',
         'It only changes what your browser shows. Nothing is written to the Sheet, no one else sees it, and the real league data is untouched. The tab title starts with [STAGED] while it is on. Turn it off to see the real League Hub again.'
       ].forEach(function (text) {
         item.appendChild(el('p', 'margin:0;font-size:14px;line-height:1.55;color:var(--rc-steel);max-width:760px;', escapeHtml(text)));

@@ -153,7 +153,7 @@ a.rcr-who-driver { color: var(--rc-carbon); text-decoration: none; }
 .rcr-set-laps, .rcr-set-wear { color: var(--rc-steel); }
 .rcr-set-none { color: var(--rc-steel); }
 .rcr-sets-tyres { text-align: center; font-variant-numeric: tabular-nums; }
-@media (orientation: portrait) { .rcr-sets-head { display: none; } .rcr-sets-row { grid-template-columns: minmax(0, 1fr) auto; } .rcr-sets-tyres::after { content: ' tires'; color: var(--rc-steel); font-weight: 400; } .rcr-sets-chips { grid-column: 1 / -1; order: 3; } }
+@media (orientation: portrait) { .rcr-sets-head { display: none; } .rcr-sets-row { grid-template-columns: minmax(0, 1fr) auto; } .rcr-sets-tyres::after { content: ' tyres'; color: var(--rc-steel); font-weight: 400; } .rcr-sets-chips { grid-column: 1 / -1; order: 3; } }
 /* Legend: pit stop circle; space under the pit strategy key. */
 .rcr-legend-circle { border-radius: 50%; border-width: 2px; border-style: solid; width: 10px; height: 10px; }
 .rcr-legend-gap { margin-bottom: 18px; }

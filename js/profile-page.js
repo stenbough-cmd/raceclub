@@ -365,7 +365,7 @@
       w.appendChild(tx('div', 'rcl-standings-class-header', title.toUpperCase()));
       var table = el('div', 'rcc-laps-table');
       var head = el('div', 'rcc-laps-row rcc-laps-head');
-      ['Lap', 'Pos', 'Lap Time', 'S1', 'S2', 'S3', 'Top Speed', 'Fuel', 'Tires (FL FR RL RR)', 'Compound'].forEach(function (t) { head.appendChild(tx('div', null, t)); });
+      ['Lap', 'Pos', 'Lap Time', 'S1', 'S2', 'S3', 'Top Speed', 'Fuel', 'Tyres (FL FR RL RR)', 'Compound'].forEach(function (t) { head.appendChild(tx('div', null, t)); });
       table.appendChild(head);
       var best = Infinity;
       s.laps.forEach(function (l) { var t = Number(l.lapTime); if (t > 0 && t < best) best = t; });
@@ -440,8 +440,8 @@
       ['Length', round && round.raceLengthMinutes ? round.raceLengthMinutes + ' min' : ''],
       ['Weather', weather],
       ['Setups', rs.setupRules || ''],
-      ['Tire Wear', rs.tireWearMultiplier || ''],
-      ['Tires Allowed', rs.tireCount ? String(rs.tireCount) : ''],
+      ['Tyre Wear', rs.tireWearMultiplier || ''],
+      ['Tyres Allowed', rs.tireCount ? String(rs.tireCount) : ''],
       ['Fuel Multiplier', rs.fuelMultiplier || ''],
       ['Pitstop Reqs', rs.pitStopReq || ''],
       ['Track Limits', season.trackLimitsPreset || ''],
