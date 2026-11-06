@@ -3118,6 +3118,13 @@ function _rccSgContext(page, c) {
     mins: mins, h: Math.floor(mins / 60), m: mins % 60, tod: tod, clock: RCC_START_CLOCK[tod],
     preset: _rccSgPreset(c.weatherPreset), presetName: c.weatherPreset || 'Sunny',
     counts: null,
+    teamLine: (function () {
+      var r = page.registration || {};
+      if (!r.teamName) return { name: 'YOUR TEAM NAME #NN', car: 'YOUR CAR' };
+      var mk = String(r.manufacturer || '').trim(), md = String(r.carModel || '').trim();
+      var car = (mk && md.toLowerCase().indexOf(mk.toLowerCase()) !== 0) ? mk + ' ' + md : (md || mk);
+      return { name: (String(r.teamName) + (r.carNumber ? ' #' + r.carNumber : '')).toUpperCase(), car: car.toUpperCase() || 'YOUR CAR' };
+    })(),
     qual: rs.qualifying !== 'No', rolling: rs.raceStart === 'Fast' ? 'Fast Rolling' : 'Rolling'
   };
 }
@@ -3146,7 +3153,7 @@ function _rccSgScreens(x) {
     s5.items.push({ kind: 'class', level: 'must', x: 167 + i * 158, y: 747, w: 145, h: 122, big: cl[1], sub: cl[2], count: (cnt === null || cnt === undefined) ? '' : String(cnt), on: x.classes.indexOf(cl[0]) !== -1,
       label: i === 0 ? 'Classes on the grid' : '', value: 'Tick only ' + (x.classes.join(', ') || 'your season’s classes') });
   });
-  s5.items.push({ kind: 'plate', level: 'free', x: 1405, y: 470, w: 590, h: 160, label: 'Your Team', value: 'The game shows your own team name and number here.' });
+  s5.items.push({ kind: 'plate', level: 'free', x: 1405, y: 470, w: 590, h: 160, label: 'Your Team', value: 'The game shows your team name, car number and car here.', name: x.teamLine.name, car: x.teamLine.car });
   s5.items.push({ kind: 'car', level: 'free', x: 1430, y: 685, w: 490, h: 165, label: 'Your Car', value: 'Pick your team’s car on the Car tab. It must be in your season’s classes.' });
   if (d.trackLimitsPreset) s5.items.push({ kind: 'chip', level: 'should', x: 368, y: 957, w: 136, h: 46, text: String(d.trackLimitsPreset).toUpperCase(), label: 'Rules', value: d.trackLimitsPreset });
   if (rs.fuelMultiplier) s5.items.push({ kind: 'chip', level: 'should', x: 580, y: 957, w: 84, h: 46, text: fuelTxt, label: 'Fuel Usage', value: fuelTxt });
@@ -3234,10 +3241,10 @@ function _rccSgFigure(scr) {
       if (it.count) sb.appendChild(_rccText('span', '', it.count));
       box.appendChild(sb);
     } else if (it.kind === 'plate') {
-      var p1 = _rccText('span', 'rcc-sg-plate-name', 'YOUR TEAM NAME #NN');
-      p1.style.fontSize = Math.min(hc * 0.2, (wc - 1.6) / (18 * 0.6)).toFixed(2) + 'cqw';
-      var p2 = _rccText('span', 'rcc-sg-plate-car', 'YOUR CAR');
-      p2.style.fontSize = (hc * 0.1).toFixed(2) + 'cqw';
+      var p1 = _rccText('span', 'rcc-sg-plate-name', it.name);
+      p1.style.fontSize = Math.min(hc * 0.2, (wc - 1.6) / (Math.max(1, it.name.length) * 0.62)).toFixed(2) + 'cqw';
+      var p2 = _rccText('span', 'rcc-sg-plate-car', it.car);
+      p2.style.fontSize = Math.min(hc * 0.1, (wc - 1.6) / (Math.max(1, it.car.length) * 0.7)).toFixed(2) + 'cqw';
       box.appendChild(p1); box.appendChild(p2);
     } else if (it.kind === 'car') {
       box.innerHTML = RCC_SG_CAR_SVG;
