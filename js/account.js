@@ -344,7 +344,7 @@
   // same popups the old separate cards used.
   // ---------------------------------------------------------------------
   function buildOnlineLeagueSection(profile, token, dashboardData, onRegistered) {
-    var box = el('div', 'rc-ol-section rc-acc');
+    var box = el('div', 'rc-ol-section rc-acc rc-collapsed');   // every Dashboard container loads closed; the member picks where to go
     var head = el('div', 'rc-ol-head');
     var headText = el('div', 'rc-ol-head-text');
     headText.appendChild(el('div', 'rc-ol-eyebrow', 'Online League'));
@@ -643,7 +643,7 @@
     function swapRows(data) {
       var fresh = buildDashboardDataRows(profile, token, data, onRegisteredRebuild);
       var oldOl = rows.topRow.querySelector('.rc-ol-section'), newOl = fresh.topRow.querySelector('.rc-ol-section');
-      if (oldOl && newOl && oldOl.classList.contains('rc-collapsed')) newOl.classList.add('rc-collapsed');
+      if (oldOl && newOl && !oldOl.classList.contains('rc-collapsed')) newOl.classList.remove('rc-collapsed');   // redrawn in place: keep it as the member left it
       rows.topRow.innerHTML = '';
       while (fresh.topRow.firstChild) rows.topRow.appendChild(fresh.topRow.firstChild);
       rows.resultsRow.innerHTML = '';
@@ -681,7 +681,7 @@
       });
     }
 
-    // ACCORDION (Matt, 2026-11-03): the Dashboard's containers are collapsed except one. Hovering a collapsed container lifts it; clicking it
+    // ACCORDION (Matt, 2026-11-03; all closed on load since 2026-11-06): the Dashboard's containers all load collapsed. Hovering a collapsed container lifts it; clicking it
     // opens it and closes the others, so only one is open at a time. Clicking the header of the open one closes it again.
     // Wired once per section: the Dashboard is redrawn in place after a save (e.g. dropping out), and a second listener would undo every click.
     // Which container is open is named in the title bar next to "Dashboard" (rcSyncDashLabel), and a container that opens scrolls to
