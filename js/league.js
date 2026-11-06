@@ -2784,7 +2784,7 @@ function _rclBuildStoryEl_(item) {
   _rclAppendStoryDetails_(wrap, item);
   if (item.editNote) {
     var editLabel = _rclFormatDate(item.editedAt);
-    var editText = 'Edited' + (editLabel ? ' ' + editLabel : '') + ' -- ' + item.editNote;
+    var editText = 'Edited' + (editLabel ? ' ' + editLabel : '') + '. ' + item.editNote;
     wrap.appendChild(_rclEl('div', 'rcl-news-editnote', _rclEscapeHtml(editText)));
   }
   _rclAddStoryVoteBar(wrap, item);
@@ -2833,7 +2833,7 @@ function _rclOpenStoryModal(startIndex, single) {
     _rclAppendStoryDetails_(wrap, item);
     if (item.editNote) {
       var editLabel = _rclFormatDate(item.editedAt);
-      var editText = 'Edited' + (editLabel ? ' ' + editLabel : '') + ' -- ' + item.editNote;
+      var editText = 'Edited' + (editLabel ? ' ' + editLabel : '') + '. ' + item.editNote;
       wrap.appendChild(_rclEl('div', 'rcl-news-editnote', _rclEscapeHtml(editText)));
     }
     _rclAddStoryVoteBar(wrap, item);

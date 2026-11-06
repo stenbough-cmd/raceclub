@@ -68,7 +68,7 @@ function _rcrIsPhone() { return (window.innerHeight || 0) >= (window.innerWidth 
 // What a stop actually did (League chat's fix, 2026-10-14): fuel counts as added when the tank is more
 // than 2% fuller coming out. The old labels said "fuel and tyres" for every stop that changed a tyre.
 function _rcrPitFuel(p) { return p && p.fuelIn !== null && p.fuelIn !== undefined && p.fuelOut !== null && p.fuelOut !== undefined ? (p.fuelOut - p.fuelIn) > 0.02 : true; }
-function _rcrPitWhat(p) { var f = _rcrPitFuel(p), t = !!p.tires; return f && t ? 'fuel and tyres' : (f ? 'fuel only' : (t ? 'tyres only' : 'no fuel or tyre change')); }
+function _rcrPitWhat(p) { var f = _rcrPitFuel(p), t = !!p.tires; return f && t ? 'fuel and tires' : (f ? 'fuel only' : (t ? 'tires only' : 'no fuel or tire change')); }
 function _rcrPitCode(p) { var f = _rcrPitFuel(p), t = !!p.tires; return f && t ? 'F+T' : (f ? 'F' : (t ? 'T' : '—')); }
 
 // Charts are drawn at roughly their on-screen width so their text stays the same size on any
@@ -367,7 +367,7 @@ var RCR_CARS = {
 
 function _rcrCar(shape, tread) {
   var def = RCR_CARS[shape] || RCR_CARS.gt;
-  var svg = _rcrSvg('svg', { viewBox: '0 0 160 300', class: 'rcr-car rcr-car-' + (RCR_CARS[shape] ? shape : 'gt'), role: 'img', 'aria-label': 'Tyre tread on each corner' });
+  var svg = _rcrSvg('svg', { viewBox: '0 0 160 300', class: 'rcr-car rcr-car-' + (RCR_CARS[shape] ? shape : 'gt'), role: 'img', 'aria-label': 'Tire tread on each corner' });
   (def.under || []).forEach(function (x) { svg.appendChild(_rcrSvg(x.tag, Object.assign({ class: x.cls }, x.a))); });
   svg.appendChild(_rcrSvg('path', { d: def.body, class: 'rcr-car-body' }));
   def.lines.forEach(function (d) { svg.appendChild(_rcrSvg('path', { d: d, class: 'rcr-car-line' })); });
@@ -482,7 +482,7 @@ function _rcrDraw(body, dr, mode, prof) {
   // 3. Tyres.
   var laps = dr.laps || [];
   if (laps.length && laps.some(function (l) { return (l.w || []).some(function (v) { return v !== null; }); })) {
-    var tb = _rcrBlock('Tyre Report', (laps[0].comp ? laps[0].comp + ' compound. ' : '') + 'Tread left on each corner.');
+    var tb = _rcrBlock('Tire Report', (laps[0].comp ? laps[0].comp + ' compound. ' : '') + 'Tread left on each corner.');
     var grid = _rccEl('div', 'rcr-tyre-grid');
     var snaps = [['Lap 1', laps[0]]];
     (you.pits || []).forEach(function (p) { var b = laps.filter(function (l) { return l.n === p.lap - 1; })[0]; if (b) snaps.push(['Pit In, Lap ' + p.lap, b]); });
@@ -540,7 +540,7 @@ function _rcrDraw(body, dr, mode, prof) {
     grid.appendChild(carBox);
     // Tread over the race: your most-worn tyre against the comparison.
     var right2 = _rccEl('div', 'rcr-tyre-side');
-    right2.appendChild(_rccText('div', 'rcr-mini-title', 'Most-worn tyre, lap by lap'));
+    right2.appendChild(_rccText('div', 'rcr-mini-title', 'Most-worn tire, lap by lap'));
     var tseries = [];
     if (mode === 'class' && cls) tseries.push({ name: 'Class average', color: RCR_SERIES[0], values: cls.tw || [], dash: true });
     if (mode === 'rivals') tseries = tseries.concat(rivalSeries('tw'));
@@ -550,8 +550,8 @@ function _rcrDraw(body, dr, mode, prof) {
     tb.appendChild(grid);
     // (The "Tread used per lap (front left)" bar graph was removed, Matt 2026-10-13.)
     // Between the tyre chart and the tyre sets table (Matt, 2026-10-11).
-    tb.appendChild(_rcrTipBox('Comparing tyre wear with the AI', [
-      'Le Mans Ultimate adjusts the AI\u2019s tyre wear and fuel use so the AI can match a player\u2019s pace over a whole session. Compare compounds, tyre sets and the pace on each set first, and treat the wear numbers against the AI as a rough guide.'
+    tb.appendChild(_rcrTipBox('Comparing tire wear with the AI', [
+      'Le Mans Ultimate adjusts the AI\u2019s tire wear and fuel use so the AI can match a player\u2019s pace over a whole session. Compare compounds, tire sets and the pace on each set first, and treat the wear numbers against the AI as a rough guide.'
     ]));
     // Tyre sets (Matt): compounds each car used, how many tyres it went through, and the pace and
     // wear on each set, which explains most of the wear differences above.
@@ -560,7 +560,7 @@ function _rcrDraw(body, dr, mode, prof) {
       // (No "Tyre sets, compounds and pace" heading above the table, Matt 2026-10-14.)
       var st = _rccEl('div', prof ? 'rcr-sets rcr-sets-wide' : 'rcr-sets');
       var hd = _rccEl('div', 'rcr-sets-row rcr-sets-head');
-      ['Car', prof ? 'Tyre sets' : 'Sets (laps, typical lap, tread used per lap)', 'Tyres'].forEach(function (h) { hd.appendChild(_rccText('div', null, h)); });
+      ['Car', prof ? 'Tire sets' : 'Sets (laps, typical lap, tread used per lap)', 'Tires'].forEach(function (h) { hd.appendChild(_rccText('div', null, h)); });
       st.appendChild(hd);
       setRows.forEach(function (f) {
         var r = _rccEl('div', 'rcr-sets-row' + (f.isPlayer && !prof ? ' rcr-sets-you' : ''));
@@ -583,7 +583,7 @@ function _rcrDraw(body, dr, mode, prof) {
       });
       tb.appendChild(st);
     } else if (dr.hasField) {
-      tb.appendChild(_rccText('p', 'rcr-note', 'Tyre sets, compounds and pace per set show for rounds uploaded from today on. Erase this round and upload the same files again to see them.'));
+      tb.appendChild(_rccText('p', 'rcr-note', 'Tire sets, compounds and pace per set show for rounds uploaded from today on. Erase this round and upload the same files again to see them.'));
     }
     body.appendChild(tb);
   }
@@ -642,7 +642,7 @@ function _rcrDraw(body, dr, mode, prof) {
         m.style.left = ((p.lap - 0.5) / maxLaps * 100) + '%';
         m.appendChild(_rccText('span', 'rcr-strat-icon', _rcrPitCode(p)));
         m.title = 'Lap ' + p.lap + ': ' + _rcrPitWhat(p) + (p.lost ? ', about ' + Math.round(p.lost) + ' s lost' : '') +
-          (p.wearIn ? ', tyres at ' + _rcrPct(Math.min.apply(null, p.wearIn.filter(function (v) { return v !== null; }).concat([1]))) : '');
+          (p.wearIn ? ', tires at ' + _rcrPct(Math.min.apply(null, p.wearIn.filter(function (v) { return v !== null; }).concat([1]))) : '');
         track.appendChild(m);
       });
       row.appendChild(track);
@@ -695,7 +695,7 @@ function _rcrDraw(body, dr, mode, prof) {
       }
     }
     pitHold.appendChild(tl);
-    var pitKey = _rcrLegend([{ name: 'F = fuel only', color: '#5b6573' }, { name: 'T = tyres only', color: '#8a94a3' }, { name: 'F+T = fuel and tyres', color: '#1f2937' }]);
+    var pitKey = _rcrLegend([{ name: 'F = fuel only', color: '#5b6573' }, { name: 'T = tires only', color: '#8a94a3' }, { name: 'F+T = fuel and tires', color: '#1f2937' }]);
     pitKey.classList.add('rcr-legend-gap');
     pitHold.appendChild(pitKey);
     body.appendChild(sb);

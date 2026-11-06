@@ -1,7 +1,7 @@
 /* =====================================================================
    Race Club helmet editor pieces  (js/helmet-editor.js)
    ---------------------------------------------------------------------
-   RCHelmetEditor.openDesigner(ctx)  -- the large admin "Helmet Designer" popup
+   RCHelmetEditor.openDesigner(ctx) . The large admin "Helmet Designer" popup
      ctx = { token, fetchApi, showModal, showToast }   (all supplied by Account.html)
    Needs js/helmet.js and css/helmet.css.
    Award helmets are complete designs: members use them exactly as designed.

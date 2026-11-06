@@ -2385,7 +2385,7 @@ function rccOpenUpload(roundId, lockRound) {
 // changing the page address.
 // ---------------------------------------------------------------------
 function rccOpenHelp() {
-  var m = rccOpenModal('Help: Single Player Mode', { wide: true });
+  var m = rccOpenModal('Help: Single Player Championship', { wide: true });
   m.body.classList.add('rcc-help-body');
   var sections = typeof RCC_HELP_SECTIONS !== 'undefined' ? RCC_HELP_SECTIONS : [];
   // Quick start for new drivers (Matt, 2026-10-13), above Jump To A Section.

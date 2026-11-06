@@ -21,7 +21,7 @@ var RULEBOOK_SECTIONS = [
     html: '<p>Race Club is a persistent driver league built on real Le Mans Ultimate races. Every round you run and every season you complete is tracked to your own driver profile: results, penalties, and history all carry forward instead of resetting each week.</p>' +
       '<p>The League Hub is the public view of that record: standings, results, and news update as soon as a round is scored, visible to anyone without needing to log in.</p>' +
       '<p>Race Club runs a WEC-style season: race length varies round to round, mixing shorter sprint rounds with longer endurance rounds. Cars are grouped into classes modeled on real WEC competition.</p>' +
-      '<div class="rc-rulebook-callout"><strong>Overview:</strong><ul>' +
+      '<div class="rc-rulebook-callout"><strong>Overview</strong><ul>' +
       '<li>Driver profile, results, and racing history persist across every season</li>' +
       '<li>Every race, penalty, and bonus is logged to your permanent record</li>' +
       '<li>Built on real LMU league races, not a separate simulation layer</li>' +
@@ -34,7 +34,7 @@ var RULEBOOK_SECTIONS = [
       '<ol><li>Choose a class. If only one class is currently open, this step is skipped automatically.</li>' +
       '<li>Choose a car. Cars are listed alphabetically by manufacturer.</li>' +
       '<li>Click Join This Team. This locks the seat in immediately and cannot be undone.</li></ol>' +
-      '<div class="rc-rulebook-callout"><strong>Registering:</strong><ul>' +
+      '<div class="rc-rulebook-callout"><strong>Registering</strong><ul>' +
       '<li>Seats are first-come, first-served: once a driver joins a team, that seat is locked for the rest of the season</li>' +
       '<li>Class and team choice both lock in immediately, no confirmation step after Join This Team</li>' +
       '</ul></div>' +
@@ -77,7 +77,7 @@ var RULEBOOK_SECTIONS = [
       '<h4>4.3 Automatically Enforced (No Organizer Action Required)</h4>' +
       '<p>The following are detected and penalized automatically by LMU’s in-game systems. Stewards do not review or re-adjudicate these:</p>' +
       '<ul><li>Track limits</li><li>Pit lane speeding</li><li>Jump starts</li><li>Formation lap conduct</li></ul>' +
-      '<div class="rc-rulebook-callout rc-rulebook-callout-warn"><strong>These calls are final.</strong> Any penalty or track limit point issued automatically by the game is not reviewable and cannot be appealed or overturned by stewards or organizers.</div>' +
+      '<div class="rc-rulebook-callout rc-rulebook-callout-warn"><strong>These calls are final</strong>Any penalty or track limit point issued automatically by the game is not reviewable and cannot be appealed or overturned by stewards or organizers.</div>' +
       '<h4>4.4 Reviewed by Stewards</h4>' +
       '<p>The following require steward review after the race, since the game doesn’t reliably catch them:</p>' +
       '<ul><li>Avoidable collisions and their consequences</li><li>Unsafe rejoins</li><li>Blocking/weaving</li>' +
@@ -93,7 +93,7 @@ var RULEBOOK_SECTIONS = [
   },
   {
     id: 'penalties', num: '5', title: 'Penalties',
-    html: '<div class="rc-rulebook-callout"><strong>Fully active.</strong> A driver can file a protest, and the Steward Board (Stewards, Organizers and Admins) reviews it. Organizers and Admins make the final ruling and assign a tier below. Ruling at Tier 2 through Tier 6 automatically applies that tier’s effect (a time penalty, or a disqualification) to the round’s results and every affected standing going forward. A ruling isn’t just a recorded judgement, but an actual penalty that gets applied to a driver’s race results. See Section 5.3 for more information on penalty tiers.</div>' +
+    html: '<div class="rc-rulebook-callout"><strong>Fully active</strong>A driver can file a protest, and the Steward Board (Stewards, Organizers and Admins) reviews it. Organizers and Admins make the final ruling and assign a tier below. A ruling at Tier 2 or above automatically applies that tier’s effect (a time penalty, a disqualification or a suspension) to the round’s results and every affected standing going forward. A ruling isn’t just a recorded judgement, but an actual penalty that gets applied to a driver’s race results. See Section 5.3 for more information on penalty tiers.</div>' +
       '<p>Race Club’s penalty system is adapted from FIA/WEC’s structure, simplified for a solo-driver format. It’s scoped to what the game <em>doesn’t</em> already catch. Track limits, pit lane speeding, and jump starts are enforced automatically by LMU’s Race Control and don’t require organizer action (see Section 4).</p>' +
       '<h4>5.1 Penalty Tiers</h4>' +
       '<p>All time penalties in Race Club are applied post-race by stewards reviewing replays/reports. There is no in-race serving mechanic. Every penalty either gets logged as a reprimand or is converted directly into added time (or a further consequence) on the final classification.</p>' +
@@ -159,8 +159,8 @@ var RULEBOOK_SECTIONS = [
       '<tr><td><strong>Bye Week</strong></td><td>A week on the calendar with no scheduled round at all: nothing to race, nothing to score.</td></tr>' +
       '<tr><td><strong>Class</strong></td><td>The category of car a driver races for a season. Race Club currently runs the five classes below.' +
         '<div class="rc-dm-subrow"><span class="rc-dm-tree">└</span><span class="rc-badge-chip rc-badge-hypercar">HY</span><span>The top class: purpose-built prototype race cars, the fastest and most technically advanced cars in the league, competing for the overall race win.</span></div>' +
-        '<div class="rc-dm-subrow"><span class="rc-dm-tree">└</span><span class="rc-badge-chip rc-badge-lmp2">LMP2</span><span>A spec prototype class one tier below Hypercar -- every car in the class shares the same chassis regulations, so racing comes down to setup and driving rather than equipment differences.</span></div>' +
-        '<div class="rc-dm-subrow"><span class="rc-dm-tree">└</span><span class="rc-badge-chip rc-badge-lmp3">LMP3</span><span>An entry-level prototype class below LMP2 -- a more affordable, lower-downforce spec car, often a driver’s first step into prototype racing.</span></div>' +
+        '<div class="rc-dm-subrow"><span class="rc-dm-tree">└</span><span class="rc-badge-chip rc-badge-lmp2">LMP2</span><span>A spec prototype class one tier below Hypercar. Every car in the class shares the same chassis regulations, so racing comes down to setup and driving rather than equipment differences.</span></div>' +
+        '<div class="rc-dm-subrow"><span class="rc-dm-tree">└</span><span class="rc-badge-chip rc-badge-lmp3">LMP3</span><span>An entry-level prototype class below LMP2. It is a more affordable, lower-downforce spec car, often a driver’s first step into prototype racing.</span></div>' +
         '<div class="rc-dm-subrow"><span class="rc-dm-tree">└</span><span class="rc-badge-chip rc-badge-lmgt3">LMGT3</span><span>GT3-spec grand tourer cars built on real production models, balanced against each other by Balance of Performance.</span></div>' +
         '<div class="rc-dm-subrow"><span class="rc-dm-tree">└</span><span class="rc-badge-chip rc-badge-lmgte">LMGTE</span><span>A production-based endurance GT class, distinct from LMGT3’s own GT3 ruleset, built for close, sustained racing over a full stint.</span></div>' +
         '</td></tr>' +

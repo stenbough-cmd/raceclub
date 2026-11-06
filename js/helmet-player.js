@@ -1,5 +1,5 @@
 /* =====================================================================
-   Race Club -- player helmet customizer  (js/helmet-player.js)
+   Race Club. Player helmet customizer  (js/helmet-player.js)
    ---------------------------------------------------------------------
    RCHelmetPlayer.open(ctx)
      ctx = { recipe, own, logos, awarded, teamInfo, teamOn, showModal, showToast, onSave(recipeOrNull) }

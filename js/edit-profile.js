@@ -120,7 +120,7 @@ function _rcEPPasswordChangeSection(token, opts) {
         })
         .catch(function () {
           btn.disabled = false; btn.textContent = 'Update Password';
-          showToast('Could not reach the server -- try again.', 'error');
+          showToast('Could not reach the server. Try again.', 'error');
         });
     });
     box.appendChild(btn);
@@ -315,7 +315,7 @@ function _rcEPOpenEditProfileModal(profile, token, host) {
       .catch(function () {
         saveBtn.disabled = false;
         saveBtn.textContent = 'Save Changes';
-        showToast('Could not reach the server -- try again.', 'error');
+        showToast('Could not reach the server. Try again.', 'error');
       });
   }
 
@@ -366,7 +366,7 @@ function _rcEPOpenEditProfileModal(profile, token, host) {
       .catch(function () {
         saveBtn.disabled = false;
         saveBtn.textContent = 'Save Changes';
-        showToast('Could not reach the server -- try again.', 'error');
+        showToast('Could not reach the server. Try again.', 'error');
       });
   });
 }
@@ -392,13 +392,13 @@ function rcOpenEditProfileModalInPlace() {
   fetchApi('getProfile', { token: token }).then(function (data) {
     if (!data.success || !data.profile) {
       modalHandle.close();
-      showToast('Could not load your profile -- try again.', 'error');
+      showToast('Could not load your profile. Try again.', 'error');
       return;
     }
     modalHandle.close();
     _rcEPOpenEditProfileModal(data.profile, token);
   }).catch(function () {
     modalHandle.close();
-    showToast('Could not reach the server -- try again.', 'error');
+    showToast('Could not reach the server. Try again.', 'error');
   });
 }

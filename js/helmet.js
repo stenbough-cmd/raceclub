@@ -8,11 +8,11 @@
    from assets/helmets/images/.
 
    Public API (window.RCHelmet):
-     PALETTE, FINISHES, VISORS      -- the choices shown in the editor
-     configure({ designs, logos })  -- which design slots / logo files exist
+     PALETTE, FINISHES, VISORS     . The choices shown in the editor
+     configure({ designs, logos }) . Which design slots / logo files exist
      defaultRecipe(), randomRecipe(), normalizeRecipe(r)
      render(recipe, { width })      -- Promise -> <canvas> (transparent background)
-     mount(el, recipe, { width })   -- render and put the canvas inside el
+     mount(el, recipe, { width })  . Render and put the canvas inside el
    ===================================================================== */
 (function () {
   'use strict';

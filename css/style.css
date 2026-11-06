@@ -3312,3 +3312,6 @@ body.rc-account-page .rc-site-footer { flex: none; margin-top: 0; }
 body:has(> .rc-auth-page):has(> .rc-site-footer) { min-height: 100vh; display: flex; flex-direction: column; }
 body:has(> .rc-auth-page) > .rc-auth-page { min-height: 0; flex: 1 0 auto; }
 body:has(> .rc-auth-page) > .rc-site-footer { flex: none; }
+
+/* Rulebook callout titles sit on their own line (no colon), same as the Single Player help. */
+.rc-rulebook-callout > strong:first-child { display: block; margin-bottom: 4px; }

@@ -871,7 +871,7 @@ function _rcOpenFeedbackModal() {
       return;
     }
     if (message.length > _RC_FEEDBACK_MESSAGE_MAX_) {
-      errorMsg.textContent = 'Message is too long -- keep it under ' + _RC_FEEDBACK_MESSAGE_MAX_ + ' characters.';
+      errorMsg.textContent = 'Message is too long. Keep it under ' + _RC_FEEDBACK_MESSAGE_MAX_ + ' characters.';
       errorMsg.style.display = 'block';
       return;
     }
@@ -920,7 +920,7 @@ function _rcOpenFeedbackModal() {
     }).catch(function (err) {
       submitBtn.disabled = false;
       submitBtn.textContent = 'Send Feedback';
-      errorMsg.textContent = (err && err.userMessage) || 'Could not send feedback -- try again.';
+      errorMsg.textContent = (err && err.userMessage) || 'Could not send feedback. Try again.';
       errorMsg.style.display = 'block';
     });
   });

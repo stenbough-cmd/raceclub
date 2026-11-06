@@ -1409,7 +1409,7 @@
             if (data.success) rcReloadAfterSave();
           })
           .catch(function () {
-            showToast('Could not reach the server -- password not changed.', 'error');
+            showToast('Could not reach the server. Password not changed.', 'error');
           });
       });
       box.appendChild(btn);
@@ -1688,7 +1688,7 @@
         checking = false;
         confirmBtn.disabled = false;
         confirmBtn.textContent = verifyLabel;
-        shakeAndFlag('Could not reach the server -- try again.');
+        shakeAndFlag('Could not reach the server. Try again.');
       });
     });
     input.focus();
@@ -1757,7 +1757,7 @@
               rcActiveSectionId = 'dashboard';
               rcReloadAfterSave();
             }).catch(function () {
-              showToast('Could not reach the server -- season not ended.', 'error');
+              showToast('Could not reach the server. Season not ended.', 'error');
             });
           },
           { waitForWrite: true }
@@ -1838,7 +1838,7 @@
           function () {
             openTypeToConfirmModal(
               'Confirm Permanent Deletion',
-              'This is the final step. There is no backup and no way to recover "' + chosenName + '" once this runs -- everything tied to it is gone for good.',
+              'This is the final step. There is no backup and no way to recover "' + chosenName + '" once this runs. Everything tied to it is gone for good.',
               'PERMANENTLY ERASE',
               'Delete Season Forever',
               function () {
@@ -1852,7 +1852,7 @@
                   showToast('Season "' + chosenName + '" and everything tied to it has been permanently deleted.', 'success');
                   if (typeof reload === 'function') reload();
                 }).catch(function () {
-                  showToast('Could not reach the server -- season not deleted.', 'error');
+                  showToast('Could not reach the server. Season not deleted.', 'error');
                 });
               },
               { iconHtml: ICON_RADIATION_SEVERE_, waitForWrite: true }
@@ -2105,7 +2105,7 @@
       // Withdraw button elsewhere in this file.
       var recomputeBtn = el('button', 'rc-btn-secondary rc-btn-row', 'Recompute Season');
       recomputeBtn.type = 'button';
-      withTooltip(recomputeBtn, 'Re-runs standings for every completed round in order -- use this after correcting an earlier round\'s results or a protest ruling, so later rounds and Season Standings reflect the fix.');
+      withTooltip(recomputeBtn, 'Re-runs standings for every completed round in order. Use this after correcting an earlier round\'s results or a protest ruling, so later rounds and Season Standings reflect the fix.');
       recomputeBtn.addEventListener('click', function () {
         recomputeBtn.disabled = true;
         // Loading-lights popup -- reuses the same .rc-startlights "starting grid" sequence every
@@ -2804,7 +2804,7 @@
       eventLine.appendChild(document.createTextNode(': '));
       eventLine.appendChild(el('span', 'rc-cal-race-event-layout', escapeHtml(entry.layout)));
     }
-    if (isSpecial) eventLine.appendChild(withTooltip(el('span', 'rc-cal-race-star', ICON_NAV_STAR), 'Special Event -- fun race, no championship points.'));
+    if (isSpecial) eventLine.appendChild(withTooltip(el('span', 'rc-cal-race-star', ICON_NAV_STAR), 'Special Event. Fun race, no championship points.'));
     head.appendChild(eventLine);
 
     // Status word, upper-right of the row -- UP NEXT for the first not-yet-finished entry,
@@ -2943,7 +2943,7 @@
         });
       });
     } else {
-      withTooltip(fileBtn, 'There\'s nothing open to protest right now -- either no round you raced has posted results, or the 24-hour filing window has closed for all of them.');
+      withTooltip(fileBtn, 'There\'s nothing open to protest right now. Either no round you raced has posted results, or the 24-hour filing window has closed for all of them.');
     }
     actionRow.appendChild(fileBtn);
     container.appendChild(actionRow);
@@ -2994,7 +2994,7 @@
   function openWithdrawProtestConfirm(token, p, withdrawBtn, parentModal, onWithdrawn) {
     var who = (p.involvedNames || []).slice(1).join(', ');
     openConfirmModal('Withdraw Protest', 'Withdraw this protest' + (who ? (' against ' + who) : '') +
-      '? It\'s removed from your own history -- the round it was filed against keeps its own record.', 'Withdraw', function () {
+      '? It\'s removed from your own history. The round it was filed against keeps its own record.', 'Withdraw', function () {
       withdrawBtn.disabled = true;
       withdrawBtn.textContent = 'WITHDRAWING...';
       if (parentModal && parentModal.closeBtn) parentModal.closeBtn.disabled = true;
@@ -3216,7 +3216,7 @@
         submitBtn.disabled = false;
         submitBtn.textContent = 'Submit Protest';
         if (modal.closeBtn) modal.closeBtn.disabled = false;
-        showToast('Could not reach the server -- protest not submitted.', 'error');
+        showToast('Could not reach the server. Protest not submitted.', 'error');
       });
     });
 
@@ -3288,7 +3288,7 @@
           saveBtn.disabled = false;
           saveBtn.textContent = 'Save Changes';
           if (modal.closeBtn) modal.closeBtn.disabled = false;
-          showToast('Could not reach the server -- protest not saved.', 'error');
+          showToast('Could not reach the server. Protest not saved.', 'error');
         });
       });
       btnRow.appendChild(cancelBtn);
@@ -3709,7 +3709,7 @@
         return;
       }
       if (!seasonRes.hasSeason) {
-        showToast('No season exists yet -- create one first.', 'info');
+        showToast('No season exists yet. Create one first.', 'info');
         return;
       }
       openSeasonWizard(buildEditWizardState(seasonRes));
@@ -3904,7 +3904,7 @@
     // covers Car Classes being frozen along with everything else, so this narrower note would just
     // be redundant.
     if (editSeasonLock && !state.__locked) {
-      var classLockNote = el('div', 'rc-hint', 'Car Classes are locked once a season is created -- they can no longer be changed here.');
+      var classLockNote = el('div', 'rc-hint', 'Car Classes are locked once a season is created. They can no longer be changed here.');
       classLockNote.style.marginBottom = '8px';
       container.appendChild(classLockNote);
     }
@@ -4084,7 +4084,7 @@
       lockNote.style.cssText = 'border-color:var(--rc-red);background:#fdf2f2;margin-bottom:16px;';
       lockNote.appendChild(el('div', 'font-weight:700;color:var(--rc-carbon);font-size:13px;', 'This season\'s first round has started'));
       lockNote.appendChild(el('div', 'color:var(--rc-steel);font-size:13px;margin-top:4px;',
-        'The season is locked into place -- only Season Name and Default Password can still change. On the next page, races can no longer be edited.'));
+        'The season is locked into place. Only Season Name and Default Password can still change. On the next page, races can no longer be edited.'));
       container.insertBefore(lockNote, container.firstChild);
       container.querySelectorAll('input, select, textarea').forEach(function (fieldEl) {
         if (!fieldEl.classList.contains('rc-wiz-editable-when-locked')) {
@@ -4217,7 +4217,7 @@
 
     if (!state.races.length) {
       container.appendChild(el('p', 'color:var(--rc-steel);font-size:13px;',
-        'No races yet -- go back to Season Details and set "Number Of Races" above 0.'));
+        'No races yet. Go back to Season Details and set "Number Of Races" above 0.'));
       return;
     }
     var computedRaceDates = computeRaceDates(state);
@@ -4827,9 +4827,9 @@
           }
         }).catch(function () {
           if (err && err.message === 'RC_FETCH_TIMEOUT') {
-            showToast('This is taking longer than expected. Apps Script may still be finishing the write -- check Season Tools before trying again so you don\'t create a duplicate season.', 'error');
+            showToast('This is taking longer than expected. Apps Script may still be finishing the write. Check Season Tools before trying again so you don\'t create a duplicate season.', 'error');
           } else {
-            showToast('Could not reach the server -- check your connection and try again.', 'error');
+            showToast('Could not reach the server. Check your connection and try again.', 'error');
           }
         });
       });
@@ -5069,7 +5069,7 @@
       paint();
       item.appendChild(sw);
       [
-        'Switches the League Hub in this browser to a made-up season: every driver is a made-up person, with their own pit stops, fuel use and tyre wear. It covers the League Hub, every Race Recap page, the Driver Reports and driver profile pages, so you can take snapshots of every screen.',
+        'Switches the League Hub in this browser to a made-up season: every driver is a made-up person, with their own pit stops, fuel use and tire wear. It covers the League Hub, every Race Recap page, the Driver Reports and driver profile pages, so you can take snapshots of every screen.',
         'It only changes what your browser shows. Nothing is written to the Sheet, no one else sees it, and the real league data is untouched. The tab title starts with [STAGED] while it is on. Turn it off to see the real League Hub again.'
       ].forEach(function (text) {
         item.appendChild(el('p', 'margin:0;font-size:14px;line-height:1.55;color:var(--rc-steel);max-width:760px;', escapeHtml(text)));
@@ -5560,7 +5560,7 @@
 
       Promise.all(jobs.map(function (j) { return readText(j.file).then(function (t) { j.text = t; j.code = _rcSniffSessionCode(t); }); })).then(function () {
         for (var i = 0; i < jobs.length; i++) {
-          if (jobs[i].code === 'P') { throw { rcShow: 'Practice session imports aren\'t supported -- only Qualify and Race results are imported.' }; }
+          if (jobs[i].code === 'P') { throw { rcShow: 'Practice session imports aren\'t supported. Only Qualify and Race results are imported.' }; }
           if (jobs[i].code && jobs[i].code !== jobs[i].want) { throw { rcShow: 'The ' + jobs[i].label + ' box has a ' + (jobs[i].code === 'Q' ? 'Qualify' : 'Race') + ' file in it. Put each file in its own box.' }; }
         }
         // The real server-side writes start now -- lock the X until they settle.
@@ -5597,7 +5597,7 @@
         if (e && e.rcShow) { showToast(e.rcShow, 'error'); return; }
         if (e && e.message && !/fetch|network|timeout|abort/i.test(e.message)) { showToast(e.message, 'error'); return; }
         // The connection dropped, but Apps Script may still be finishing; re-enabled so the admin is not trapped.
-        showToast('This is taking longer than expected. Apps Script may still be finishing the import -- check League Tools before trying again so you don\'t import the same file twice.', 'error');
+        showToast('This is taking longer than expected. Apps Script may still be finishing the import. Check League Tools before trying again so you don\'t import the same file twice.', 'error');
       });
     });
     btnRow.appendChild(importBtn);
@@ -5653,7 +5653,7 @@
             .catch(function () {
               eraseBtn.disabled = false;
               eraseBtn.textContent = 'Erase';
-              showToast('Could not reach the server. The erase may not have finished -- check League Tools before trying again.', 'error');
+              showToast('Could not reach the server. The erase may not have finished. Check League Tools before trying again.', 'error');
             });
         },
         { waitForWrite: true }
@@ -6659,7 +6659,7 @@
           if (!data.success) {
             saveBtn.disabled = false;
             saveBtn.textContent = 'Publish Post';
-            showToast(data.message || 'Could not publish this post -- try again.', 'error');
+            showToast(data.message || 'Could not publish this post. Try again.', 'error');
             return;
           }
           if (reload) reload(); else rcReloadAfterSave();
@@ -6668,7 +6668,7 @@
         .catch(function (err) {
           saveBtn.disabled = false;
           saveBtn.textContent = 'Publish Post';
-          showToast((err && err.message) || 'Could not reach the server -- post not published.', 'error');
+          showToast((err && err.message) || 'Could not reach the server. Post not published.', 'error');
         });
     });
   }
@@ -6752,7 +6752,7 @@
           if (!data.success) {
             saveBtn.disabled = false;
             saveBtn.textContent = 'Save Changes';
-            showToast(data.message || 'Could not save changes -- try again.', 'error');
+            showToast(data.message || 'Could not save changes. Try again.', 'error');
             return;
           }
           if (reload) reload(); else rcReloadAfterSave();
@@ -6761,7 +6761,7 @@
         .catch(function (err) {
           saveBtn.disabled = false;
           saveBtn.textContent = 'Save Changes';
-          showToast((err && err.message) || 'Could not reach the server -- changes not saved.', 'error');
+          showToast((err && err.message) || 'Could not reach the server. Changes not saved.', 'error');
         });
     });
 
@@ -6798,7 +6798,7 @@
           if (reload) reload(); else rcReloadAfterSave();
         })
         .catch(function () {
-          showToast('Could not reach the server -- post not updated.', 'error');
+          showToast('Could not reach the server. Post not updated.', 'error');
         });
     }
   }
@@ -6818,7 +6818,7 @@
     form.appendChild(el('label', null, 'Layout'));
     var layout = el('input'); layout.type = 'text'; layout.required = true;
     form.appendChild(layout);
-    form.appendChild(el('div', 'rc-hint', 'Every track needs at least one layout -- add more from its Edit popup afterward.'));
+    form.appendChild(el('div', 'rc-hint', 'Every track needs at least one layout. Add more from its Edit popup afterward.'));
 
     // Region -- venue-level, groups the Tracks list; a free-text field since there's no fixed
     // region list yet (unlike Class, which draws from a governed set in reference-data.js).
@@ -6877,7 +6877,7 @@
           if (reload) reload(); else rcReloadAfterSave();
         })
         .catch(function () {
-          showToast('Could not reach the server -- track not added.', 'error');
+          showToast('Could not reach the server. Track not added.', 'error');
         });
     });
   }
@@ -7059,7 +7059,7 @@
     form.appendChild(el('label', null, 'Manufacturer'));
     var manufacturer = el('input'); manufacturer.type = 'text';
     form.appendChild(manufacturer);
-    form.appendChild(el('div', 'rc-hint', 'Used to find that manufacturer’s logo (assets/manufacturers/) -- a space becomes a dash, e.g. "Aston Martin" → aston-martin.png.'));
+    form.appendChild(el('div', 'rc-hint', 'Used to find that manufacturer’s logo (assets/manufacturers/). A space becomes a dash, e.g. "Aston Martin" → aston-martin.png.'));
 
     form.appendChild(el('label', null, 'Car Model'));
     var carModel = el('input'); carModel.type = 'text';
@@ -7129,7 +7129,7 @@
           if (reload) reload(); else rcReloadAfterSave();
         })
         .catch(function () {
-          showToast('Could not reach the server -- car not added.', 'error');
+          showToast('Could not reach the server. Car not added.', 'error');
         });
     });
   }
@@ -7274,7 +7274,7 @@
     form.appendChild(el('label', null, 'Email Address'));
     var email = el('input'); email.type = 'email'; email.required = true;
     form.appendChild(email);
-    form.appendChild(el('div', 'rc-hint', 'Used for password-reset delivery only -- this driver logs in with their username, not this email.'));
+    form.appendChild(el('div', 'rc-hint', 'Used for password-reset delivery only. This driver logs in with their username, not this email.'));
 
     var saveBtn = el('button', null, 'Add Driver');
     saveBtn.type = 'submit';
@@ -7311,7 +7311,7 @@
           if (!data.success) {
             saveBtn.disabled = false;
             saveBtn.textContent = 'Add Driver';
-            showToast(data.message || 'Could not add this driver -- try again.', 'error');
+            showToast(data.message || 'Could not add this driver. Try again.', 'error');
             return;
           }
           if (reload) reload(); else rcReloadAfterSave();
@@ -7329,7 +7329,7 @@
           pwEl.style.fontFamily = 'monospace';
           credWrap.appendChild(pwEl);
           body.appendChild(credWrap);
-          body.appendChild(el('div', 'rc-hint', 'This password only shows once -- copy it now and pass it along to ' + escapeHtml(firstName.value.trim()) + ', or email it to them directly below. They can also set their own password anytime via Forgot Password on the login page, using ' + escapeHtml(email.value.trim()) + '.'));
+          body.appendChild(el('div', 'rc-hint', 'This password only shows once. Copy it now and pass it along to ' + escapeHtml(firstName.value.trim()) + ', or email it to them directly below. They can also set their own password anytime via Forgot Password on the login page, using ' + escapeHtml(email.value.trim()) + '.'));
 
           // Email Password To Driver -- same button/action as the Reset Password confirmation
           // screen below (doResetPassword_'s own emailBtn), sending this exact tempPassword via
@@ -7350,7 +7350,7 @@
             }).catch(function () {
               addDriverEmailBtn.disabled = false;
               addDriverEmailBtn.textContent = 'Email Password To Driver';
-              showToast('Could not reach the server -- email not sent.', 'error');
+              showToast('Could not reach the server. Email not sent.', 'error');
             });
           });
           body.appendChild(addDriverEmailBtn);
@@ -7358,7 +7358,7 @@
         .catch(function (err) {
           saveBtn.disabled = false;
           saveBtn.textContent = 'Add Driver';
-          showToast((err && err.message) || 'Could not reach the server -- driver not added.', 'error');
+          showToast((err && err.message) || 'Could not reach the server. Driver not added.', 'error');
         });
     });
   }
@@ -7498,7 +7498,7 @@
           if (reload) reload(); else rcReloadAfterSave();
         })
         .catch(function () {
-          showToast('Could not reach the server -- changes not saved.', 'error');
+          showToast('Could not reach the server. Changes not saved.', 'error');
         });
     });
 
@@ -7541,7 +7541,7 @@
           if (reload) reload(); else rcReloadAfterSave();
         })
         .catch(function () {
-          showToast('Could not reach the server -- account status not changed.', 'error');
+          showToast('Could not reach the server. Account status not changed.', 'error');
         });
     }
 
@@ -7567,7 +7567,7 @@
           if (!data.success) {
             resetPwBtn.disabled = false;
             resetPwBtn.textContent = 'Reset Password';
-            showToast(data.message || 'Could not reset this password -- try again.', 'error');
+            showToast(data.message || 'Could not reset this password. Try again.', 'error');
             return;
           }
           // Refreshes the Members list sitting underneath (nothing visible there actually changes
@@ -7591,7 +7591,7 @@
           pwEl.style.fontFamily = 'monospace';
           credWrap.appendChild(pwEl);
           body.appendChild(credWrap);
-          body.appendChild(el('div', 'rc-hint', 'This password only shows once -- copy it now and pass it along to ' + escapeHtml(driverName) + ', or email it to them directly below.'));
+          body.appendChild(el('div', 'rc-hint', 'This password only shows once. Copy it now and pass it along to ' + escapeHtml(driverName) + ', or email it to them directly below.'));
 
           // Email Password To Driver -- fires immediately on click (no further step), so it gets
           // the save-style red button per the sitewide button rule, same as Approve/Deny elsewhere
@@ -7614,18 +7614,18 @@
               }).catch(function () {
                 emailBtn.disabled = false;
                 emailBtn.textContent = 'Email Password To Driver';
-                showToast('Could not reach the server -- email not sent.', 'error');
+                showToast('Could not reach the server. Email not sent.', 'error');
               });
             });
             body.appendChild(emailBtn);
           } else {
-            body.appendChild(el('div', 'rc-hint', 'No email on file for this account -- the password can\'t be emailed automatically.'));
+            body.appendChild(el('div', 'rc-hint', 'No email on file for this account. The password can\'t be emailed automatically.'));
           }
         })
         .catch(function () {
           resetPwBtn.disabled = false;
           resetPwBtn.textContent = 'Reset Password';
-          showToast('Could not reach the server -- password not reset.', 'error');
+          showToast('Could not reach the server. Password not reset.', 'error');
         });
     }
   }
@@ -7815,7 +7815,7 @@
               showToast(active ? 'Layout deactivated.' : 'Layout reactivated.', 'success');
             })
             .catch(function () {
-              showToast('Could not reach the server -- layout not changed.', 'error');
+              showToast('Could not reach the server. Layout not changed.', 'error');
             });
         });
         layoutRow.appendChild(toggleBtn);
@@ -7859,7 +7859,7 @@
           showToast('Layout added.', 'success');
         })
         .catch(function () {
-          showToast('Could not reach the server -- layout not added.', 'error');
+          showToast('Could not reach the server. Layout not added.', 'error');
         });
     });
 
@@ -7941,7 +7941,7 @@
         .catch(function () {
           updateTrackBtn.disabled = false;
           updateTrackBtn.textContent = trackSaveOriginalText;
-          showToast('Could not reach the server -- changes not saved.', 'error');
+          showToast('Could not reach the server. Changes not saved.', 'error');
         });
     });
 
@@ -7978,7 +7978,7 @@
           if (reload) reload(); else rcReloadAfterSave();
         })
         .catch(function () {
-          showToast('Could not reach the server -- track not updated.', 'error');
+          showToast('Could not reach the server. Track not updated.', 'error');
         });
     }
   }
@@ -8138,7 +8138,7 @@
     form.appendChild(el('label', null, 'Manufacturer'));
     var manufacturer = el('input'); manufacturer.type = 'text'; manufacturer.value = car.Manufacturer || '';
     form.appendChild(manufacturer);
-    form.appendChild(el('div', 'rc-hint', 'Used to find that manufacturer’s logo (assets/manufacturers/) -- a space becomes a dash, e.g. "Aston Martin" → aston-martin.png.'));
+    form.appendChild(el('div', 'rc-hint', 'Used to find that manufacturer’s logo (assets/manufacturers/). A space becomes a dash, e.g. "Aston Martin" → aston-martin.png.'));
 
     form.appendChild(el('label', null, 'Car Model'));
     var carModel = el('input'); carModel.type = 'text'; carModel.value = car.CarModel || '';
@@ -8213,7 +8213,7 @@
           if (reload) reload(); else rcReloadAfterSave();
         })
         .catch(function () {
-          showToast('Could not reach the server -- changes not saved.', 'error');
+          showToast('Could not reach the server. Changes not saved.', 'error');
         });
     });
 
@@ -8253,7 +8253,7 @@
           if (reload) reload(); else rcReloadAfterSave();
         })
         .catch(function () {
-          showToast('Could not reach the server -- car status not changed.', 'error');
+          showToast('Could not reach the server. Car status not changed.', 'error');
         });
     }
   }

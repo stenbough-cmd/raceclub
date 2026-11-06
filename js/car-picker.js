@@ -288,9 +288,9 @@
             return;
           }
           failed((res && res.message) || (res && res.error === 'TEAM_TAKEN'
-            ? 'That seat was just taken -- reloading to show what’s still open.'
-            : 'Could not confirm this registration -- reloading to check.'));
-        }).catch(function () { failed('Could not confirm this registration -- reloading to check.'); });
+            ? 'That seat was just taken. Reloading to show what’s still open.'
+            : 'Could not confirm this registration. Reloading to check.'));
+        }).catch(function () { failed('Could not confirm this registration. Reloading to check.'); });
       }
 
       openSigningSequence(team, cls, function () {
@@ -311,8 +311,8 @@
             return;
           }
           cfg.toast((res && res.message) || (res && res.error === 'TEAM_TAKEN'
-            ? 'That seat was just taken -- reloading to show what’s still open.'
-            : 'Could not confirm this registration -- reloading to check.'), 'error');
+            ? 'That seat was just taken. Reloading to show what’s still open.'
+            : 'Could not confirm this registration. Reloading to check.'), 'error');
           cfg.reload();
         }).catch(function () {
           cfg.toast('Reloading to confirm your registration...', 'success');

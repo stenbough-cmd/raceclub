@@ -1,5 +1,5 @@
 /* =====================================================================
-   Race Club -- helmet avatars  (js/helmet-avatar.js)
+   Race Club. Helmet avatars  (js/helmet-avatar.js)
    ---------------------------------------------------------------------
    A driver's helmet is stored in their existing profile field (avatarFilename) as the text
    "helmet:" followed by a small JSON recipe. Anything else in that field (empty, an old
@@ -181,12 +181,12 @@
           timeZone: profile.timeZone || '', avatarFilename: newValue
         }
       }).then(function (data) {
-        if (!data || !data.success) { revert((data && data.message) || 'Could not save your helmet -- reverted.'); return false; }
+        if (!data || !data.success) { revert((data && data.message) || 'Could not save your helmet. Reverted.'); return false; }
         if (typeof setProfileCache === 'function') setProfileCache(data.profile);
         if (typeof renderHeader === 'function') renderHeader();
         toast('Helmet saved.', 'success');
         return true;
-      }).catch(function () { revert('Could not reach the server -- helmet change reverted.'); return false; });
+      }).catch(function () { revert('Could not reach the server. Helmet change reverted.'); return false; });
 
       function revert(msg) {
         profile.avatarFilename = previous;
