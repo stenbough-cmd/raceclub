@@ -3274,9 +3274,22 @@ function _rclShowPageLoader_(text) {
 // Lifts the "plain empty page" state (html.rc-pending, league.html) so every container appears together.
 // Nobody is signed in: same container and wording style as the Championship page's sign-up message.
 function _rclShowLoggedOut_() {
-  try { _rclRenderNavbar_(null); } catch (err) { /* the message still shows */ }
+  _rclShowCenteredMessage_('Sign Up To View League Hub',
+    'The League Hub is for Race Club members. Create a free account or log in to see standings, race results, news and the full season calendar.',
+    [['Log In', 'login.html'], ['Create An Account', 'register.html']]);
+}
+
+// There is not a single season in the sheet yet: the same centered message, with no buttons.
+function _rclShowNoSeasons_() {
+  _rclShowCenteredMessage_('No Seasons Yet',
+    'There are no League seasons yet. Check back soon, or join the Race Club Discord to hear when the next season opens.',
+    null);
+}
+
+// One message that fills the page (hides everything else on it) and sits in the vertical middle between the link bar and the footer.
+function _rclShowCenteredMessage_(title, text, links) {
   var main = document.querySelector('.rcl-main');
-  if (main) {
+  if (main && !document.getElementById('rcl-signup-panel')) {
     Array.prototype.forEach.call(main.children, function (c) { c.style.display = 'none'; });
     main.classList.add('rcc-only-message');   // centers the message between the link bar and the footer, same as the Championship page
     var box = document.createElement('div');
@@ -3286,14 +3299,17 @@ function _rclShowLoggedOut_() {
     var ic = document.createElement('div'); ic.className = 'rcl-empty-state-icon';
     ic.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><line x1="5.6" y1="5.6" x2="18.4" y2="18.4"></line></svg>';
     st.appendChild(ic);
-    var t = document.createElement('div'); t.className = 'rcl-empty-state-title'; t.textContent = 'Sign Up To View League Hub';
-    var d = document.createElement('p'); d.className = 'rcl-empty-state-subtitle';
-    d.textContent = 'The League Hub is for Race Club members. Create a free account or log in to see standings, race results, news and the full season calendar.';
-    var row = document.createElement('div'); row.className = 'rcc-off-actions';
-    [['Log In','login.html'],['Create An Account','register.html']].forEach(function (x) {
-      var a = document.createElement('a'); a.className = 'rc-btn-secondary rc-btn-sm'; a.textContent = x[0]; a.href = x[1]; row.appendChild(a);
-    });
-    st.appendChild(t); st.appendChild(d); st.appendChild(row); box.appendChild(st); main.insertBefore(box, main.firstChild);
+    var t = document.createElement('div'); t.className = 'rcl-empty-state-title'; t.textContent = title;
+    var d = document.createElement('p'); d.className = 'rcl-empty-state-subtitle'; d.textContent = text;
+    st.appendChild(t); st.appendChild(d);
+    if (links && links.length) {
+      var row = document.createElement('div'); row.className = 'rcc-off-actions';
+      links.forEach(function (x) {
+        var a = document.createElement('a'); a.className = 'rc-btn-secondary rc-btn-sm'; a.textContent = x[0]; a.href = x[1]; row.appendChild(a);
+      });
+      st.appendChild(row);
+    }
+    box.appendChild(st); main.insertBefore(box, main.firstChild);
   }
   _rclHidePageLoader();
   _rclUnlockBodyScroll();
@@ -3409,6 +3425,10 @@ document.addEventListener('DOMContentLoaded', function () {
       return;
     }
     try { _rclRenderNavbar_(hub); } catch (err) { /* keep going */ }
+    // No season at all: one centered message instead of a page of empty boxes. If a season shows up while the message is
+    // on screen (the page checks again now and then), start the page over.
+    if (!hub.hasSeason) { _rclShowNoSeasons_(); return; }
+    if (document.getElementById('rcl-signup-panel')) { location.reload(); return; }
     RENDERERS.forEach(function (fn) { fn(hub); });
     storyWritingOn = _rclStoryWritingActive(hub);
     _rclReveal_();

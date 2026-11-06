@@ -2417,4 +2417,6 @@ body.rcl-hub .rcl-news-current-body, .rcl-modal-story .rcl-news-body { display: 
   .rcl-season-name { font-size: 26px; }
   .rcl-season-line { font-size: 14px; }
 }
-.rcl-main.rcc-only-message > .rcl-row-full { margin-top: 0; }   /* the message box has no top margin, so it sits exactly in the middle */
+.rcl-main.rcc-only-message > .rcl-row-full { margin-top: 0; }
+/* body.rcl-hub .rcl-main (24px top padding) is more specific than the rule above, so it left the message 12px below the middle. */
+body.rcl-hub .rcl-main.rcc-only-message { padding-top: 0; padding-bottom: 0; }   /* the message box has no top margin, so it sits exactly in the middle */
