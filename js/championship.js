@@ -3412,7 +3412,7 @@ function rccOpenSetupGuide(roundNum) {
     var rg = page.registration || {};
     var carNm = _rccSgCarName(rg);
     var trackBold = '<strong>' + _rccEsc(current.track || current.trackName || 'the track') + (current.layout ? ', ' + _rccEsc(current.layout) + ' layout' : '') + '</strong>';
-    var carBold = rg.teamName ? ' (<strong>' + _rccEsc(rg.teamName) + (carNm ? ', ' + _rccEsc(carNm) : '') + (rg.carClass ? ' in the ' + _rccEsc(rg.carClass) + ' class' : '') + '</strong>)' : '';
+    var carBold = rg.teamName ? ' (<strong>' + _rccEsc(rg.teamName) + (rg.carNumber ? ' #' + _rccEsc(rg.carNumber) : '') + (carNm ? ', ' + _rccEsc(carNm) : '') + (rg.carClass ? ' in the ' + _rccEsc(rg.carClass) + ' class' : '') + '</strong>)' : '';
     s0.appendChild(_rccEl('p', 'rcc-sg-section-text', 'Then pick the round’s track (' + trackBold + ') on the Circuit tab and your team’s car' + carBold + ' on the Car tab. If the track is missing, switch the filter to All.'));
     holder.appendChild(s0);
 
