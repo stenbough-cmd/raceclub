@@ -3326,7 +3326,7 @@ function rccOpenSetupGuide(roundNum) {
     var x = _rccSgContext(page, current);
     x.counts = carCounts;
 
-    var s0 = section('Before the Settings', 'Two quick steps in the game. These screens cannot be copied here, so check them yourself.');
+    var s0 = section('Start a Single Player Session');
     var pair = _rccEl('div', 'rcc-sg-pair');
     var a = _rccEl('div', 'rcc-sg-pair-item');
     a.appendChild(_rccText('div', 'rcc-sg-step', '1. Choose RACE WEEKEND'));
