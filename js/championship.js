@@ -3174,7 +3174,7 @@ function _rccSgHeader(scr, x) {
   if (r.teamName) {
     var tl = (String(r.teamName) + (x.year ? ' ' + x.year : '') + (r.carNumber ? ' #' + r.carNumber : '')).toUpperCase();
     var car = _rccSgCarName(r).toUpperCase();
-    scr.items.push({ kind: 'ov', x: 1560, y: 478, w: 435, h: 170, build: function (b) {
+    scr.items.push({ kind: 'ov', x: 1520, y: 478, w: 475, h: 170, build: function (b) {
       var t = _rccEl('div', 'rcc-sg-ov-team'); t.textContent = tl; t.style.fontSize = (tl.length > 28 ? 2.5 : 3.1) + 'cqw'; b.appendChild(t);
       if (car) { var cn = _rccEl('div', 'rcc-sg-ov-carname'); cn.textContent = car; b.appendChild(cn); }
     } });
