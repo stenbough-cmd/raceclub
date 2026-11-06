@@ -46,7 +46,7 @@ var RCC_HELP_SECTIONS = [
     id: 'set-up-race', num: '3', title: 'Race a Round in the Game',
     html:
       '<p>Each round is one Race Weekend in Le Mans Ultimate. Open <strong>Season Preview</strong> here, then in the game choose <strong>Race Weekend</strong> and match the round.</p>' +
-      '<div class="rc-rulebook-callout"><strong class="rcc-help-callout-title">Race Setup Guide</strong>In Season Preview, press <strong>Open Race Setup Guide</strong>. It shows each game screen with your season\u2019s values on it, so you can match them one for one. Red values must match or the upload is refused, blue values keep your records accurate, and grey values are your choice.</div>' +
+      '<div class="rc-rulebook-callout"><strong class="rcc-help-callout-title">Race Setup Guide</strong>On the Championship calendar, press <strong>Race Setup Guide</strong> beside Upload Results on any round. It shows each game screen with your season\u2019s values on it, so you can match them one for one. Red values must match or the upload is refused, blue values keep your records accurate, and grey values are your choice.</div>' +
       '<div class="rc-rulebook-callout"><strong class="rcc-help-callout-title">These Five Settings Must Match or the Upload Fails</strong><ul>' +
       '<li><strong>Series and year</strong>, as in your season</li>' +
       '<li><strong>Track and layout</strong>, as in the round. If the track is missing, switch the filter to All.</li>' +

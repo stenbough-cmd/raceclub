@@ -178,7 +178,7 @@
     var firstEmpty = cal.filter(function (x) { return !x.hasResults; })[0];
     var doneRounds = cal.filter(function (x) { return x.hasQualifyResults || x.hasRaceResults; });
     var lastDone = doneRounds[doneRounds.length - 1];
-    function roundRow(c, readOnly, forSeries) {
+    function roundRow(c, readOnly, forSeries, rowPage) {
       var r = mk('div', 'rcd-round');
       var top = mk('div', 'rcd-round-top');
       top.appendChild(mk('span', 'rcd-round-num', (c.roundNum < 10 ? '0' : '') + c.roundNum));
@@ -197,18 +197,23 @@
       top.appendChild(icon);
       r.appendChild(top);
       r.appendChild(mk('div', 'rcd-round-status' + tone, text));
+      var bg = mk('div', 'rcd-round-actions');
+      // Race Setup Guide: on every round, left of Upload Results. The guide reads RCC.page, so point it at this row's season while it opens.
+      bg.appendChild(rowBtn('Race Setup Guide', true, function () {
+        var keep = RCC.page; RCC.page = rowPage || page;
+        try { rccOpenSetupGuide(c.roundNum); } finally { RCC.page = keep; }
+      }, ''));
       if (active && !readOnly) {
-        var bg = mk('div', 'rcd-round-actions');
         var canUp = !!page.registration && firstEmpty && firstEmpty.roundId === c.roundId;
         bg.appendChild(rowBtn('Upload Results', canUp, function () { rccOpenUpload(c.roundId, true); },
           c.hasResults ? 'Results already uploaded for this round. Erase them first to upload again.' : (!page.registration ? 'Choose your team first.' : 'Upload the earlier rounds first.')));
         bg.appendChild(rowBtn('Erase Results', !!lastDone && lastDone.roundId === c.roundId, function () { rccOpenErase(); },
           (c.hasQualifyResults || c.hasRaceResults) ? 'Only the latest round with results can be erased.' : 'No results uploaded for this round.'));
-        r.appendChild(bg);
       }
+      r.appendChild(bg);
       return r;
     }
-    function calendarBlock(rounds, ro, forSeries) {
+    function calendarBlock(rounds, ro, forSeries, rowPage) {
       var wrap = mk('div', 'rcd-cal');
       var ch = mk('div', 'rcd-cal-head');
       ch.appendChild(mk('div', 'rcd-cal-title', 'Championship calendar'));
@@ -216,7 +221,7 @@
       wrap.appendChild(ch);
       var list = mk('div', 'rcd-cal-list');
       if (!rounds.length) list.appendChild(mk('div', 'rc-dm-empty', 'No rounds in this season.'));
-      rounds.forEach(function (c) { list.appendChild(roundRow(c, ro, forSeries)); });
+      rounds.forEach(function (c) { list.appendChild(roundRow(c, ro, forSeries, rowPage)); });
       wrap.appendChild(list);
       return wrap;
     }
@@ -309,7 +314,7 @@
             racesBox.appendChild(mk('div', 'rc-hint', 'Loading rounds...'));
             loadPast().then(function (pg) {
               racesBox.innerHTML = '';
-              racesBox.appendChild(calendarBlock(pg.calendar || [], true, (pg.seasonDetails && pg.seasonDetails.series) || ''));
+              racesBox.appendChild(calendarBlock(pg.calendar || [], true, (pg.seasonDetails && pg.seasonDetails.series) || '', pg));
             }).catch(function () {
               pastFilled = false;
               racesBox.innerHTML = '';
