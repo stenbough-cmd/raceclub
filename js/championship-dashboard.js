@@ -54,9 +54,8 @@
       '.rcd-panel .rc-btn-primary { border: 1px solid transparent; }' +
       '.rcd-panel .rc-btn-row { min-height: 28px; }' +
       // Popups look like the Account page popups (Edit Season in League Tools): plain white header, thin gray line, small bold title, a plain X,
-      // no red slash or red line, and centered over the page body (right of the sidebar), not the whole screen.
+      // no red slash or red line, and always centered in the page (never shifted over by the sidebar).
       '.rcc-modal-overlay.rcc-page { background: rgba(23, 23, 23, 0.5); align-items: center; padding: calc(var(--rc-band-top, 0px) + 24px) 24px calc(var(--rc-band-bottom, 0px) + 24px); z-index: 2000; }' +
-      '@media (orientation: landscape) { .rcc-modal-overlay.rcc-page { padding-left: 244px; } }' +
       '.rcc-modal-overlay.rcc-page .rcl-modal-dialog { background: var(--rc-white); border: 0; border-radius: 10px; box-shadow: var(--rc-shadow-lg); padding: 0; max-width: 820px; max-height: calc(100vh - var(--rc-band-top, 0px) - var(--rc-band-bottom, 0px) - 48px); margin: auto; }' +
       '.rcc-modal-overlay.rcc-page .rcl-modal-dialog-wide { max-width: 820px; }' +
       '.rcc-modal-overlay.rcc-page .rcl-modal-dialog-narrow { max-width: 460px; }' +
@@ -165,7 +164,7 @@
     row.appendChild(btn('Delete Season', hasSeason, function () { rccOpenDeleteSeason(); }, 'No season is currently eligible to delete.'));
     panel.appendChild(row);
 
-    function rowBtn(label, enabled, onClick, why) { return btn(label, enabled, onClick, why, 'rc-btn-secondary rc-btn-row'); }
+    function rowBtn(label, enabled, onClick, why, cls) { return btn(label, enabled, onClick, why, cls || 'rc-btn-secondary rc-btn-row'); }
     var seriesLabel = (page.seasonDetails && page.seasonDetails.series) || '';
 
     function niceDate(iso) {
@@ -202,7 +201,7 @@
       bg.appendChild(rowBtn('Race Setup Guide', true, function () {
         var keep = RCC.page; RCC.page = rowPage || page;
         try { rccOpenSetupGuide(c.roundNum); } finally { RCC.page = keep; }
-      }, ''));
+      }, '', 'rc-btn-secondary rc-btn-row rcd-guide-btn'));
       if (active && !readOnly) {
         var canUp = !!page.registration && firstEmpty && firstEmpty.roundId === c.roundId;
         bg.appendChild(rowBtn('Upload Results', canUp, function () { rccOpenUpload(c.roundId, true); },
@@ -302,7 +301,7 @@
             sgBtn.disabled = false;
             if (typeof showToast === 'function') showToast('Could not load this season right now.', 'error');
           });
-        });
+        }, '', 'rc-btn-secondary rc-btn-row rcd-guide-btn');
         bg.appendChild(sgBtn);
         var open = mk('a', 'rc-btn-primary rc-btn-row rcd-view-btn rcd-btn-black', 'View Season →');
         open.href = 'championship.html?id=' + encodeURIComponent(opts.profile.profileId) + '&season=' + encodeURIComponent(s.seasonId);

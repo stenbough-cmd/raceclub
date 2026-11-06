@@ -3218,6 +3218,9 @@ button.rc-switch { display: inline-flex; align-items: center; gap: 12px; width: 
 .rcd-season-actions .rcd-btn-black, .rcd-btn-black { background: var(--rc-carbon); border: 1px solid var(--rc-carbon); color: var(--rc-white); }
 .rcd-season-actions .rcd-btn-black:hover, .rcd-btn-black:hover:not(:disabled) { background: #3a3a3a; border-color: #3a3a3a; color: var(--rc-white); }
 .rcd-btn-black:disabled { opacity: 0.4; }
+/* Race Setup Guide buttons: steel blue so they stand out from the gray row buttons. */
+.rc-btn-secondary.rcd-guide-btn { background: #4682b4; border: 1px solid #4682b4; color: var(--rc-white); }
+.rc-btn-secondary.rcd-guide-btn:hover:not(:disabled) { background: #386a94; border-color: #386a94; color: var(--rc-white); }
 /* All past seasons share one container, most recent first; a thin line under each season's buttons (and any rounds opened with the arrow)
    separates it from the next. */
 .rcd-past-box { gap: 18px; }

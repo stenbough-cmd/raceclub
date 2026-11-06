@@ -3151,27 +3151,30 @@ function _rccSgFit(root) {
     el.style.transform = 'scaleX(' + k.toFixed(3) + ')';
   }
 }
+function _rccSgCarName(r) {
+  var mk = String((r && r.manufacturer) || '').trim(), md = String((r && r.carModel) || '').trim();
+  return (mk && md.toLowerCase().indexOf(mk.toLowerCase()) !== 0) ? (mk + ' ' + md).trim() : (md || mk);
+}
 // Event Settings: the round's track (flag, name, place) top left, and the driver's team, number and car on the right.
 function _rccSgHeader(scr, x) {
   var c = x.round || {};
   var r = x.reg || {};
   var flagSrc = (c.country && typeof countryFlagSrc === 'function') ? countryFlagSrc(c.country) : '';
-  if (flagSrc) scr.items.push({ kind: 'ov', x: 438, y: 152, w: 109, h: 82, build: function (b) {
+  if (flagSrc) scr.items.push({ kind: 'ov', x: 338, y: 152, w: 109, h: 82, build: function (b) {
     var im = document.createElement('img'); im.src = flagSrc; im.alt = c.country; im.className = 'rcc-sg-ov-flag'; b.appendChild(im);
   } });
   var tn = String(c.trackName || c.track || '').toUpperCase();
-  if (tn) scr.items.push({ kind: 'ov', x: 570, y: 140, w: 980, h: 110, build: function (b) {
+  if (tn) scr.items.push({ kind: 'ov', x: 470, y: 140, w: 980, h: 110, build: function (b) {
     var t = _rccEl('span', 'rcc-sg-ov-title'); _rccSgSqueeze(t, tn, 6.6); b.appendChild(t);
   } });
   var place = [c.region, c.country].filter(Boolean).join(', ').toUpperCase();
-  if (place) scr.items.push({ kind: 'ov', x: 440, y: 250, w: 1110, h: 70, build: function (b) {
+  if (place) scr.items.push({ kind: 'ov', x: 340, y: 250, w: 1110, h: 70, build: function (b) {
     var t = _rccEl('span', 'rcc-sg-ov-place'); _rccSgSqueeze(t, place, 2.6); b.appendChild(t);
   } });
   if (r.teamName) {
     var tl = (String(r.teamName) + (x.year ? ' ' + x.year : '') + (r.carNumber ? ' #' + r.carNumber : '')).toUpperCase();
-    var mk = String(r.manufacturer || '').trim(), md = String(r.carModel || '').trim();
-    var car = ((mk && md.toLowerCase().indexOf(mk.toLowerCase()) !== 0) ? mk + ' ' + md : (md || mk)).toUpperCase();
-    scr.items.push({ kind: 'ov', x: 1610, y: 478, w: 385, h: 170, build: function (b) {
+    var car = _rccSgCarName(r).toUpperCase();
+    scr.items.push({ kind: 'ov', x: 1560, y: 478, w: 435, h: 170, build: function (b) {
       var t = _rccEl('div', 'rcc-sg-ov-team'); t.textContent = tl; t.style.fontSize = (tl.length > 28 ? 2.5 : 3.1) + 'cqw'; b.appendChild(t);
       if (car) { var cn = _rccEl('div', 'rcc-sg-ov-carname'); cn.textContent = car; b.appendChild(cn); }
     } });
@@ -3287,7 +3290,7 @@ function _rccSgFigure(scr) {
     if (it.kind === 'ov') { box.className = 'rcc-sg-item rcc-sg-ov'; it.build(box); } else if (it.kind === 'class') {
       box.className += ' ' + (it.on ? 'rcc-sg-class-on' : 'rcc-sg-class-off');
       var ck = _rccEl('span', 'rcc-sg-class-check', it.on ? '&#10003;' : '');
-      ck.style.fontSize = '0.65cqw';
+      ck.style.fontSize = '0.5cqw';
       box.appendChild(ck);
       var bg = _rccText('span', 'rcc-sg-class-big', it.big);
       bg.style.fontSize = '2cqw';
@@ -3362,6 +3365,7 @@ function rccOpenSetupGuide(roundNum) {
   cal.forEach(function (c) { if (roundNum && Number(c.roundNum) === Number(roundNum)) current = c; });
   _rccSgFonts();
   var m = rccOpenModal('Race Setup Guide', { wide: true });
+  m.dialog.classList.add('rcc-light-dialog');
   m.body.classList.add('rcc-sg-body');
 
   var top = _rccEl('div', 'rcc-sg-top');
@@ -3405,7 +3409,11 @@ function rccOpenSetupGuide(roundNum) {
     b.appendChild(_rccSgMenuFigure('01.jpg', 2000, 1122, yb ? [yb] : [], 'Le Mans Ultimate series picker'));
     pair.appendChild(b);
     s0.appendChild(pair);
-    s0.appendChild(_rccText('p', 'rcc-sg-section-text', 'Then pick the round’s track (' + current.track + (current.layout ? ', ' + current.layout : '') + ') on the Circuit tab and your team’s car on the Car tab. If the track is missing, switch the filter to All.'));
+    var rg = page.registration || {};
+    var carNm = _rccSgCarName(rg);
+    var trackBold = '<strong>' + _rccEsc(current.track || current.trackName || 'the track') + (current.layout ? ', ' + _rccEsc(current.layout) + ' layout' : '') + '</strong>';
+    var carBold = rg.teamName ? ' (<strong>' + _rccEsc(rg.teamName) + (carNm ? ', ' + _rccEsc(carNm) : '') + (rg.carClass ? ' in the ' + _rccEsc(rg.carClass) + ' class' : '') + '</strong>)' : '';
+    s0.appendChild(_rccEl('p', 'rcc-sg-section-text', 'Then pick the round’s track (' + trackBold + ') on the Circuit tab and your team’s car' + carBold + ' on the Car tab. If the track is missing, switch the filter to All.'));
     holder.appendChild(s0);
 
     _rccSgScreens(x).forEach(function (scr, i) {
