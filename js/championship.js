@@ -2454,14 +2454,6 @@ function rccOpenSeasonPreview() {
   _rccSeasonFormat(page, m.body);
   var g = _rccEl('div', 'rcl-hero-stats-group');
   g.appendChild(_rccText('div', 'rcl-hero-stats-label', 'Rounds'));
-  // Race Setup Guide: the game's screens with this season's values on them. Opens on the next unraced round.
-  var guideBtn = _rccText('button', 'rc-btn-secondary rc-btn-sm rcc-sg-open', 'Open Race Setup Guide');
-  guideBtn.type = 'button';
-  guideBtn.addEventListener('click', function () {
-    var next = (page.calendar || []).filter(function (c) { return !c.hasResults; })[0] || (page.calendar || [])[0];
-    rccOpenSetupGuide(next ? next.roundNum : 0);
-  });
-  g.appendChild(guideBtn);
   var list = _rccEl('div', 'rcl-seasonfmt-list rcc-preview-rounds');
   (page.calendar || []).forEach(function (c) {
     var bits = [c.track + (c.layout ? ': ' + c.layout : '')];

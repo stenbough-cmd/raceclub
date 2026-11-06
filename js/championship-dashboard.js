@@ -288,6 +288,22 @@
           });
           bg.appendChild(pvBtn);
         }
+        // Race Setup Guide, left of View Season. Opens on the next round without results (the first round if all are done).
+        function openGuideFor(pg) {
+          var rounds = (pg && pg.calendar) || [];
+          var next = rounds.filter(function (c) { return !c.hasResults; })[0] || rounds[0];
+          var keep = RCC.page; RCC.page = pg;
+          try { rccOpenSetupGuide(next ? next.roundNum : 0); } finally { RCC.page = keep; }
+        }
+        var sgBtn = rowBtn('Race Setup Guide', true, function () {
+          if (isCurrent) { openGuideFor(page); return; }
+          sgBtn.disabled = true;
+          loadPast().then(function (pg) { sgBtn.disabled = false; openGuideFor(pg); }).catch(function () {
+            sgBtn.disabled = false;
+            if (typeof showToast === 'function') showToast('Could not load this season right now.', 'error');
+          });
+        });
+        bg.appendChild(sgBtn);
         var open = mk('a', 'rc-btn-primary rc-btn-row rcd-view-btn rcd-btn-black', 'View Season →');
         open.href = 'championship.html?id=' + encodeURIComponent(opts.profile.profileId) + '&season=' + encodeURIComponent(s.seasonId);
         bg.appendChild(open);
