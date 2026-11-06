@@ -3224,7 +3224,7 @@ function _rccSgFigure(scr) {
     if (it.kind === 'class') {
       box.className += ' ' + (it.on ? 'rcc-sg-class-on' : 'rcc-sg-class-off');
       var ck = _rccEl('span', 'rcc-sg-class-check', it.on ? '&#10003;' : '');
-      ck.style.fontSize = (hc * 0.16).toFixed(2) + 'cqw';
+      ck.style.fontSize = '0.65cqw';
       box.appendChild(ck);
       var bg = _rccText('span', 'rcc-sg-class-big', it.big);
       bg.style.fontSize = '2cqw';

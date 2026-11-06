@@ -951,7 +951,7 @@ body.rcc-page.rcl-hub .rcl-lr-mention-title { color: #F21B0C; }
 .rcc-sg-class-off { border-color: rgba(255,255,255,0.22); background: #0c1829; }
 .rcc-sg-class-off .rcc-sg-class-big, .rcc-sg-class-off .rcc-sg-class-sub { color: rgba(255,255,255,0.35); }
 .rcc-sg-class-big { position: absolute; left: 0.9cqw; top: 1.1cqw; font-family: var(--rc-font-heading); font-weight: 800; line-height: 1; color: #fff; }
-.rcc-sg-class-check { position: absolute; right: 0.7cqw; top: 0.7cqw; width: 1.5cqw; height: 1.5cqw; box-sizing: border-box; border-radius: 50%; display: flex; align-items: center; justify-content: center; line-height: 1; font-weight: 800; background: #fff; color: #0b2a6b; }
+.rcc-sg-class-check { position: absolute; right: 0.8cqw; top: 0.8cqw; width: 1.05cqw; height: 1.05cqw; box-sizing: border-box; border-radius: 50%; display: flex; align-items: center; justify-content: center; line-height: 1; font-weight: 800; background: #fff; color: #0b2a6b; }
 .rcc-sg-class-off .rcc-sg-class-check { background: transparent; border: 0.15cqw solid rgba(255,255,255,0.6); }
 .rcc-sg-class-sub { position: absolute; left: 0.9cqw; right: 0.9cqw; bottom: 0.8cqw; display: flex; justify-content: space-between; align-items: baseline; gap: 0.4cqw; font-weight: 700; line-height: 1; color: #fff; white-space: nowrap; }
 .rcc-sg-plate { background: #0c1829; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; padding: 0 1.2cqw; gap: 0.5cqw; overflow: hidden; }
