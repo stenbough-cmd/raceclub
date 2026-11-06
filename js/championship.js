@@ -3134,7 +3134,7 @@ function _rccSgScreens(x) {
   var screens = [];
 
   // 05 Event Settings
-  var s5 = { img: '05-Update.jpg', W: 2000, H: 1123, title: 'Event Settings', intro: 'This is the first screen you see after choosing your track and car. Match the red and blue values, then open Difficulty, Sessions, Weather and Advanced with the buttons at the top of the game screen.', items: [] };
+  var s5 = { img: '05-Update.jpg', W: 2000, H: 1123, title: 'Event Settings', intro: 'This is the first screen you see after choosing your track and car. Match the red and blue values, then click Advanced Settings to adjust the AI Difficulty, Session details, Weather forecast and Advanced settings.', items: [] };
   s5.items.push({ kind: 'box', level: 'free', x: 167, y: 462, w: 376, h: 198, label: 'Practice', value: 'Your choice. Practice is never uploaded.' });
   s5.items.push({ kind: 'box', level: x.qual ? 'free' : 'should', x: 565, y: 462, w: 375, h: 198, label: 'Qualifying', value: x.qual ? 'On. The length is your choice.' : 'Off. Untick Qualifying so the race starts from a random grid.' });
   if (lenShort) s5.items.push({ kind: 'chip', level: 'must', x: 1198, y: 606, w: 74, h: 40, text: lenShort, label: 'Race Length', value: _rccSgClock(x.mins) + ' or longer' });
