@@ -3109,7 +3109,7 @@ function _rccSgContext(page, c) {
     d: d, rs: rs, classes: _rccSortClasses(classes, function (k) { return k; }), year: yr, series: d.series || 'WEC',
     mins: mins, h: Math.floor(mins / 60), m: mins % 60, tod: tod, clock: RCC_START_CLOCK[tod],
     preset: _rccSgPreset(c.weatherPreset), presetName: c.weatherPreset || 'Sunny',
-    counts: null,
+    counts: null, round: c, reg: page.registration || null,
     teamLine: (function () {
       var r = page.registration || {};
       if (!r.teamName) return { name: 'YOUR TEAM NAME #NN', car: 'YOUR CAR' };
@@ -3119,6 +3119,68 @@ function _rccSgContext(page, c) {
     })(),
     qual: rs.qualifying !== 'No', rolling: rs.raceStart === 'Fast' ? 'Fast Rolling' : 'Rolling'
   };
+}
+
+// Fonts that stand in for the game's: a tall condensed one for names, a wide one for the outlined location line.
+function _rccSgFonts() {
+  if (document.getElementById('rcc-sg-fonts')) return;
+  var l = document.createElement('link');
+  l.id = 'rcc-sg-fonts'; l.rel = 'stylesheet';
+  l.href = 'https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Syncopate:wght@700&display=swap';
+  document.head.appendChild(l);
+}
+// Text that keeps the game's letter height and is squeezed sideways (never wrapped) when it would run past its box.
+function _rccSgSqueeze(el, text, fontCqw, wCqw) {
+  el.textContent = text;
+  el.style.fontSize = fontCqw + 'cqw';
+  el.setAttribute('data-fit', '1');
+}
+// Once on screen (and again when the web fonts arrive): squeeze each fitted line to its box, shrinking the type if it would need more than 45%.
+function _rccSgFit(root) {
+  var list = root.querySelectorAll('[data-fit]');
+  for (var n = 0; n < list.length; n++) {
+    var el = list[n], box = el.parentNode;
+    el.style.transform = '';
+    var base = parseFloat(el.style.fontSize);
+    if (!el.getAttribute('data-base')) el.setAttribute('data-base', base); else base = parseFloat(el.getAttribute('data-base'));
+    el.style.fontSize = base + 'cqw';
+    var avail = box.clientWidth, nat = el.offsetWidth;
+    if (!avail || !nat || nat <= avail) continue;
+    var k = avail / nat;
+    if (k < 0.55) { el.style.fontSize = (base * k / 0.55).toFixed(2) + 'cqw'; k = 0.55; }
+    el.style.transform = 'scaleX(' + k.toFixed(3) + ')';
+  }
+}
+// Event Settings: the round's track (flag, name, place) top left, and the driver's team, number and car on the right.
+function _rccSgHeader(scr, x) {
+  var c = x.round || {};
+  var r = x.reg || {};
+  var flagSrc = (c.country && typeof countryFlagSrc === 'function') ? countryFlagSrc(c.country) : '';
+  if (flagSrc) scr.items.push({ kind: 'ov', x: 438, y: 152, w: 109, h: 82, build: function (b) {
+    var im = document.createElement('img'); im.src = flagSrc; im.alt = c.country; im.className = 'rcc-sg-ov-flag'; b.appendChild(im);
+  } });
+  var tn = String(c.trackName || c.track || '').toUpperCase();
+  if (tn) scr.items.push({ kind: 'ov', x: 570, y: 140, w: 980, h: 110, build: function (b) {
+    var t = _rccEl('span', 'rcc-sg-ov-title'); _rccSgSqueeze(t, tn, 6.6); b.appendChild(t);
+  } });
+  var place = [c.region, c.country].filter(Boolean).join(', ').toUpperCase();
+  if (place) scr.items.push({ kind: 'ov', x: 440, y: 250, w: 1110, h: 70, build: function (b) {
+    var t = _rccEl('span', 'rcc-sg-ov-place'); _rccSgSqueeze(t, place, 2.6); b.appendChild(t);
+  } });
+  if (r.teamName) {
+    var tl = (String(r.teamName) + (x.year ? ' ' + x.year : '') + (r.carNumber ? ' #' + r.carNumber : '')).toUpperCase();
+    var mk = String(r.manufacturer || '').trim(), md = String(r.carModel || '').trim();
+    var car = ((mk && md.toLowerCase().indexOf(mk.toLowerCase()) !== 0) ? mk + ' ' + md : (md || mk)).toUpperCase();
+    scr.items.push({ kind: 'ov', x: 1610, y: 478, w: 385, h: 170, build: function (b) {
+      var t = _rccEl('div', 'rcc-sg-ov-team'); t.textContent = tl; t.style.fontSize = (tl.length > 28 ? 2.5 : 3.1) + 'cqw'; b.appendChild(t);
+      if (car) { var cn = _rccEl('div', 'rcc-sg-ov-carname'); cn.textContent = car; b.appendChild(cn); }
+    } });
+    if (r.carNumber && x.year) scr.items.push({ kind: 'ov', x: 1420, y: 680, w: 520, h: 190, build: function (b) {
+      var im = document.createElement('img'); im.className = 'rcc-sg-ov-car'; im.alt = '';
+      _rccCarImg(im, x.year, r.carNumber, x.series, function () { im.style.display = 'none'; });
+      b.appendChild(im);
+    } });
+  }
 }
 
 // One screen: { img, W, H, title, intro, items: [{ x, y, w, h, kind, level, text, label, value }] }.
@@ -3135,6 +3197,7 @@ function _rccSgScreens(x) {
 
   // 05 Event Settings
   var s5 = { img: '05-Update.jpg', W: 2000, H: 1123, title: 'Event Settings', intro: 'This is the first screen you see after choosing your track and car. Match the red and blue values, then click Advanced Settings to adjust the AI Difficulty, Session details, Weather forecast and Advanced settings.', items: [] };
+  _rccSgHeader(s5, x);
   s5.items.push({ kind: 'box', level: 'free', x: 167, y: 462, w: 376, h: 198, label: 'Practice', value: 'Your choice. Practice is never uploaded.' });
   s5.items.push({ kind: 'box', level: x.qual ? 'free' : 'should', x: 565, y: 462, w: 375, h: 198, label: 'Qualifying', value: x.qual ? 'On. The length is your choice.' : 'Off. Untick Qualifying so the race starts from a random grid.' });
   if (lenShort) s5.items.push({ kind: 'chip', level: 'must', x: 1198, y: 606, w: 74, h: 40, text: lenShort, label: 'Race Length', value: _rccSgClock(x.mins) + ' or longer' });
@@ -3214,14 +3277,14 @@ function _rccSgFigure(scr) {
   img.loading = 'lazy';
   shot.appendChild(img);
   scr.items.forEach(function (it) {
-    var lvl = RCC_SG_LEVEL[it.level];
+    var lvl = RCC_SG_LEVEL[it.level || 'free'];
     var box = _rccEl('div', 'rcc-sg-item rcc-sg-' + it.kind + ' ' + lvl.cls);
     box.style.left = _rccSgPct(it.x, scr.W);
     box.style.top = _rccSgPct(it.y, scr.H);
     box.style.width = _rccSgPct(it.w, scr.W);
     box.style.height = _rccSgPct(it.h, scr.H);
     var wc = it.w / scr.W * 100, hc = it.h / scr.W * 100;
-    if (it.kind === 'class') {
+    if (it.kind === 'ov') { box.className = 'rcc-sg-item rcc-sg-ov'; it.build(box); } else if (it.kind === 'class') {
       box.className += ' ' + (it.on ? 'rcc-sg-class-on' : 'rcc-sg-class-off');
       var ck = _rccEl('span', 'rcc-sg-class-check', it.on ? '&#10003;' : '');
       ck.style.fontSize = '0.65cqw';
@@ -3297,6 +3360,7 @@ function rccOpenSetupGuide(roundNum) {
   if (!cal.length) { _rccToast('This season has no rounds yet.', 'error'); return; }
   var current = cal[0];
   cal.forEach(function (c) { if (roundNum && Number(c.roundNum) === Number(roundNum)) current = c; });
+  _rccSgFonts();
   var m = rccOpenModal('Race Setup Guide', { wide: true });
   m.body.classList.add('rcc-sg-body');
 
@@ -3349,6 +3413,8 @@ function rccOpenSetupGuide(roundNum) {
       s.appendChild(_rccSgFigure(scr));
       holder.appendChild(s);
     });
+    _rccSgFit(holder);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { _rccSgFit(holder); });
   }
   render();
   // Number of cars in each class for this season's series and year, from the same car list the season wizard uses.

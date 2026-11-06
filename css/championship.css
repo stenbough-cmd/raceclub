@@ -961,3 +961,13 @@ body.rcc-page.rcl-hub .rcl-lr-mention-title { color: #F21B0C; }
 .rcc-sg-car svg { width: 100%; height: 100%; display: block; }
 
 .rcc-sg-cover { background: linear-gradient(to bottom, rgb(16,29,44), rgb(21,40,62)); border-color: transparent; }
+
+/* Event Settings guide: track and team text drawn over the game screenshot */
+.rcc-sg-ov { border: 0; border-radius: 0; background: none; display: flex; align-items: flex-start; overflow: visible; }
+.rcc-sg-ov-flag { height: 100%; width: auto; display: block; }
+.rcc-sg-ov-title { font-family: 'Bebas Neue', 'Arial Narrow', Impact, sans-serif; color: #fff; line-height: 1; white-space: nowrap; transform-origin: left top; letter-spacing: 0.01em; }
+.rcc-sg-ov-place { font-family: 'Syncopate', 'Arial Black', Arial, sans-serif; font-weight: 700; color: transparent; -webkit-text-stroke: 0.12cqw rgba(255,255,255,0.9); line-height: 1; white-space: nowrap; transform-origin: left top; letter-spacing: 0.04em; }
+.rcc-sg-ov-team { font-family: 'Bebas Neue', 'Arial Narrow', Impact, sans-serif; color: #fff; line-height: 1.02; overflow-wrap: anywhere; }
+.rcc-sg-ov-carname { font-family: 'Bebas Neue', 'Arial Narrow', Impact, sans-serif; color: #fff; font-size: 1.35cqw; line-height: 1.1; margin-top: 0.4cqw; }
+.rcc-sg-ov { flex-direction: column; }
+.rcc-sg-ov-car { width: 100%; height: 100%; object-fit: contain; object-position: center; display: block; }
