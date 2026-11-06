@@ -3117,6 +3117,7 @@ function _rccSgContext(page, c) {
     d: d, rs: rs, classes: _rccSortClasses(classes, function (k) { return k; }), year: yr, series: d.series || 'WEC',
     mins: mins, h: Math.floor(mins / 60), m: mins % 60, tod: tod, clock: RCC_START_CLOCK[tod],
     preset: _rccSgPreset(c.weatherPreset), presetName: c.weatherPreset || 'Sunny',
+    counts: null,
     qual: rs.qualifying !== 'No', rolling: rs.raceStart === 'Fast' ? 'Fast Rolling' : 'Rolling'
   };
 }
@@ -3139,8 +3140,14 @@ function _rccSgScreens(x) {
   s5.items.push({ kind: 'box', level: x.qual ? 'free' : 'should', x: 565, y: 462, w: 375, h: 198, label: 'Qualifying', value: x.qual ? 'On. The length is your choice.' : 'Off. Untick Qualifying so the race starts from a random grid.' });
   if (lenShort) s5.items.push({ kind: 'chip', level: 'must', x: 1198, y: 606, w: 74, h: 40, text: lenShort, label: 'Race Length', value: _rccSgClock(x.mins) + ' or longer' });
   s5.items.push({ kind: 'chip', level: 'should', x: 1022, y: 606, w: 96, h: 40, text: startShort, label: 'Race Start', value: x.rolling });
-  s5.items.push({ kind: 'chip', level: 'must', x: 343, y: 693, w: 120, h: 40, small: true, text: seasonTab, label: 'Starting Grid', value: (x.year ? x.year + ' Season' : 'Your season') + '. Never Fill Grid.' });
-  s5.items.push({ kind: 'box', level: 'must', x: 163, y: 744, w: 470, h: 130, label: 'Classes on the grid', value: 'Tick only ' + (x.classes.join(', ') || 'your season’s classes') });
+  s5.items.push({ kind: 'chip', level: 'must', x: 343, y: 693, w: 121, h: 38, light: true, text: seasonTab, label: 'Starting Grid', value: (x.year ? x.year + ' Season' : 'Your season') + '. Never Fill Grid.' });
+  [['Hypercar', 'HY', 'HYPERCAR'], ['LMP2', 'P2', 'LMP2'], ['LMP3', 'P3', 'LMP3'], ['LMGT3', 'GT3', 'LMGT3'], ['LMGTE', 'GTE', 'LMGTE']].forEach(function (cl, i) {
+    var cnt = x.counts ? x.counts[cl[0]] : null;
+    s5.items.push({ kind: 'class', level: 'must', x: 167 + i * 158, y: 747, w: 145, h: 122, big: cl[1], sub: cl[2], count: (cnt === null || cnt === undefined) ? '' : String(cnt), on: x.classes.indexOf(cl[0]) !== -1,
+      label: i === 0 ? 'Classes on the grid' : '', value: 'Tick only ' + (x.classes.join(', ') || 'your season’s classes') });
+  });
+  s5.items.push({ kind: 'plate', level: 'free', x: 1405, y: 470, w: 590, h: 160, label: 'Your Team', value: 'The game shows your own team name and number here.' });
+  s5.items.push({ kind: 'car', level: 'free', x: 1430, y: 685, w: 490, h: 165, label: 'Your Car', value: 'Pick your team’s car on the Car tab. It must be in your season’s classes.' });
   if (d.trackLimitsPreset) s5.items.push({ kind: 'chip', level: 'should', x: 368, y: 957, w: 136, h: 46, text: String(d.trackLimitsPreset).toUpperCase(), label: 'Rules', value: d.trackLimitsPreset });
   if (rs.fuelMultiplier) s5.items.push({ kind: 'chip', level: 'should', x: 580, y: 957, w: 84, h: 46, text: fuelTxt, label: 'Fuel Usage', value: fuelTxt });
   if (rs.tireWearMultiplier) s5.items.push({ kind: 'chip', level: 'should', x: 732, y: 957, w: 84, h: 46, text: wearTxt, label: 'Tyre Wear', value: wearTxt });
@@ -3191,6 +3198,9 @@ function _rccSgScreens(x) {
   return screens;
 }
 
+// Greyed-out car drawn over the game's car picture (Event Settings guide).
+var RCC_SG_CAR_SVG = '<svg viewBox="0 0 490 165" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><g fill="#5b6672"><path d="M30 112c4-18 20-28 52-33l92-28c24-9 52-14 80-14 30 0 52 6 70 16l62 22c40 6 60 14 70 30 4 8 2 16-4 20H38c-8 0-10-6-8-13z"/><path d="M150 52l40-22c20-9 70-9 96 2l30 20z" fill="#76828f"/></g><g fill="#2a3139"><circle cx="118" cy="124" r="30"/><circle cx="388" cy="124" r="30"/></g><g fill="#7c8793"><circle cx="118" cy="124" r="14"/><circle cx="388" cy="124" r="14"/></g></svg>';
+
 function _rccSgPct(v, total) { return (v / total * 100).toFixed(3) + '%'; }
 
 function _rccSgFigure(scr) {
@@ -3209,12 +3219,39 @@ function _rccSgFigure(scr) {
     box.style.top = _rccSgPct(it.y, scr.H);
     box.style.width = _rccSgPct(it.w, scr.W);
     box.style.height = _rccSgPct(it.h, scr.H);
-    if (it.kind === 'chip') {
-      var t = _rccText('span', 'rcc-sg-chip-text' + (it.small ? ' rcc-sg-small' : ''), it.text);
+    var wc = it.w / scr.W * 100, hc = it.h / scr.W * 100;
+    if (it.kind === 'class') {
+      box.className += ' ' + (it.on ? 'rcc-sg-class-on' : 'rcc-sg-class-off');
+      var ck = _rccEl('span', 'rcc-sg-class-check', it.on ? '&#10003;' : '');
+      ck.style.fontSize = (hc * 0.16).toFixed(2) + 'cqw';
+      box.appendChild(ck);
+      var bg = _rccText('span', 'rcc-sg-class-big', it.big);
+      bg.style.fontSize = '2cqw';
+      box.appendChild(bg);
+      var sb = _rccEl('span', 'rcc-sg-class-sub');
+      sb.style.fontSize = Math.min(hc * 0.12, (wc - 1.2) / ((it.sub.length + (it.count ? it.count.length + 1 : 0)) * 0.62)).toFixed(2) + 'cqw';
+      sb.appendChild(_rccText('span', '', it.sub));
+      if (it.count) sb.appendChild(_rccText('span', '', it.count));
+      box.appendChild(sb);
+    } else if (it.kind === 'plate') {
+      var p1 = _rccText('span', 'rcc-sg-plate-name', 'YOUR TEAM NAME #NN');
+      p1.style.fontSize = Math.min(hc * 0.2, (wc - 1.6) / (18 * 0.6)).toFixed(2) + 'cqw';
+      var p2 = _rccText('span', 'rcc-sg-plate-car', 'YOUR CAR');
+      p2.style.fontSize = (hc * 0.1).toFixed(2) + 'cqw';
+      box.appendChild(p1); box.appendChild(p2);
+    } else if (it.kind === 'car') {
+      box.innerHTML = RCC_SG_CAR_SVG;
+    } else if (it.kind === 'chip') {
+      var t = _rccText('span', 'rcc-sg-chip-text', it.text);
+      var avail = wc - 0.9 - (it.drop ? 1.6 : 0);
+      t.style.fontSize = Math.min(1.05, avail / (Math.max(1, String(it.text).length) * 0.72), hc * 0.62).toFixed(2) + 'cqw';
+      if (it.light) box.className += ' rcc-sg-light';
       box.appendChild(t);
       if (it.drop) box.appendChild(_rccEl('span', 'rcc-sg-chip-caret', '&#9662;'));
     } else if (it.kind === 'slider') {
-      box.appendChild(_rccText('span', 'rcc-sg-slider-text', it.text));
+      var st = _rccText('span', 'rcc-sg-slider-text', it.text);
+      st.style.fontSize = Math.min(1.05, (wc * 0.5) / (Math.max(1, String(it.text).length) * 0.72)).toFixed(2) + 'cqw';
+      box.appendChild(st);
       var track = _rccEl('span', 'rcc-sg-slider-track');
       var handle = _rccEl('span', 'rcc-sg-slider-handle');
       handle.style.left = (((it.pct - 75) / 30) * 100).toFixed(1) + '%';
@@ -3283,9 +3320,11 @@ function rccOpenSetupGuide(roundNum) {
     if (text) s.appendChild(_rccText('p', 'rcc-sg-section-text', text));
     return s;
   }
+  var carCounts = null;
   function render() {
     holder.innerHTML = '';
     var x = _rccSgContext(page, current);
+    x.counts = carCounts;
 
     var s0 = section('Before the Settings', 'Two quick steps in the game. These screens cannot be copied here, so check them yourself.');
     var pair = _rccEl('div', 'rcc-sg-pair');
@@ -3311,4 +3350,17 @@ function rccOpenSetupGuide(roundNum) {
     });
   }
   render();
+  // Number of cars in each class for this season's series and year, from the same car list the season wizard uses.
+  fetchApi('getCars', { token: RCC.token }).then(function (res) {
+    var cars = ((res && res.cars) || []).filter(function (c) { return (c.Active || 'Active') !== 'Inactive'; });
+    var d = page.seasonDetails || {};
+    var series = String(d.series || 'WEC').toUpperCase() === 'ELMS' ? 'ELMS' : 'WEC';
+    var out = {};
+    RCC_CLASS_ORDER.forEach(function (cls) {
+      var yr = String((d.classSeasons || {})[cls] || d.seasonYear || '');
+      out[cls] = cars.filter(function (c) { return _rccClassKey(c.Class) === cls && String(c.Season) === yr && _rccCarSeries(c) === series; }).length;
+    });
+    carCounts = out;
+    render();
+  }).catch(function () { /* counts just stay blank */ });
 }

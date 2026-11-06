@@ -925,7 +925,7 @@ body.rcc-page.rcl-hub .rcl-lr-mention-title { color: #F21B0C; }
 .rcc-sg-shot img { display: block; width: 100%; height: auto; }
 .rcc-sg-item { position: absolute; box-sizing: border-box; border: 0.25cqw solid currentColor; border-radius: 0.4cqw; }
 .rcc-sg-box { background: transparent; box-shadow: 0 0 0 1px rgba(0,0,0,0.45); }
-.rcc-sg-chip, .rcc-sg-slider { background: #0c1829; display: flex; align-items: center; justify-content: flex-end; padding: 0 0.6cqw; gap: 0.5cqw; }
+.rcc-sg-chip, .rcc-sg-slider { background: #0c1829; display: flex; align-items: center; justify-content: flex-end; padding: 0 0.45cqw; gap: 0.4cqw; overflow: hidden; }
 .rcc-sg-chip-text, .rcc-sg-slider-text { font: 700 1.05cqw/1 var(--rc-font-body); color: #fff; white-space: nowrap; }
 .rcc-sg-chip-caret { font: 700 1cqw/1 var(--rc-font-body); color: #fff; }
 .rcc-sg-slider-track { position: relative; flex: 0 0 47%; height: 0.15cqw; background: #d8dde1; margin-left: 1cqw; }
@@ -942,3 +942,20 @@ body.rcc-page.rcl-hub .rcl-lr-mention-title { color: #F21B0C; }
 .rcc-sg-open { margin: 4px 0 10px; }
 .rcc-sg-chip-text.rcc-sg-small { font-size: 0.8cqw; }
 .rcc-sg-slider-track { flex: 0 0 41%; }
+
+/* Event Settings guide: season tab, class tiles, team plate and car */
+.rcc-sg-chip.rcc-sg-light { background: #fff; justify-content: center; padding: 0; }
+.rcc-sg-chip.rcc-sg-light .rcc-sg-chip-text { color: #0b2a6b; }
+.rcc-sg-class { background: #0c1829; display: block; overflow: hidden; border-color: transparent; border-radius: 0.6cqw; }
+.rcc-sg-class-on { border-color: #fff; background: #0e1d33; box-shadow: 0 0 1.2cqw rgba(255,255,255,0.35); }
+.rcc-sg-class-off { border-color: rgba(255,255,255,0.22); background: #0c1829; }
+.rcc-sg-class-off .rcc-sg-class-big, .rcc-sg-class-off .rcc-sg-class-sub { color: rgba(255,255,255,0.35); }
+.rcc-sg-class-big { position: absolute; left: 0.9cqw; top: 1.1cqw; font-family: var(--rc-font-heading); font-weight: 800; line-height: 1; color: #fff; }
+.rcc-sg-class-check { position: absolute; right: 0.7cqw; top: 0.7cqw; width: 1.5cqw; height: 1.5cqw; box-sizing: border-box; border-radius: 50%; display: flex; align-items: center; justify-content: center; line-height: 1; font-weight: 800; background: #fff; color: #0b2a6b; }
+.rcc-sg-class-off .rcc-sg-class-check { background: transparent; border: 0.15cqw solid rgba(255,255,255,0.6); }
+.rcc-sg-class-sub { position: absolute; left: 0.9cqw; right: 0.9cqw; bottom: 0.8cqw; display: flex; justify-content: space-between; align-items: baseline; gap: 0.4cqw; font-weight: 700; line-height: 1; color: #fff; white-space: nowrap; }
+.rcc-sg-plate { background: #0c1829; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; padding: 0 1.2cqw; gap: 0.5cqw; overflow: hidden; }
+.rcc-sg-plate-name { font-family: var(--rc-font-heading); font-weight: 800; color: #fff; white-space: nowrap; line-height: 1; }
+.rcc-sg-plate-car { font-weight: 700; color: #aab4be; letter-spacing: 0.06em; white-space: nowrap; line-height: 1; }
+.rcc-sg-car { background: #0d1a2e; display: flex; align-items: center; justify-content: center; overflow: hidden; border-color: transparent; }
+.rcc-sg-car svg { width: 100%; height: 100%; display: block; }
