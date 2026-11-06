@@ -1703,16 +1703,14 @@ var RCC_REALROAD_SCALES = ['Normal'];
 for (var _rccQ = 2; _rccQ <= 15; _rccQ++) RCC_REALROAD_SCALES.push(_rccQ + 'x');
 RCC_REALROAD_SCALES.push('Session %', 'Static');
 
-// LMU's AI Skill names by percentage (Matt, 2026-11-06).
+// AI skill names by percentage. These are Matt's original bands; the game's own labels are still to be
+// confirmed by him (2026-11-06), so change them here when he does.
 function _rccSkillLevel(pct) {
   pct = Number(pct);
-  if (pct >= 105) return 'Alien';
-  if (pct >= 100) return 'Professional';
-  if (pct >= 95) return 'Advanced';
-  if (pct >= 90) return 'Intermediate';
-  if (pct >= 85) return 'Amateur';
-  if (pct >= 80) return 'Novice';
-  return 'Beginner';
+  if (pct >= 101) return 'Expert';
+  if (pct >= 91) return 'Pro';
+  if (pct >= 81) return 'Intermediate';
+  return 'Rookie';
 }
 
 function _rccDefaultDetails() {
