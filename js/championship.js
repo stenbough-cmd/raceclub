@@ -3142,7 +3142,7 @@ function _rccSgScreens(x) {
   var screens = [];
 
   // 05 Event Settings
-  var s5 = { img: '05.jpg', W: 2000, H: 1123, title: 'Event Settings', intro: 'This is the first screen you see after choosing your track and car. Match the red and blue values, then open Difficulty, Sessions, Weather and Advanced with the buttons at the top of the game screen.', items: [] };
+  var s5 = { img: '05-Update.jpg', W: 2000, H: 1123, title: 'Event Settings', intro: 'This is the first screen you see after choosing your track and car. Match the red and blue values, then open Difficulty, Sessions, Weather and Advanced with the buttons at the top of the game screen.', items: [] };
   s5.items.push({ kind: 'box', level: 'free', x: 167, y: 462, w: 376, h: 198, label: 'Practice', value: 'Your choice. Practice is never uploaded.' });
   s5.items.push({ kind: 'box', level: x.qual ? 'free' : 'should', x: 565, y: 462, w: 375, h: 198, label: 'Qualifying', value: x.qual ? 'On. The length is your choice.' : 'Off. Untick Qualifying so the race starts from a random grid.' });
   if (lenShort) s5.items.push({ kind: 'chip', level: 'must', x: 1198, y: 606, w: 74, h: 40, text: lenShort, label: 'Race Length', value: _rccSgClock(x.mins) + ' or longer' });
@@ -3153,8 +3153,6 @@ function _rccSgScreens(x) {
     s5.items.push({ kind: 'class', level: 'must', x: 167 + i * 158, y: 747, w: 145, h: 122, big: cl[1], sub: cl[2], count: (cnt === null || cnt === undefined) ? '' : String(cnt), on: x.classes.indexOf(cl[0]) !== -1,
       label: i === 0 ? 'Classes on the grid' : '', value: 'Tick only ' + (x.classes.join(', ') || 'your season’s classes') });
   });
-  s5.items.push({ kind: 'plate', level: 'free', x: 1405, y: 470, w: 590, h: 160, label: 'Your Team', value: 'The game shows your team name, car number and car here.', name: x.teamLine.name, car: x.teamLine.car });
-  s5.items.push({ kind: 'car', level: 'free', x: 1430, y: 685, w: 490, h: 165, label: 'Your Car', value: 'Pick your team’s car on the Car tab. It must be in your season’s classes.' });
   if (d.trackLimitsPreset) s5.items.push({ kind: 'chip', level: 'should', x: 368, y: 957, w: 136, h: 46, text: String(d.trackLimitsPreset).toUpperCase(), label: 'Rules', value: d.trackLimitsPreset });
   if (rs.fuelMultiplier) s5.items.push({ kind: 'chip', level: 'should', x: 580, y: 957, w: 84, h: 46, text: fuelTxt, label: 'Fuel Usage', value: fuelTxt });
   if (rs.tireWearMultiplier) s5.items.push({ kind: 'chip', level: 'should', x: 732, y: 957, w: 84, h: 46, text: wearTxt, label: 'Tyre Wear', value: wearTxt });
