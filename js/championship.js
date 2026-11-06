@@ -3163,7 +3163,7 @@ function _rccSgScreens(x) {
   [['Tyre Wear', rs.tireWearMultiplier, wearTxt, 418], ['Tyre Warmers', rs.tireWarmers, rs.tireWarmers, 464], ['Available Tyres', rs.tireCount, String(rs.tireCount), 510], ['Fuel Usage', rs.fuelMultiplier, fuelTxt, 556]].forEach(function (r) {
     if (r[1]) s9.items.push({ kind: 'chip', level: 'should', x: 1330, y: r[3], w: 122, h: 34, text: r[2], label: r[0], value: r[2] });
   });
-  s9.items.push({ kind: 'box', level: 'free', x: 492, y: 640, w: 1026, h: 335, label: 'Your Assists', value: 'Your choice. The assists you use appear in your race recap.' });
+  s9.items.push({ kind: 'box', level: 'free', x: 492, y: 640, w: 1026, h: 335, label: 'Your Assists', value: 'Your choice.' });
   screens.push(s9);
 
   // 06 Sessions
