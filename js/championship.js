@@ -3148,9 +3148,13 @@ function _rccSgScreens(x) {
   if (lenShort) s5.items.push({ kind: 'chip', level: 'must', x: 1198, y: 606, w: 74, h: 40, text: lenShort, label: 'Race Length', value: _rccSgClock(x.mins) + ' or longer' });
   s5.items.push({ kind: 'chip', level: 'should', x: 1022, y: 606, w: 96, h: 40, text: startShort, label: 'Race Start', value: x.rolling });
   s5.items.push({ kind: 'chip', level: 'must', x: 343, y: 693, w: 121, h: 38, light: true, text: seasonTab, label: 'Starting Grid', value: (x.year ? x.year + ' Season' : 'Your season') + '. Never Fill Grid.' });
-  [['Hypercar', 'HY', 'HYPERCAR'], ['LMP2', 'P2', 'LMP2'], ['LMP3', 'P3', 'LMP3'], ['LMGT3', 'GT3', 'LMGT3'], ['LMGTE', 'GTE', 'LMGTE']].forEach(function (cl, i) {
-    var cnt = x.counts ? x.counts[cl[0]] : null;
-    s5.items.push({ kind: 'class', level: 'must', x: 167 + i * 158, y: 747, w: 145, h: 122, big: cl[1], sub: cl[2], count: (cnt === null || cnt === undefined) ? '' : String(cnt), on: x.classes.indexOf(cl[0]) !== -1,
+  // Only the classes that have cars for this season's series and year (from the uploaded car list); until that list has loaded, the season's own classes.
+  s5.items.push({ kind: 'cover', level: 'free', x: 160, y: 742, w: 480, h: 134 });
+  var CL = { Hypercar: ['HY', 'HYPERCAR'], LMP2: ['P2', 'LMP2'], LMP3: ['P3', 'LMP3'], LMGT3: ['GT3', 'LMGT3'], LMGTE: ['GTE', 'LMGTE'] };
+  var shown = RCC_CLASS_ORDER.filter(function (k) { return x.counts ? x.counts[k] > 0 : x.classes.indexOf(k) !== -1; });
+  shown.forEach(function (k, i) {
+    var cnt = x.counts ? x.counts[k] : null;
+    s5.items.push({ kind: 'class', level: 'must', x: 167 + i * 158, y: 747, w: 145, h: 122, big: CL[k][0], sub: CL[k][1], count: (cnt === null || cnt === undefined) ? '' : String(cnt), on: x.classes.indexOf(k) !== -1,
       label: i === 0 ? 'Classes on the grid' : '', value: 'Tick only ' + (x.classes.join(', ') || 'your season’s classes') });
   });
   if (d.trackLimitsPreset) s5.items.push({ kind: 'chip', level: 'should', x: 368, y: 957, w: 136, h: 46, text: String(d.trackLimitsPreset).toUpperCase(), label: 'Rules', value: d.trackLimitsPreset });
