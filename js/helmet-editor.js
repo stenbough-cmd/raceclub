@@ -426,10 +426,10 @@
       var saveNewBtn = mk('button', 'rc-btn-secondary rc-btn-sm', 'Save as New'); saveNewBtn.type = 'button'; saveNewBtn.style.display = 'none';
       withIcon(saveBtn, 'SAVE', 'Save'); withIcon(saveNewBtn, 'SAVENEW', 'Save as New');
       saveNewBtn.title = 'Keep the helmet you opened as it is and save this design as a separate helmet';
-      var loadBtn = mk('button', 'rc-btn-secondary rc-btn-sm', 'Manage'); loadBtn.type = 'button';
+      var loadBtn = mk('button', 'rc-btn-secondary rc-btn-sm', 'Load'); loadBtn.type = 'button';
       loadBtn.title = 'Load, edit, archive or delete the saved helmet designs';
       var newBtn = mk('button', 'rc-btn-secondary rc-btn-sm rch-blackbtn', 'New'); newBtn.type = 'button';
-      withIcon(loadBtn, 'OPEN', 'Manage'); withIcon(newBtn, 'NEW', 'New');
+      withIcon(loadBtn, 'OPEN', 'Load'); withIcon(newBtn, 'NEW', 'New');
       newBtn.title = 'Start a new helmet: a plain white helmet with no design and no logos';
       function startNew() {
         R = blankRecipe(); sel = null; cur = { id: '', name: '', kind: 'Awards', mfr: '', desc: '', coll: '', tier: 'Common' }; baseline = JSON.parse(JSON.stringify(R));
