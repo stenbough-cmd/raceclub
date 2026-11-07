@@ -198,7 +198,8 @@
       r.appendChild(mk('div', 'rcd-round-status' + tone, text));
       var bg = mk('div', 'rcd-round-actions');
       // Race Setup Guide: on every round, left of Upload Results. The guide reads RCC.page, so point it at this row's season while it opens.
-      bg.appendChild(rowBtn('Race Setup Guide', true, function () {
+      // Not on past seasons (readOnly rows): their setups are over.
+      if (!readOnly) bg.appendChild(rowBtn('Race Setup Guide', true, function () {
         var keep = RCC.page; RCC.page = rowPage || page;
         try { rccOpenSetupGuide(c.roundNum); } finally { RCC.page = keep; }
       }, '', 'rc-btn-secondary rc-btn-row rcd-guide-btn'));
@@ -287,22 +288,6 @@
           });
           bg.appendChild(pvBtn);
         }
-        // Race Setup Guide, left of View Season. Opens on the next round without results (the first round if all are done).
-        function openGuideFor(pg) {
-          var rounds = (pg && pg.calendar) || [];
-          var next = rounds.filter(function (c) { return !c.hasResults; })[0] || rounds[0];
-          var keep = RCC.page; RCC.page = pg;
-          try { rccOpenSetupGuide(next ? next.roundNum : 0); } finally { RCC.page = keep; }
-        }
-        var sgBtn = rowBtn('Race Setup Guide', true, function () {
-          if (isCurrent) { openGuideFor(page); return; }
-          sgBtn.disabled = true;
-          loadPast().then(function (pg) { sgBtn.disabled = false; openGuideFor(pg); }).catch(function () {
-            sgBtn.disabled = false;
-            if (typeof showToast === 'function') showToast('Could not load this season right now.', 'error');
-          });
-        }, '', 'rc-btn-secondary rc-btn-row rcd-guide-btn');
-        bg.appendChild(sgBtn);
         var open = mk('a', 'rc-btn-primary rc-btn-row rcd-view-btn rcd-btn-black', 'View Season →');
         open.href = 'championship.html?id=' + encodeURIComponent(opts.profile.profileId) + '&season=' + encodeURIComponent(s.seasonId);
         bg.appendChild(open);

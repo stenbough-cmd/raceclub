@@ -1706,10 +1706,13 @@ RCC_REALROAD_SCALES.push('Session %', 'Static');
 // AI skill names by percentage. These are Matt's original bands; the game's own labels are still to be
 // confirmed by him (2026-11-06), so change them here when he does.
 function _rccSkillLevel(pct) {
+  // The game's own labels (Matt, 2026-11-07): Rookie 75-79, Novice 79-84, Intermediate 85-90, Advanced 91-97, Professional 98-105.
+  // 79 is listed under both Rookie and Novice; it is counted as Rookie.
   pct = Number(pct);
-  if (pct >= 101) return 'Expert';
-  if (pct >= 91) return 'Pro';
-  if (pct >= 81) return 'Intermediate';
+  if (pct >= 98) return 'Professional';
+  if (pct >= 91) return 'Advanced';
+  if (pct >= 85) return 'Intermediate';
+  if (pct >= 80) return 'Novice';
   return 'Rookie';
 }
 
@@ -1958,7 +1961,7 @@ function _rccBuildWizard(m, tracks, cars, edit) {
   // RealRoad Time Scale are per round (Rounds below).
   var sec3 = _rccSection('Difficulty');
   var diffOptions = [];
-  // Skill bands (Matt): 75-80% Rookie, 81-90% Intermediate, 91-100% Pro, 101-105% Expert.
+  // Skill bands: see _rccSkillLevel (the game's own labels).
   for (var d = 75; d <= 105; d++) diffOptions.push({ label: d + '% (' + _rccSkillLevel(d) + ')', value: d });
   var g3 = _rccEl('div', 'rcc-field-grid');
   if (!rs.damage) rs.damage = 'Realistic';
@@ -3278,18 +3281,17 @@ function _rccSgScreens(x) {
   screens.push(s9);
 
   // 06 Sessions
-  var s6 = { img: '06.jpg', W: 2000, H: 1581, title: 'Sessions', intro: 'Scroll down in the game to reach the Race section. The Race Time is the one that must match.', items: [] };
-  s6.items.push({ kind: 'box', level: 'free', x: 492, y: 255, w: 996, h: 392, label: 'Practice', value: 'Your choice. Practice is never uploaded.' });
-  s6.items.push({ kind: 'chip', level: 'should', x: 1330, y: 600, w: 90, h: 36, text: rrTxt, label: 'Practice RealRoad Time Scale', value: rrTxt });
-  s6.items.push({ kind: 'box', level: 'free', x: 492, y: 676, w: 996, h: 344, label: 'Qualifying', value: 'The length, start time and grip are your choice.' });
-  s6.items.push({ kind: 'chip', level: x.qual ? 'should' : 'should', x: 1384, y: 748, w: 104, h: 36, text: x.qual ? 'On' : 'Off', label: 'Qualifying', value: x.qual ? 'On' : 'Off' });
-  s6.items.push({ kind: 'chip', level: 'must', x: 1190, y: 1166, w: 66, h: 36, text: x.h + ' hrs', label: 'Race Time (hours)', value: x.h + ' hrs' });
-  s6.items.push({ kind: 'chip', level: 'must', x: 1330, y: 1166, w: 90, h: 36, text: x.m + ' mins', label: 'Race Time (minutes)', value: x.m + ' mins' });
-  s6.items.push({ kind: 'chip', level: 'should', x: 1316, y: 1212, w: 104, h: 36, text: x.clock, label: 'Race Start Time (' + x.tod + ')', value: x.clock });
-  s6.items.push({ kind: 'chip', level: 'should', x: 1290, y: 1258, w: 130, h: 36, text: x.rolling, label: 'Race Start Type', value: x.rolling });
-  if (!x.qual) s6.items.push({ kind: 'chip', level: 'should', x: 1330, y: 1303, w: 90, h: 36, text: 'Random', label: 'Grid Position', value: 'Random' });
-  s6.items.push({ kind: 'box', level: 'free', x: 492, y: 1346, w: 996, h: 92, label: 'Race Starting Grip and RealRoad Wet', value: 'Your choice.' });
-  s6.items.push({ kind: 'chip', level: 'should', x: 1330, y: 1440, w: 90, h: 36, text: rrTxt, label: 'Race RealRoad Time Scale', value: rrTxt });
+  var s6 = { img: '06.jpg', W: 2000, H: 1123, title: 'Sessions', intro: 'Qualifying and Race are both on this screen. The Race Time is the one that must match.', items: [] };
+  s6.items.push({ kind: 'chip', level: 'should', x: 1382, y: 276, w: 106, h: 36, text: x.qual ? 'On' : 'Off', label: 'Qualifying', value: x.qual ? 'On' : 'Off' });
+  s6.items.push({ kind: 'box', level: 'free', x: 491, y: 318, w: 996, h: 229, label: 'Qualifying', value: 'The length, start time and grip are your choice.' });
+  s6.items.push({ kind: 'chip', level: 'should', x: 1340, y: 551, w: 80, h: 36, text: rrTxt, label: 'Qualifying RealRoad Time Scale', value: rrTxt });
+  s6.items.push({ kind: 'chip', level: 'must', x: 1198, y: 744, w: 58, h: 36, text: x.h + ' hrs', label: 'Race Time (hours)', value: x.h + ' hrs' });
+  s6.items.push({ kind: 'chip', level: 'must', x: 1336, y: 744, w: 84, h: 36, text: x.m + ' mins', label: 'Race Time (minutes)', value: x.m + ' mins' });
+  s6.items.push({ kind: 'chip', level: 'should', x: 1334, y: 790, w: 86, h: 36, text: x.clock, label: 'Race Start Time (' + x.tod + ')', value: x.clock });
+  s6.items.push({ kind: 'chip', level: 'should', x: 1308, y: 836, w: 112, h: 36, text: x.rolling, label: 'Race Start Type', value: x.rolling });
+  if (!x.qual) s6.items.push({ kind: 'chip', level: 'should', x: 1334, y: 881, w: 86, h: 36, text: 'Random', label: 'Grid Position', value: 'Random' });
+  s6.items.push({ kind: 'box', level: 'free', x: 491, y: 923, w: 996, h: 92, label: 'Race Starting Grip and RealRoad Wet', value: 'Your choice.' });
+  s6.items.push({ kind: 'chip', level: 'should', x: 1340, y: 1021, w: 80, h: 36, text: rrTxt, label: 'Race RealRoad Time Scale', value: rrTxt });
   screens.push(s6);
 
   // 07 Weather
