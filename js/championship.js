@@ -3248,8 +3248,8 @@ function _rccSgScreens(x) {
   // 05 Event Settings
   var s5 = { img: x.hasShot ? x.shot : '05-no-track.jpg', W: 2000, H: 1123, title: 'Event Settings', intro: 'This is the first screen you see after choosing your track and car. Match the red and blue values, then click Advanced Settings to adjust the AI Difficulty, Session details, Weather forecast and Advanced settings.', items: [] };
   _rccSgHeader(s5, x);
-  s5.items.push({ kind: 'box', level: 'free', x: 167, y: 462, w: 376, h: 198, label: 'Practice', value: 'Disabled. Practice is never uploaded.' });
-  s5.items.push({ kind: 'box', level: x.qual ? 'free' : 'should', x: 565, y: 462, w: 375, h: 198, label: 'Qualifying', value: x.qual ? 'On. The length is your choice.' : 'Off. Untick Qualifying so the race starts from a random grid.' });
+  s5.items.push({ kind: 'box', level: 'free', x: 158, y: 453, w: 394, h: 216, label: 'Practice', value: 'Disabled. Practice is never uploaded.' });
+  s5.items.push({ kind: 'box', level: x.qual ? 'free' : 'should', x: 556, y: 453, w: 393, h: 216, label: 'Qualifying', value: x.qual ? 'On. The length is your choice.' : 'Off. Untick Qualifying so the race starts from a random grid.' });
   if (lenShort) s5.items.push({ kind: 'chip', level: 'must', x: 1198, y: 606, w: 74, h: 40, text: lenShort, label: 'Race Length', value: _rccSgClock(x.mins) + ' or longer' });
   s5.items.push({ kind: 'chip', level: 'should', x: 1022, y: 606, w: 96, h: 40, text: startShort, label: 'Race Start', value: x.rolling });
   // The box goes AROUND the game's white rectangle; the rectangle itself is redrawn exactly on top of it with this season's name.
@@ -3268,16 +3268,20 @@ function _rccSgScreens(x) {
     s5.items.push({ kind: 'class', level: 'must', x: 167 + i * 158, y: 747, w: 145, h: 122, big: CL[k][0], sub: CL[k][1], count: (cnt === null || cnt === undefined) ? '' : String(cnt), on: x.classes.indexOf(k) !== -1,
       label: i === 0 ? 'Classes on the grid' : '', value: 'Tick only ' + (x.classes.join(', ') || 'your season’s classes') });
   });
-  if (d.trackLimitsPreset) s5.items.push({ kind: 'chip', level: 'should', x: 368, y: 957, w: 136, h: 46, text: String(d.trackLimitsPreset).toUpperCase(), label: 'Rules', value: d.trackLimitsPreset });
-  if (rs.fuelMultiplier) s5.items.push({ kind: 'chip', level: 'should', x: 580, y: 957, w: 84, h: 46, text: fuelTxt, label: 'Fuel Usage', value: fuelTxt });
-  if (rs.tireWearMultiplier) s5.items.push({ kind: 'chip', level: 'should', x: 732, y: 957, w: 84, h: 46, text: wearTxt, label: 'Tyre Wear', value: wearTxt });
-  if (rs.tireWarmers) s5.items.push({ kind: 'chip', level: 'should', x: 888, y: 957, w: 84, h: 46, text: String(rs.tireWarmers).toUpperCase(), label: 'Tyre Warmers', value: String(rs.tireWarmers).toUpperCase() });
-  if (rs.tireCount) s5.items.push({ kind: 'chip', level: 'should', x: 1048, y: 957, w: 60, h: 46, text: String(rs.tireCount), label: 'Available Tyres', value: String(rs.tireCount) });
+  if (d.trackLimitsPreset) s5.items.push({ kind: 'chip', level: 'should', x: 402, y: 958, w: 104, h: 46, center: true, text: String(d.trackLimitsPreset).toUpperCase(), label: 'Rules', value: d.trackLimitsPreset });
+  if (rs.fuelMultiplier) s5.items.push({ kind: 'chip', level: 'should', x: 593, y: 958, w: 66, h: 46, center: true, text: fuelTxt, label: 'Fuel Usage', value: fuelTxt });
+  if (rs.tireWearMultiplier) s5.items.push({ kind: 'chip', level: 'should', x: 745, y: 958, w: 66, h: 46, center: true, text: wearTxt, label: 'Tyre Wear', value: wearTxt });
+  if (rs.tireWarmers) s5.items.push({ kind: 'chip', level: 'should', x: 897, y: 958, w: 66, h: 46, center: true, text: String(rs.tireWarmers).toUpperCase(), label: 'Tyre Warmers', value: String(rs.tireWarmers).toUpperCase() });
+  if (rs.tireCount) s5.items.push({ kind: 'chip', level: 'should', x: 1049, y: 958, w: 66, h: 46, center: true, text: String(rs.tireCount), label: 'Available Tyres', value: String(rs.tireCount) });
   screens.push(s5);
 
   // 09 Difficulty
   var s9 = { img: '09.jpg', W: 2000, H: 1123, title: 'Difficulty', intro: 'Use the arrows on each row until the game shows the same value.', items: [] };
-  if (pct) s9.items.push({ kind: 'slider', level: 'should', x: 1040, y: 323, w: 458, h: 40, pct: pct, text: _rccSkillLevel(pct) + ' (' + pct + '%)', label: 'Opponent Difficulty', value: _rccSkillLevel(pct) + ' (' + pct + '%)' });
+  // The difficulty text sits left of the game's left arrow; the slider box sits between the two arrows (never over them).
+  if (pct) {
+    s9.items.push({ kind: 'chip', level: 'should', x: 1118, y: 323, w: 152, h: 40, fs: 0.8, text: _rccSkillLevel(pct) + ' (' + pct + '%)', label: 'Opponent Difficulty', value: _rccSkillLevel(pct) + ' (' + pct + '%)' });
+    s9.items.push({ kind: 'slider', level: 'should', x: 1301, y: 323, w: 193, h: 40, pct: pct, bare: true });
+  }
   if (rs.damage) s9.items.push({ kind: 'chip', level: 'should', x: 1352, y: 372, w: 156, h: 34, text: rs.damage, drop: true, label: 'Damage Simulation', value: rs.damage });
   [['Tyre Wear', rs.tireWearMultiplier, wearTxt, 418], ['Tyre Warmers', rs.tireWarmers, rs.tireWarmers, 464], ['Available Tyres', rs.tireCount, String(rs.tireCount), 510], ['Fuel Usage', rs.fuelMultiplier, fuelTxt, 556]].forEach(function (r) {
     if (r[1]) s9.items.push({ kind: 'chip', level: 'should', x: 1330, y: r[3], w: 122, h: 34, text: r[2], label: r[0], value: r[2] });
@@ -3363,14 +3367,18 @@ function _rccSgFigure(scr) {
     } else if (it.kind === 'chip') {
       var t = _rccText('span', 'rcc-sg-chip-text', it.text);
       var avail = wc - 0.9 - (it.drop ? 1.6 : 0);
-      t.style.fontSize = Math.min(1.05, avail / (Math.max(1, String(it.text).length) * 0.72), hc * 0.62).toFixed(2) + 'cqw';
+      t.style.fontSize = (it.fs ? Math.min(it.fs, avail / (Math.max(1, String(it.text).length) * 0.6)) : Math.min(1.05, avail / (Math.max(1, String(it.text).length) * 0.72), hc * 0.62)).toFixed(2) + 'cqw';
       if (it.light) box.className += ' rcc-sg-light';
+      if (it.center) box.className += ' rcc-sg-center';
       box.appendChild(t);
       if (it.drop) box.appendChild(_rccEl('span', 'rcc-sg-chip-caret', '&#9662;'));
     } else if (it.kind === 'slider') {
-      var st = _rccText('span', 'rcc-sg-slider-text', it.text);
-      st.style.fontSize = Math.min(1.05, (wc * 0.5) / (Math.max(1, String(it.text).length) * 0.72)).toFixed(2) + 'cqw';
-      box.appendChild(st);
+      if (it.bare) box.className += ' rcc-sg-bare';
+      else {
+        var st = _rccText('span', 'rcc-sg-slider-text', it.text);
+        st.style.fontSize = Math.min(1.05, (wc * 0.5) / (Math.max(1, String(it.text).length) * 0.72)).toFixed(2) + 'cqw';
+        box.appendChild(st);
+      }
       var track = _rccEl('span', 'rcc-sg-slider-track');
       var handle = _rccEl('span', 'rcc-sg-slider-handle');
       handle.style.left = (((it.pct - 75) / 30) * 100).toFixed(1) + '%';

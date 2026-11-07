@@ -949,7 +949,10 @@ body.rcc-page.rcl-hub .rcl-lr-mention-title { color: #F21B0C; }
 .rcc-sg-chip.rcc-sg-light .rcc-sg-chip-text { color: #0b2a6b; }
 .rcc-sg-class { background: rgba(14, 26, 44, 0.86); -webkit-backdrop-filter: blur(0.6cqw); backdrop-filter: blur(0.6cqw); display: block; overflow: hidden; border-width: 0.13cqw; border-color: transparent; border-radius: 1.05cqw; }
 .rcc-sg-class-on { border-color: rgba(255,255,255,0.96); }
-.rcc-sg-class-off { border-color: rgba(255,255,255,0.3); }
+.rcc-sg-class-off { border: 0; background: rgba(12, 22, 38, 0.5); -webkit-backdrop-filter: none; backdrop-filter: none; overflow: visible; }
+/* A deactivated tile is just dimmed: a borderless dark layer over the game's tile (its border shows through, dimmed), with our text on an inset fill. */
+.rcc-sg-class-off::before { content: ''; position: absolute; inset: 0.22cqw; border-radius: 0.85cqw; background: rgba(14, 26, 44, 0.92); }
+.rcc-sg-class-off > * { z-index: 1; }
 .rcc-sg-class-off .rcc-sg-class-big, .rcc-sg-class-off .rcc-sg-class-sub { color: rgba(255,255,255,0.33); }
 .rcc-sg-class-big { position: absolute; left: 0.75cqw; top: 0.7cqw; font-family: 'RC League Gothic', 'League Gothic', 'Arial Narrow', Impact, sans-serif; font-weight: 400; line-height: 1; color: #fff; }
 .rcc-sg-class-check { position: absolute; right: 0.6cqw; top: 0.8cqw; width: 1.05cqw; height: 1.05cqw; box-sizing: border-box; border-radius: 50%; display: flex; align-items: center; justify-content: center; line-height: 1; font-weight: 800; background: #ececef; color: #1b2742; }
@@ -983,3 +986,7 @@ body.rcc-page.rcl-hub .rcl-lr-mention-title { color: #F21B0C; }
 /* The season name sits exactly on the game's white rectangle. */
 .rcc-sg-ov.rcc-sg-tabov { background: #f3f3f5; border-radius: 0.35cqw; align-items: center; justify-content: center; flex-direction: row; overflow: hidden; }
 .rcc-sg-tabov-text { display: inline-block; font-family: 'RC League Gothic', 'League Gothic', 'Arial Narrow', Impact, sans-serif; color: #10224f; line-height: 1; white-space: nowrap; transform-origin: center center; }
+
+.rcc-sg-chip.rcc-sg-center { justify-content: center; padding: 0; }
+.rcc-sg-slider.rcc-sg-bare { padding: 0 0.3cqw; }
+.rcc-sg-slider.rcc-sg-bare .rcc-sg-slider-track { flex: 1 1 auto; margin: 0; }
