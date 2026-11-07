@@ -437,7 +437,6 @@
       // the helmet gets their own name, country and number instead.
       var pvTouched = false;
       function syncPv() { R.pl = { n: String(previewPlayer.n || '').slice(0, 40), c: String(previewPlayer.c || '').slice(0, 60), u: String(previewPlayer.u || '').slice(0, 4) }; }
-      bar.appendChild(mk('div', 'rch-label rch-subhead rch-mt rch-boldlabel', 'Preview'));
       var pvf = buildPreviewFields(previewPlayer, function () { var g = pvf.get(); previewPlayer.n = g.n; previewPlayer.c = g.c; previewPlayer.u = g.u; pvTouched = true; syncPv(); draw(true); });
       bar.appendChild(pvf.row);
       // A helmet that is opened (or pasted in) brings its own saved preview along; a new one keeps what is typed.
@@ -1131,7 +1130,6 @@
         db.appendChild(mk('div', 'rch-label rch-mt', 'Helmet description'));
         var ds = mk('textarea', 'rch-desc'); ds.maxLength = 200; ds.rows = 3; ds.value = p.description || ''; ds.placeholder = 'Optional. A short note about this helmet (200 characters at most).'; db.appendChild(ds);
         // Preview name, country and number: saved inside the helmet, shown wherever it is displayed outside a member's own profile.
-        db.appendChild(mk('div', 'rch-label rch-subhead rch-mt rch-boldlabel', 'Preview'));
         var pvd = buildPreviewFields(H.normalizeRecipe(p.recipe).pl, function () {}); db.appendChild(pvd.row);
         var kh = mk('p', 'rch-hint'); db.appendChild(kh);
         // Give to: every member with a checkbox (special event, premium and award helmets only). Group access that is already set is kept as it is.
