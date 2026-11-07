@@ -298,7 +298,8 @@ function _rcMfrLogoSlug_(manufacturerName) {
 // exist cost 4 missing-file requests per logo (.webp, .jpg, .jpeg, .png) before the plain file was tried.
 // 'white' means only the -white file exists (the plain file serves the light-background case).
 // ADD A SLUG HERE whenever a new -black / -white pair is uploaded.
-var RC_MFR_VARIANTS = { 'genesis': true, 'mclaren': true, 'oreca': 'white', 'toyota': true };
+var RC_MFR_VARIANTS = { 'genesis': true, 'toyota': true, 'duqueine': 'white', 'ligier': 'white' };
+// McLaren and Oreca have ONE file that reads on both light and dark backgrounds (mclaren.png / oreca.webp), so they are not listed.
 
 function manufacturerLogoSrc(manufacturerName, variant) {
   var v = (variant === 'white') ? 'white' : 'black';
