@@ -311,3 +311,25 @@ body.rc-league-page:not(.rcc-page) .rch-confirm-msg { color: var(--rcl-ink); }
 .rch-row-kt { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; align-items: end; }
 
 .rch-rotrow { justify-content: center; }
+
+/* The preview helmet never grows taller than the window allows, however wide the popup is (a narrow, tall window stacks the two sides). */
+.rch-stage { min-height: 300px; }
+.rch-stage canvas { width: auto; max-width: 100%; max-height: min(56vh, 600px); }
+
+/* Enlarge / shrink window button, left of the X in the designer's header. */
+.rch-expand { flex: none; margin-left: auto; width: 30px; height: 30px; padding: 0; border: none; border-radius: 4px; background: none; color: var(--rc-steel); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+.rch-expand:hover { background: var(--rc-offwhite); color: var(--rc-carbon); }
+/* Full size: the designer fills the whole browser window. */
+.rc-modal-backdrop.rch-backdrop-full { padding: 0; }
+.rc-modal.rch-modal.rch-full { max-width: none; width: 100vw; height: 100vh; max-height: none; border-radius: 0; display: flex; flex-direction: column; overflow: hidden; }
+.rc-modal.rch-modal.rch-full .rc-modal-head { border-radius: 0; }
+.rc-modal.rch-modal.rch-full .rc-modal-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+.rc-modal.rch-modal.rch-full .rch-stage canvas { max-height: calc(100vh - 250px); }
+@media (orientation: landscape) {
+  .rc-modal.rch-modal.rch-full .rc-modal-body { overflow: hidden; }
+}
+/* Narrow or tall windows stack the two sides, so the helmet gets a smaller cap there. */
+@media (orientation: portrait) {
+  .rch-stage canvas { max-height: min(40vh, 420px); }
+  .rc-modal.rch-modal.rch-full .rch-stage canvas { max-height: min(52vh, calc(100vh - 250px)); }
+}

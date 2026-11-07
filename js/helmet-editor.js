@@ -275,6 +275,26 @@
 
     function build(assets) {
       body.innerHTML = '';
+      // Enlarge / shrink window button, beside the X: the designer fills the whole browser window, and back again.
+      if (!only && !inline && modal.closeBtn && modal.closeBtn.parentNode && !modal.el.querySelector('.rch-expand')) {
+        var SVG0 = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">';
+        var ICON_EXPAND = SVG0 + '<polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>';
+        var ICON_SHRINK = SVG0 + '<polyline points="20 10 14 10 14 4"/><polyline points="4 14 10 14 10 20"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/></svg>';
+        var expBtn = mk('button', 'rch-expand'); expBtn.type = 'button';
+        var isFull = false;
+        function setFull(on) {
+          isFull = on;
+          modal.el.classList.toggle('rch-full', on);
+          if (modal.el.parentNode) modal.el.parentNode.classList.toggle('rch-backdrop-full', on);
+          expBtn.innerHTML = on ? ICON_SHRINK : ICON_EXPAND;
+          expBtn.title = on ? 'Shrink window' : 'Enlarge window';
+          expBtn.setAttribute('aria-label', expBtn.title);
+          setTimeout(function () { try { updateSelBox(); } catch (e1) {} }, 60);
+        }
+        expBtn.onclick = function () { setFull(!isFull); };
+        modal.closeBtn.parentNode.insertBefore(expBtn, modal.closeBtn);
+        setFull(false);
+      }
       var cfg = H.getConfig();
       // a plain white helmet with no design (the way the designer opens and what Reset returns to)
       function blankRecipe() { var b = H.normalizeRecipe(H.defaultRecipe()); b.d = 0; b.logos = []; return b; }

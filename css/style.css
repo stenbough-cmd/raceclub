@@ -2160,15 +2160,7 @@ a.rc-needs-item:hover { background: rgba(255, 255, 255, 0.06); }
   padding: calc(var(--rc-band-top, 0px) + 24px) 24px calc(var(--rc-band-bottom, 0px) + 24px);
   z-index: 2000;
 }
-/* Center popups over the content area, not the whole screen. Only while the sidebar is showing
-   (wider than 640px and not upright); with the sidebar hidden, popups sit in the middle of the screen. */
-@media (orientation: landscape) {
-  .rc-modal-backdrop { padding-left: 244px; }
-  /* Opt back out of the sidebar-offset centering above. Only a modal that explicitly knows there's
-     no sidebar to offset for adds this class; every other .rc-modal-backdrop keeps the offset
-     unchanged. */
-  .rc-modal-backdrop.rc-modal-backdrop-centered { padding-left: 24px; }
-}
+/* There is no sidebar any more, so every popup sits in the middle of the screen. */
 .rc-modal {
   width: 100%;
   max-width: 460px;
