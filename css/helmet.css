@@ -340,3 +340,7 @@ body.rc-league-page:not(.rcc-page) .rch-confirm-msg { color: var(--rcl-ink); }
 }
 .rc-modal.rch-modal:not(.rch-full) .rch-stage { min-height: 0; padding: 10px; }
 .rc-modal.rch-modal:not(.rch-full) .rch-stage canvas { max-height: min(34vh, 320px); }
+
+/* The loading lights sit in the vertical centre of the popup (the header is 66px tall, so the box leaves 66px empty at the bottom). */
+.rch-loading { display: flex; align-items: center; justify-content: center; box-sizing: border-box; min-height: calc(100vh - var(--rc-band-top, 0px) - var(--rc-band-bottom, 0px) - 154px); padding-bottom: 66px; }
+@media (orientation: landscape) { .rch-loading { height: 100%; min-height: 0; padding-bottom: 66px; } }

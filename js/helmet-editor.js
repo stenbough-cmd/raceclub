@@ -258,7 +258,7 @@
       stub = ctx.showModal(only === 'logos' ? 'Logo Manager' : 'Manage Helmet Designs', { bodyEl: sb, wide: true });
     }
     // the loading lights sit in the middle of the popup
-    var loadBox = mk('div'); loadBox.style.cssText = 'display:flex;align-items:center;justify-content:center;min-height:62vh';
+    var loadBox = mk('div', 'rch-loading');
     loadBox.appendChild(window.rcHelmetSpinner_ ? window.rcHelmetSpinner_('Loading the helmet designer...') : mk('p', 'rch-hint', 'Loading the helmet designer...'));
     body.appendChild(loadBox);
     try { localStorage.removeItem('rcHelmetVerChecked'); } catch (e0) {}   // helmets may change here: every page checks for the new version next time
