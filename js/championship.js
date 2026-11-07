@@ -3109,7 +3109,7 @@ function _rccSgContext(page, c) {
     d: d, rs: rs, classes: _rccSortClasses(classes, function (k) { return k; }), year: yr, series: d.series || 'WEC',
     mins: mins, h: Math.floor(mins / 60), m: mins % 60, tod: tod, clock: RCC_START_CLOCK[tod],
     preset: _rccSgPreset(c.weatherPreset), presetName: c.weatherPreset || 'Sunny',
-    counts: null, round: c, shot: (_rccSgTrackShot(c) || {}).file || '', hasShot: !!_rccSgTrackShot(c), shotQOff: !!(_rccSgTrackShot(c) || {}).qOff, reg: page.registration || null,
+    counts: null, round: c, shot: (_rccSgTrackShot(c) || {}).file || '', hasShot: !!_rccSgTrackShot(c), shotQOff: !!(_rccSgTrackShot(c) || {}).qOff, shotPOn: !!(_rccSgTrackShot(c) || {}).pOn, reg: page.registration || null,
     teamLine: (function () {
       var r = page.registration || {};
       if (!r.teamName) return { name: 'YOUR TEAM NAME #NN', car: 'YOUR CAR' };
@@ -3153,15 +3153,15 @@ function _rccSgFit(root) {
 }
 // Matt's Event Settings screenshot for each track (assets/championship_help/05-<name>.jpg). The names are his file names, typos included.
 var RCC_SG_SHOTS = [
-  [/bahrain|sakhir/, '05-bahrain.jpg'], [/barcelona|catalunya|cataluyna|montmel/, '05-cataluyna.jpg'], [/americas|cota|austin/, '05-COTA.jpg', 1],
-  [/daytona/, '05-daytona.jpg', 1], [/fuji/, '05-fuji.jpg'], [/imola|enzo/, '05-imola.jpg'], [/interlagos|paulo/, '05-interlagos.jpg'],
+  [/bahrain|sakhir/, '05-bahrain.jpg', 0, 1], [/barcelona|catalunya|cataluyna|montmel/, '05-cataluyna.jpg', 0, 1], [/americas|cota|austin/, '05-COTA.jpg', 1],
+  [/daytona/, '05-daytona.jpg', 1], [/fuji/, '05-fuji.jpg'], [/imola|enzo/, '05-imola.jpg', 0, 1], [/interlagos|paulo/, '05-interlagos.jpg', 0, 1],
   [/laguna/, '05-laguna.jpg'], [/le mans|sarthe/, '05-le mans.jpg'], [/long beach/, '05-long beach.jpg'], [/lusail|qatar/, '05-lusail.jpg'],
-  [/monza/, '05-monza.jpg'], [/ricard|castellet/, '05-paul ricard.jpg'], [/portim|algarve/, '05-portimao.jpg'],
+  [/monza/, '05-monza.jpg', 0, 1], [/ricard|castellet/, '05-paul ricard.jpg'], [/portim|algarve/, '05-portimao.jpg', 0, 1],
   [/road atlanta|petit/, '05-road atlants.jpg'], [/sebring/, '05-sebring.jpg'], [/spa|francorchamps/, '05-spa.jpg']
 ];
 function _rccSgTrackShot(c) {
   var t = (String((c && c.trackName) || '') + ' ' + String((c && c.track) || '')).toLowerCase();
-  for (var n = 0; n < RCC_SG_SHOTS.length; n++) if (RCC_SG_SHOTS[n][0].test(t)) return { file: encodeURI(RCC_SG_SHOTS[n][1]), qOff: !!RCC_SG_SHOTS[n][2] };
+  for (var n = 0; n < RCC_SG_SHOTS.length; n++) if (RCC_SG_SHOTS[n][0].test(t)) return { file: encodeURI(RCC_SG_SHOTS[n][1]), qOff: !!RCC_SG_SHOTS[n][2], pOn: !!RCC_SG_SHOTS[n][3] };
   return null;
 }
 function _rccSgCarName(r) {
@@ -3188,6 +3188,10 @@ function _rccSgHeader(scr, x) {
   // screenshot's own card only when the two disagree.
   if (x.hasShot && x.qual === x.shotQOff) scr.items.push({ kind: 'ov', x: 563, y: 459, w: 379, h: 204, build: function (b) {
     var im = document.createElement('img'); im.className = 'rcc-sg-ov-qcard'; im.alt = ''; im.src = 'assets/championship_help/' + (x.qual ? 'q-on.webp' : 'q-off.webp'); b.appendChild(im);
+  } });
+  // Practice is never used, so its card always shows Practice disabled (the screenshots that show it on get the disabled card laid over).
+  if (x.hasShot && x.shotPOn) scr.items.push({ kind: 'ov', x: 165, y: 459, w: 380, h: 204, build: function (b) {
+    var im = document.createElement('img'); im.className = 'rcc-sg-ov-qcard'; im.alt = ''; im.src = 'assets/championship_help/p-off.webp'; b.appendChild(im);
   } });
   if (!x.hasShot) {
     var flagSrc = (c.country && typeof countryFlagSrc === 'function') ? countryFlagSrc(c.country) : '';
@@ -3241,7 +3245,7 @@ function _rccSgScreens(x) {
   // 05 Event Settings
   var s5 = { img: x.hasShot ? x.shot : '05-no-track.jpg', W: 2000, H: 1123, title: 'Event Settings', intro: 'This is the first screen you see after choosing your track and car. Match the red and blue values, then click Advanced Settings to adjust the AI Difficulty, Session details, Weather forecast and Advanced settings.', items: [] };
   _rccSgHeader(s5, x);
-  s5.items.push({ kind: 'box', level: 'free', x: 167, y: 462, w: 376, h: 198, label: 'Practice', value: 'Your choice. Practice is never uploaded.' });
+  s5.items.push({ kind: 'box', level: 'free', x: 167, y: 462, w: 376, h: 198, label: 'Practice', value: 'Disabled. Practice is never uploaded.' });
   s5.items.push({ kind: 'box', level: x.qual ? 'free' : 'should', x: 565, y: 462, w: 375, h: 198, label: 'Qualifying', value: x.qual ? 'On. The length is your choice.' : 'Off. Untick Qualifying so the race starts from a random grid.' });
   if (lenShort) s5.items.push({ kind: 'chip', level: 'must', x: 1198, y: 606, w: 74, h: 40, text: lenShort, label: 'Race Length', value: _rccSgClock(x.mins) + ' or longer' });
   s5.items.push({ kind: 'chip', level: 'should', x: 1022, y: 606, w: 96, h: 40, text: startShort, label: 'Race Start', value: x.rolling });
