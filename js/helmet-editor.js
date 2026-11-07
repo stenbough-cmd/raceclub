@@ -252,6 +252,7 @@
     var modal = (only || inline) ? { el: mk('div'), closeBtn: mk('button'), close: function () {} } : ctx.showModal('Helmet Designer', { bodyEl: body, wide: true });
     if (inline) { body.classList.add('rch-studio'); opts.host.appendChild(body); window.addEventListener('beforeunload', function (e) { if (dirtyFn && dirtyFn()) { e.preventDefault(); e.returnValue = ''; } }); }
     modal.el.classList.add('rch-modal');
+    if (modal.el.parentNode && modal.el.parentNode.classList) modal.el.parentNode.classList.add('rch-backdrop');   // a little less empty space above and below the designer
     var stub = null;
     if (only) {   // the manager popup opens straight away with its own loading lights; the real one replaces it once the designer data is ready
       var sb = mk('div', 'rch-loadbody'); sb.appendChild(spin('Loading...'));
