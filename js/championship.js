@@ -3189,12 +3189,12 @@ function _rccSgHeader(scr, x) {
   var r = x.reg || {};
   // The Qualifying card follows the season's setting (On / Off). A real card from Matt's screenshots is laid over the
   // screenshot's own card only when the two disagree.
-  if (x.hasShot && x.qual === x.shotQOff) scr.items.push({ kind: 'ov', x: 563, y: 459, w: 379, h: 204, build: function (b) {
-    var im = document.createElement('img'); im.className = 'rcc-sg-ov-qcard'; im.alt = ''; im.src = 'assets/championship_help/' + (x.qual ? 'q-on.webp' : 'q-off.webp'); b.appendChild(im);
+  if (x.hasShot && x.qual === x.shotQOff) scr.items.push({ kind: 'ov', x: 559, y: 455, w: 387, h: 212, build: function (b) {
+    var im = document.createElement('img'); im.className = 'rcc-sg-ov-qcard'; im.alt = ''; im.src = 'assets/championship_help/' + (x.qual ? 'q-on-fg.webp' : 'q-off-fg.webp'); b.classList.add('rcc-sg-glass'); b.appendChild(im);
   } });
   // Practice is never used, so its card always shows Practice disabled (the screenshots that show it on get the disabled card laid over).
-  if (x.hasShot && x.shotPOn) scr.items.push({ kind: 'ov', x: 165, y: 459, w: 380, h: 204, build: function (b) {
-    var im = document.createElement('img'); im.className = 'rcc-sg-ov-qcard'; im.alt = ''; im.src = 'assets/championship_help/p-off.webp'; b.appendChild(im);
+  if (x.hasShot && x.shotPOn) scr.items.push({ kind: 'ov', x: 161, y: 455, w: 388, h: 212, build: function (b) {
+    var im = document.createElement('img'); im.className = 'rcc-sg-ov-qcard'; im.alt = ''; im.src = 'assets/championship_help/p-off-fg.webp'; b.classList.add('rcc-sg-glass'); b.appendChild(im);
   } });
   if (!x.hasShot) {
     var flagSrc = (c.country && typeof countryFlagSrc === 'function') ? countryFlagSrc(c.country) : '';
@@ -3252,7 +3252,12 @@ function _rccSgScreens(x) {
   s5.items.push({ kind: 'box', level: x.qual ? 'free' : 'should', x: 565, y: 462, w: 375, h: 198, label: 'Qualifying', value: x.qual ? 'On. The length is your choice.' : 'Off. Untick Qualifying so the race starts from a random grid.' });
   if (lenShort) s5.items.push({ kind: 'chip', level: 'must', x: 1198, y: 606, w: 74, h: 40, text: lenShort, label: 'Race Length', value: _rccSgClock(x.mins) + ' or longer' });
   s5.items.push({ kind: 'chip', level: 'should', x: 1022, y: 606, w: 96, h: 40, text: startShort, label: 'Race Start', value: x.rolling });
-  s5.items.push({ kind: 'chip', level: 'must', x: 343, y: 693, w: 121, h: 38, light: true, text: seasonTab, label: 'Starting Grid', value: (x.year ? x.year + ' Season' : 'Your season') + '. Never Fill Grid.' });
+  // The box goes AROUND the game's white rectangle; the rectangle itself is redrawn exactly on top of it with this season's name.
+  s5.items.push({ kind: 'box', level: 'must', x: 336, y: 687, w: 137, h: 53, label: 'Starting Grid', value: (x.year ? x.year + ' Season' : 'Your season') + '. Never Fill Grid.' });
+  s5.items.push({ kind: 'ov', x: 343, y: 694, w: 122, h: 39, build: function (b) {
+    b.classList.add('rcc-sg-tabov');
+    var t = _rccEl('span', 'rcc-sg-tabov-text'); _rccSgSqueeze(t, String(seasonTab).toUpperCase(), 1.2); b.appendChild(t);
+  } });
   // Only the classes that have cars for this season's series and year (from the uploaded car list); until that list has loaded, the season's own classes.
   var CL = { Hypercar: ['HY', 'HYPERCAR'], LMP2: ['P2', 'LMP2'], LMP3: ['P3', 'LMP3'], LMGT3: ['GT3', 'LMGT3'], LMGTE: ['GTE', 'LMGTE'] };
   var shown = RCC_CLASS_ORDER.filter(function (k) { return x.counts ? x.counts[k] > 0 : x.classes.indexOf(k) !== -1; });
@@ -3337,13 +3342,13 @@ function _rccSgFigure(scr) {
     if (it.kind === 'ov') { box.className = 'rcc-sg-item rcc-sg-ov'; it.build(box); } else if (it.kind === 'class') {
       box.className += ' ' + (it.on ? 'rcc-sg-class-on' : 'rcc-sg-class-off');
       var ck = _rccEl('span', 'rcc-sg-class-check', it.on ? '&#10003;' : '');
-      ck.style.fontSize = '0.5cqw';
+      ck.style.fontSize = '0.7cqw';
       box.appendChild(ck);
       var bg = _rccText('span', 'rcc-sg-class-big', it.big);
-      bg.style.fontSize = '2cqw';
+      bg.style.fontSize = '2.75cqw';
       box.appendChild(bg);
       var sb = _rccEl('span', 'rcc-sg-class-sub');
-      sb.style.fontSize = Math.min(hc * 0.12, (wc - 1.2) / ((it.sub.length + (it.count ? it.count.length + 1 : 0)) * 0.62)).toFixed(2) + 'cqw';
+      sb.style.fontSize = Math.min(1.3, (wc - 1.5) / ((it.sub.length + (it.count ? it.count.length + 1 : 0)) * 0.46)).toFixed(2) + 'cqw';
       sb.appendChild(_rccText('span', '', it.sub));
       if (it.count) sb.appendChild(_rccText('span', '', it.count));
       box.appendChild(sb);

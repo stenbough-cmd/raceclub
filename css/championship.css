@@ -947,20 +947,14 @@ body.rcc-page.rcl-hub .rcl-lr-mention-title { color: #F21B0C; }
 /* Event Settings guide: season tab, class tiles, team plate and car */
 .rcc-sg-chip.rcc-sg-light { background: #fff; justify-content: center; padding: 0; }
 .rcc-sg-chip.rcc-sg-light .rcc-sg-chip-text { color: #0b2a6b; }
-.rcc-sg-class { background: #0c1829; display: block; overflow: hidden; border-color: transparent; border-radius: 0.6cqw; }
-.rcc-sg-class-on { border-color: #fff; background: #0e1d33; box-shadow: 0 0 1.2cqw rgba(255,255,255,0.35); }
-.rcc-sg-class-off { border-color: rgba(255,255,255,0.22); background: #0c1829; }
-.rcc-sg-class-off .rcc-sg-class-big, .rcc-sg-class-off .rcc-sg-class-sub { color: rgba(255,255,255,0.35); }
-.rcc-sg-class-big { position: absolute; left: 0.9cqw; top: 1.1cqw; font-family: var(--rc-font-heading); font-weight: 800; line-height: 1; color: #fff; }
-.rcc-sg-class-check { position: absolute; right: 0.9cqw; top: 0.9cqw; width: 0.8cqw; height: 0.8cqw; box-sizing: border-box; border-radius: 50%; display: flex; align-items: center; justify-content: center; line-height: 1; font-weight: 800; background: #fff; color: #0b2a6b; }
-.rcc-sg-class-off .rcc-sg-class-check { background: transparent; border: 0.12cqw solid rgba(255,255,255,0.6); }
-.rcc-sg-class-sub { position: absolute; left: 0.9cqw; right: 0.9cqw; bottom: 0.8cqw; display: flex; justify-content: space-between; align-items: baseline; gap: 0.4cqw; font-weight: 700; line-height: 1; color: #fff; white-space: nowrap; }
-.rcc-sg-plate { background: #0c1829; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; padding: 0 1.2cqw; gap: 0.5cqw; overflow: hidden; }
-.rcc-sg-plate-name { font-family: var(--rc-font-heading); font-weight: 800; color: #fff; white-space: nowrap; line-height: 1; }
-.rcc-sg-plate-car { font-weight: 700; color: #aab4be; letter-spacing: 0.06em; white-space: nowrap; line-height: 1; }
-.rcc-sg-car { background: #0d1a2e; display: flex; align-items: center; justify-content: center; overflow: hidden; border-color: transparent; }
-.rcc-sg-car svg { width: 100%; height: 100%; display: block; }
-
+.rcc-sg-class { background: rgba(14, 26, 44, 0.86); -webkit-backdrop-filter: blur(0.6cqw); backdrop-filter: blur(0.6cqw); display: block; overflow: hidden; border-width: 0.13cqw; border-color: transparent; border-radius: 1.05cqw; }
+.rcc-sg-class-on { border-color: rgba(255,255,255,0.96); }
+.rcc-sg-class-off { border-color: rgba(255,255,255,0.3); }
+.rcc-sg-class-off .rcc-sg-class-big, .rcc-sg-class-off .rcc-sg-class-sub { color: rgba(255,255,255,0.33); }
+.rcc-sg-class-big { position: absolute; left: 0.75cqw; top: 0.7cqw; font-family: 'RC League Gothic', 'League Gothic', 'Arial Narrow', Impact, sans-serif; font-weight: 400; line-height: 1; color: #fff; }
+.rcc-sg-class-check { position: absolute; right: 0.6cqw; top: 0.8cqw; width: 1.05cqw; height: 1.05cqw; box-sizing: border-box; border-radius: 50%; display: flex; align-items: center; justify-content: center; line-height: 1; font-weight: 800; background: #ececef; color: #1b2742; }
+.rcc-sg-class-off .rcc-sg-class-check { background: transparent; border: 0.1cqw solid rgba(255,255,255,0.42); }
+.rcc-sg-class-sub { position: absolute; left: 0.65cqw; right: 0.65cqw; bottom: 0.5cqw; display: flex; justify-content: space-between; align-items: baseline; gap: 0.4cqw; font-family: 'RC League Gothic', 'League Gothic', 'Arial Narrow', Impact, sans-serif; font-weight: 400; line-height: 1; color: #fff; white-space: nowrap; }
 .rcc-sg-cover { background: linear-gradient(to bottom, rgb(16,29,44), rgb(21,40,62)); border-color: transparent; }
 
 /* Event Settings guide: track and team text drawn over the game screenshot */
@@ -983,3 +977,9 @@ body.rcc-page.rcl-hub .rcl-lr-mention-title { color: #F21B0C; }
 
 /* Race Setup Guide: as wide as the Helmet Designer popup (1120px), on this page and inside the dashboard. */
 .rcl-modal-dialog.rcc-sg-dialog, .rcc-modal-overlay.rcc-page .rcl-modal-dialog.rcc-sg-dialog { max-width: 1120px; }
+
+/* Card patches cut from Matt's screenshots keep only the text, icons and border; the glass behind them is this track's own backdrop, blurred and dimmed. */
+.rcc-sg-ov.rcc-sg-glass { border-radius: 1.2cqw; overflow: hidden; padding: 0.2cqw; background: rgba(22, 30, 42, 0.975); -webkit-backdrop-filter: blur(2cqw); backdrop-filter: blur(2cqw); }
+/* The season name sits exactly on the game's white rectangle. */
+.rcc-sg-ov.rcc-sg-tabov { background: #f3f3f5; border-radius: 0.35cqw; align-items: center; justify-content: center; flex-direction: row; overflow: hidden; }
+.rcc-sg-tabov-text { display: inline-block; font-family: 'RC League Gothic', 'League Gothic', 'Arial Narrow', Impact, sans-serif; color: #10224f; line-height: 1; white-space: nowrap; transform-origin: center center; }
