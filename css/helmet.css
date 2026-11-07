@@ -292,6 +292,7 @@ body.rc-league-page:not(.rcc-page) .rch-confirm-msg { color: var(--rcl-ink); }
 .rch-pvrow { display: grid; grid-template-columns: 5fr 3fr 2fr; gap: 10px; align-items: end; }
 .rch-pvfield { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .rch-pvfield .rch-input, .rch-pvfield .rch-select-wide { width: 100%; box-sizing: border-box; min-width: 0; }
+.rch-pvfield { gap: 0; }
 
 /* Open / Manage Helmet Designs list: each kind's helmets sit inset under the kind heading, split by category; tier shows as a colored left edge */
 .rch-kindgroup { margin-left: 18px; }
