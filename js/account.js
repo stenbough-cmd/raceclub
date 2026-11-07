@@ -2664,7 +2664,7 @@
     var head = el('div', 'rc-adm-head');
     var ht = el('div', '');
     ht.appendChild(el('div', 'rc-adm-eyebrow', 'Administration'));
-    ht.appendChild(el('div', 'rc-adm-title', 'Site tools.'));
+    ht.appendChild(el('div', 'rc-adm-title', 'Head honcho stuff.'));
     var subRow = el('div', 'rc-coll-sub');
     subRow.appendChild(el('p', 'rc-adm-sub', 'Manage members, tracks, cars and the website.'));
     ht.appendChild(subRow);
