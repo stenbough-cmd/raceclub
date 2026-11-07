@@ -1,3 +1,4 @@
+@font-face { font-family: 'RC League Gothic'; font-weight: 400; font-style: normal; font-display: swap; src: url('../assets/fonts/league-gothic-latin-400-normal.woff2') format('woff2'); }
 /* Race Club -- css/championship.css
    championship.html loads css/style.css + css/league.css + this file. The page uses the League
    Hub's own markup and class names (body.rc-league-page), so the layout is identical; this file
@@ -965,7 +966,7 @@ body.rcc-page.rcl-hub .rcl-lr-mention-title { color: #F21B0C; }
 /* Event Settings guide: track and team text drawn over the game screenshot */
 .rcc-sg-ov { border: 0; border-radius: 0; background: none; display: flex; align-items: flex-start; overflow: visible; }
 .rcc-sg-ov-flag { height: 100%; width: auto; display: block; }
-.rcc-sg-ov-title { font-family: 'Bebas Neue', 'Arial Narrow', Impact, sans-serif; color: #fff; line-height: 1; white-space: nowrap; transform-origin: left top; letter-spacing: 0.01em; }
+.rcc-sg-ov-title { font-family: 'RC League Gothic', 'League Gothic', 'Arial Narrow', Impact, sans-serif; color: #fff; line-height: 1; white-space: nowrap; transform-origin: left top; letter-spacing: 0.01em; }
 .rcc-sg-ov-place { font-family: 'Syncopate', 'Arial Black', Arial, sans-serif; font-weight: 700; color: transparent; -webkit-text-stroke: 0.12cqw rgba(255,255,255,0.9); line-height: 1; white-space: nowrap; transform-origin: left top; letter-spacing: 0.04em; }
 .rcc-sg-ov { flex-direction: column; }
 .rcc-sg-ov-car { width: 100%; height: 100%; object-fit: contain; object-position: center; display: block; }
@@ -974,6 +975,8 @@ body.rcc-page.rcl-hub .rcl-lr-mention-title { color: #F21B0C; }
 .rcc-sg-ov-logo { width: 100%; height: 100%; object-fit: contain; object-position: center top; display: block; }
 .rcc-sg-ov-teambox { flex-direction: column; justify-content: center; align-items: stretch; }
 .rcc-sg-ov-teamline, .rcc-sg-ov-carline { width: 100%; }
-.rcc-sg-ov-team { display: inline-block; font-family: 'Bebas Neue', 'Arial Narrow', Impact, sans-serif; color: #fff; line-height: 1.02; white-space: nowrap; transform-origin: left center; }
-.rcc-sg-ov-carname { display: inline-block; font-family: 'Bebas Neue', 'Arial Narrow', Impact, sans-serif; color: #fff; line-height: 1.1; white-space: nowrap; transform-origin: left center; }
+.rcc-sg-ov-team { display: inline-block; font-family: 'RC League Gothic', 'League Gothic', 'Arial Narrow', Impact, sans-serif; color: #fff; line-height: 1.02; white-space: nowrap; transform-origin: left center; }
+.rcc-sg-ov-carname { display: inline-block; font-family: 'RC League Gothic', 'League Gothic', 'Arial Narrow', Impact, sans-serif; color: #fff; line-height: 1.1; white-space: nowrap; transform-origin: left center; }
 .rcc-sg-ov-carline { margin-top: 0.3cqw; }
+
+.rcc-sg-ov-qcard { width: 100%; height: 100%; display: block; }

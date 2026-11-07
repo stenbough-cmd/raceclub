@@ -3109,7 +3109,7 @@ function _rccSgContext(page, c) {
     d: d, rs: rs, classes: _rccSortClasses(classes, function (k) { return k; }), year: yr, series: d.series || 'WEC',
     mins: mins, h: Math.floor(mins / 60), m: mins % 60, tod: tod, clock: RCC_START_CLOCK[tod],
     preset: _rccSgPreset(c.weatherPreset), presetName: c.weatherPreset || 'Sunny',
-    counts: null, round: c, shot: _rccSgTrackShot(c), hasShot: !!_rccSgTrackShot(c), reg: page.registration || null,
+    counts: null, round: c, shot: (_rccSgTrackShot(c) || {}).file || '', hasShot: !!_rccSgTrackShot(c), shotQOff: !!(_rccSgTrackShot(c) || {}).qOff, reg: page.registration || null,
     teamLine: (function () {
       var r = page.registration || {};
       if (!r.teamName) return { name: 'YOUR TEAM NAME #NN', car: 'YOUR CAR' };
@@ -3126,7 +3126,7 @@ function _rccSgFonts() {
   if (document.getElementById('rcc-sg-fonts')) return;
   var l = document.createElement('link');
   l.id = 'rcc-sg-fonts'; l.rel = 'stylesheet';
-  l.href = 'https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Syncopate:wght@700&display=swap';
+  l.href = 'https://fonts.googleapis.com/css2?family=Syncopate:wght@700&display=swap';
   document.head.appendChild(l);
 }
 // Text that keeps the game's letter height and is squeezed sideways (never wrapped) when it would run past its box.
@@ -3153,16 +3153,16 @@ function _rccSgFit(root) {
 }
 // Matt's Event Settings screenshot for each track (assets/championship_help/05-<name>.jpg). The names are his file names, typos included.
 var RCC_SG_SHOTS = [
-  [/bahrain|sakhir/, '05-bahrain.jpg'], [/barcelona|catalunya|cataluyna|montmel/, '05-cataluyna.jpg'], [/americas|cota|austin/, '05-COTA.jpg'],
-  [/daytona/, '05-daytona.jpg'], [/fuji/, '05-fuji.jpg'], [/imola|enzo/, '05-imola.jpg'], [/interlagos|paulo/, '05-interlagos.jpg'],
+  [/bahrain|sakhir/, '05-bahrain.jpg'], [/barcelona|catalunya|cataluyna|montmel/, '05-cataluyna.jpg'], [/americas|cota|austin/, '05-COTA.jpg', 1],
+  [/daytona/, '05-daytona.jpg', 1], [/fuji/, '05-fuji.jpg'], [/imola|enzo/, '05-imola.jpg'], [/interlagos|paulo/, '05-interlagos.jpg'],
   [/laguna/, '05-laguna.jpg'], [/le mans|sarthe/, '05-le mans.jpg'], [/long beach/, '05-long beach.jpg'], [/lusail|qatar/, '05-lusail.jpg'],
   [/monza/, '05-monza.jpg'], [/ricard|castellet/, '05-paul ricard.jpg'], [/portim|algarve/, '05-portimao.jpg'],
   [/road atlanta|petit/, '05-road atlants.jpg'], [/sebring/, '05-sebring.jpg'], [/spa|francorchamps/, '05-spa.jpg']
 ];
 function _rccSgTrackShot(c) {
   var t = (String((c && c.trackName) || '') + ' ' + String((c && c.track) || '')).toLowerCase();
-  for (var n = 0; n < RCC_SG_SHOTS.length; n++) if (RCC_SG_SHOTS[n][0].test(t)) return encodeURI(RCC_SG_SHOTS[n][1]);
-  return '';
+  for (var n = 0; n < RCC_SG_SHOTS.length; n++) if (RCC_SG_SHOTS[n][0].test(t)) return { file: encodeURI(RCC_SG_SHOTS[n][1]), qOff: !!RCC_SG_SHOTS[n][2] };
+  return null;
 }
 function _rccSgCarName(r) {
   var mk = String((r && r.manufacturer) || '').trim(), md = String((r && r.carModel) || '').trim();
@@ -3184,6 +3184,11 @@ function _rccSgSplit(text) {
 function _rccSgHeader(scr, x) {
   var c = x.round || {};
   var r = x.reg || {};
+  // The Qualifying card follows the season's setting (On / Off). A real card from Matt's screenshots is laid over the
+  // screenshot's own card only when the two disagree.
+  if (x.hasShot && x.qual === x.shotQOff) scr.items.push({ kind: 'ov', x: 563, y: 459, w: 379, h: 204, build: function (b) {
+    var im = document.createElement('img'); im.className = 'rcc-sg-ov-qcard'; im.alt = ''; im.src = 'assets/championship_help/' + (x.qual ? 'q-on.webp' : 'q-off.webp'); b.appendChild(im);
+  } });
   if (!x.hasShot) {
     var flagSrc = (c.country && typeof countryFlagSrc === 'function') ? countryFlagSrc(c.country) : '';
     if (flagSrc) scr.items.push({ kind: 'ov', x: 188, y: 153, w: 150, h: 92, build: function (b) {
@@ -3212,7 +3217,7 @@ function _rccSgHeader(scr, x) {
     (tl.length > 22 ? _rccSgSplit(tl) : [tl]).forEach(function (ln) {
       var d = _rccEl('div', 'rcc-sg-ov-teamline'); var t = _rccEl('span', 'rcc-sg-ov-team'); _rccSgSqueeze(t, ln, 3.2); d.appendChild(t); b.appendChild(d);
     });
-    if (car) { var d2 = _rccEl('div', 'rcc-sg-ov-carline'); var t2 = _rccEl('span', 'rcc-sg-ov-carname'); _rccSgSqueeze(t2, car, 1.55); d2.appendChild(t2); b.appendChild(d2); }
+    if (car) { var d2 = _rccEl('div', 'rcc-sg-ov-carline'); var t2 = _rccEl('span', 'rcc-sg-ov-carname'); _rccSgSqueeze(t2, car, 1.4); d2.appendChild(t2); b.appendChild(d2); }
   } });
   if (r.carNumber && x.year) scr.items.push({ kind: 'ov', x: 1420, y: 680, w: 520, h: 190, build: function (b) {
     var im = document.createElement('img'); im.className = 'rcc-sg-ov-car'; im.alt = '';
