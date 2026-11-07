@@ -349,3 +349,12 @@ body.rc-league-page:not(.rcc-page) .rch-confirm-msg { color: var(--rcl-ink); }
 .rc-modal-backdrop.rch-backdrop:not(.rch-backdrop-full) { padding-top: calc(var(--rc-band-top, 0px) + 10px); padding-bottom: calc(var(--rc-band-bottom, 0px) + 10px); }
 .rc-modal.rch-modal:not(.rch-full) { max-height: min(calc(100vh - 20px), calc(100vh - var(--rc-band-top, 0px) - var(--rc-band-bottom, 0px) + 25px)); }
 @media (orientation: landscape) { .rc-modal.rch-modal:not(.rch-full) { height: min(calc(100vh - 20px), calc(100vh - var(--rc-band-top, 0px) - var(--rc-band-bottom, 0px) + 25px)); } }
+
+/* Manufacturer team colors: two codes in rectangles, click to copy. */
+.rch-codes { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.rch-tools:empty, .rch-dstack .rch-tools { width: 100%; }
+.rch-code { display: flex; align-items: center; gap: 8px; width: 100%; padding: 6px 9px; border: 1px solid var(--rc-silver); border-radius: 6px; background: var(--rc-white); color: var(--rc-carbon); font: inherit; font-size: 13px; cursor: pointer; text-align: left; box-sizing: border-box; }
+.rch-code:hover { border-color: var(--rc-steel); }
+.rch-code-sw { flex: none; width: 18px; height: 18px; border-radius: 4px; border: 1px solid var(--rc-silver); display: block; }
+.rch-code-tx { flex: 1 1 auto; font-family: monospace; font-size: 13px; letter-spacing: 0.04em; }
+.rch-code-cp { flex: none; font-style: normal; font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--rc-steel); }

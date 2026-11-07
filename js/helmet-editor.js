@@ -389,6 +389,37 @@
       fillMfrs();
       mfrWrap.appendChild(mfrSel);
       var mcRow = mk('div', 'rch-row-mc'); mcRow.appendChild(mfrWrap);
+      // The manufacturer's two team colors, as codes that can be copied (click a code to copy it).
+      var MFR_COLORS = {
+        alpine: ['#0057B8', '#FFFFFF'], astonmartin: ['#00665E', '#95D600'], bmw: ['#0066B1', '#FFFFFF'], cadillac: ['#000000', '#C9CACA'],
+        chevrolet: ['#F7D117', '#000000'], corvette: ['#F7D117', '#000000'], ferrari: ['#DC0000', '#FFCC00'], ford: ['#003478', '#FFFFFF'],
+        lamborghini: ['#DDB321', '#000000'], lexus: ['#000000', '#FFFFFF'], mclaren: ['#FF8700', '#000000'], mercedesamg: ['#00D2BE', '#000000'],
+        mercedes: ['#00D2BE', '#000000'], peugeot: ['#000000', '#AFAFAF'], porsche: ['#D5001C', '#000000'], toyota: ['#EB0A1E', '#000000'],
+        toyotagazooracing: ['#EB0A1E', '#000000'], cadillacracing: ['#D4AF37', '#000000'], corvetteracing: ['#F7D117', '#202020'],
+        acura: ['#E31B23', '#000000'], vanwall: ['#006B3F', '#FFFFFF'], glickenhaus: ['#C00000', '#000000']
+      };
+      var mfrCodes = mk('div', 'rch-codes');
+      function codeBox(label) {
+        var w = mk('div', 'rch-codewrap'); w.appendChild(mk('div', 'rch-label', label));
+        var b = mk('button', 'rch-code'); b.type = 'button';
+        var sw = mk('i', 'rch-code-sw'), tx = mk('span', 'rch-code-tx'), cp = mk('em', 'rch-code-cp', 'Copy');
+        b.appendChild(sw); b.appendChild(tx); b.appendChild(cp); w.appendChild(b);
+        b.onclick = function () {
+          var v = tx.textContent; if (!v) return;
+          function done() { cp.textContent = 'Copied'; setTimeout(function () { cp.textContent = 'Copy'; }, 1400); }
+          function fallback() { try { var t = mk('textarea'); t.value = v; t.style.cssText = 'position:fixed;opacity:0;'; document.body.appendChild(t); t.select(); document.execCommand('copy'); t.remove(); done(); } catch (e2) {} }
+          if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(v).then(done, fallback); else fallback();
+        };
+        return { el: w, set: function (hex) { tx.textContent = hex; sw.style.background = hex; } };
+      }
+      var codePri = codeBox('Primary color'), codeSec = codeBox('Secondary color');
+      mfrCodes.appendChild(codePri.el); mfrCodes.appendChild(codeSec.el);
+      function syncMfrCodes() {
+        var key = String(cur.mfr || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+        var c = MFR_COLORS[key];
+        mfrCodes.style.display = (c && cur.kind === 'Manufacturer') ? '' : 'none';
+        if (c) { codePri.set(c[0]); codeSec.set(c[1]); }
+      }
       bar.appendChild(mcRow);
       // Category (Season 1, Limited Edition...): only for Special Event, Premium and Awards helmets; groups them in the Load and Manage lists
       var collPick = makeCollPicker(function (v) { cur.coll = v; updateTab(); });
@@ -465,12 +496,7 @@
       if (gAdm.children.length) dSel.appendChild(gAdm);
       dSel.onchange = function () { R.d = parseInt(dSel.value, 10); draw(); };
       dWrap.appendChild(dSel); dRow.appendChild(dWrap);
-      var tools = mk('div', 'rch-btns rch-tools');
-      var rb = mk('button', 'rc-btn-secondary rc-btn-row', 'Randomize'); rb.type = 'button';
-      rb.onclick = function () { var lg = R.logos; var n = H.randomRecipe(R.d); n.logos = lg; R = H.normalizeRecipe(n); draw(); };
-      var rs = mk('button', 'rc-btn-secondary rc-btn-row', 'Reset colors'); rs.type = 'button';
-      rs.onclick = function () { var lg = R.logos, d = R.d; R = H.normalizeRecipe(H.defaultRecipe()); R.d = d; R.logos = lg; draw(); };
-      tools.appendChild(rb); tools.appendChild(rs); dRow.appendChild(tools);
+      var tools = mk('div', 'rch-tools'); tools.appendChild(mfrCodes); dRow.appendChild(tools);   // the manufacturer color codes sit where the Reset colors button used to be
       style.appendChild(dRow);
 
       var slotRows = {};
@@ -835,6 +861,7 @@
         var isMfr = cur.kind === 'Manufacturer';
         kindSel.value = cur.kind; mfrSel.value = cur.mfr || '';
         mcRow.style.display = isMfr ? '' : 'none';
+        syncMfrCodes();
         var hasColl = COLL_KINDS.indexOf(cur.kind) >= 0;
         collWrap.style.display = hasColl ? '' : 'none'; tierWrap.style.display = hasColl ? '' : 'none';
         nkRow.style.gridTemplateColumns = hasColl ? '' : '1fr'; ktRow.style.gridTemplateColumns = hasColl ? '' : '1fr';   // a lone box takes the whole row
