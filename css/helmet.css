@@ -333,3 +333,10 @@ body.rc-league-page:not(.rcc-page) .rch-confirm-msg { color: var(--rcl-ink); }
   .rch-stage canvas { max-height: min(40vh, 420px); }
   .rc-modal.rch-modal.rch-full .rch-stage canvas { max-height: min(52vh, calc(100vh - 250px)); }
 }
+
+/* Baseline popup: a smaller preview box so the controls get most of the room. Full size (enlarged window) goes back to the roomy layout. */
+@media (orientation: landscape) {
+  .rc-modal.rch-modal:not(.rch-full) .rch-grid { grid-template-columns: minmax(0, 0.78fr) minmax(0, 1.22fr); }
+}
+.rc-modal.rch-modal:not(.rch-full) .rch-stage { min-height: 0; padding: 10px; }
+.rc-modal.rch-modal:not(.rch-full) .rch-stage canvas { max-height: min(34vh, 320px); }
