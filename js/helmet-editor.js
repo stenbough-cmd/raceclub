@@ -392,7 +392,7 @@
       // The manufacturer's two team colors, as codes that can be copied (click a code to copy it).
       var MFR_COLORS = {
         alpine: ['#0057B8', '#FFFFFF'], astonmartin: ['#00665E', '#95D600'], bmw: ['#0066B1', '#FFFFFF'], cadillac: ['#000000', '#C9CACA'],
-        chevrolet: ['#F7D117', '#000000'], corvette: ['#F7D117', '#000000'], ferrari: ['#DC0000', '#FFCC00'], ford: ['#1351D8', '#FFFFFF'],
+        chevrolet: ['#F7D117', '#000000'], corvette: ['#F7D117', '#000000'], ferrari: ['#DC0000', '#FFCC00'], ford: ['#1131F3', '#FFFFFF'],
         lamborghini: ['#DDB321', '#000000'], lexus: ['#000000', '#FFFFFF'], mclaren: ['#FF8700', '#000000'], mercedesamg: ['#00D2BE', '#000000'],
         mercedes: ['#00D2BE', '#000000'], peugeot: ['#000000', '#AFAFAF'], porsche: ['#D5001C', '#000000'], toyota: ['#EB0A1E', '#000000'],
         toyotagazooracing: ['#EB0A1E', '#000000'], cadillacracing: ['#D4AF37', '#000000'], corvetteracing: ['#F7D117', '#202020'],
