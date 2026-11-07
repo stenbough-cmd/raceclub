@@ -347,9 +347,9 @@ body.rc-league-page:not(.rcc-page) .rch-confirm-msg { color: var(--rcl-ink); }
 @media (orientation: landscape) { .rch-loading { height: 100%; min-height: 0; padding-bottom: 66px; } }
 
 /* Taller popup: 10px of backdrop above and below instead of 24px, plus 45px more height (never taller than the window; the enlarged window ignores this). */
-.rc-modal-backdrop.rch-backdrop:not(.rch-backdrop-full) { padding-top: calc(var(--rc-band-top, 0px) + 10px); padding-bottom: calc(var(--rc-band-bottom, 0px) + 10px); }
-.rc-modal.rch-modal:not(.rch-full) { max-height: min(calc(100vh - 20px), calc(100vh - var(--rc-band-top, 0px) - var(--rc-band-bottom, 0px) + 25px)); }
-@media (orientation: landscape) { .rc-modal.rch-modal:not(.rch-full) { height: min(calc(100vh - 20px), calc(100vh - var(--rc-band-top, 0px) - var(--rc-band-bottom, 0px) + 25px)); } }
+.rc-modal-backdrop.rch-backdrop:not(.rch-backdrop-full) { padding-top: 65px; padding-bottom: 65px; }   /* 65px of page above and below the popup */
+.rc-modal.rch-modal:not(.rch-full) { max-height: calc(100vh - 130px); }
+@media (orientation: landscape) { .rc-modal.rch-modal:not(.rch-full) { height: calc(100vh - 130px); } }
 
 /* Manufacturer team colors: two codes in rectangles, click to copy. */
 .rch-codes { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
