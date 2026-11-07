@@ -3277,7 +3277,7 @@ function _rccSgScreens(x) {
   [['Tyre Wear', rs.tireWearMultiplier, wearTxt, 418], ['Tyre Warmers', rs.tireWarmers, rs.tireWarmers, 464], ['Available Tyres', rs.tireCount, String(rs.tireCount), 510], ['Fuel Usage', rs.fuelMultiplier, fuelTxt, 556]].forEach(function (r) {
     if (r[1]) s9.items.push({ kind: 'chip', level: 'should', x: 1330, y: r[3], w: 122, h: 34, text: r[2], label: r[0], value: r[2] });
   });
-  s9.items.push({ kind: 'box', level: 'free', x: 492, y: 640, w: 1026, h: 335, label: 'Your Assists', value: 'Your choice.' });
+  s9.items.push({ kind: 'box', level: 'free', x: 480, y: 626, w: 1050, h: 366, label: 'Your Assists', value: 'Your choice.' });
   screens.push(s9);
 
   // 06 Sessions
@@ -3446,7 +3446,7 @@ function rccOpenSetupGuide(roundNum) {
     var pair = _rccEl('div', 'rcc-sg-pair');
     var a = _rccEl('div', 'rcc-sg-pair-item');
     a.appendChild(_rccText('div', 'rcc-sg-step', '1. Choose RACE WEEKEND'));
-    a.appendChild(_rccSgMenuFigure('00.jpg', 2000, 1124, [[56, 274, 436, 115]], 'Le Mans Ultimate main menu'));
+    a.appendChild(_rccSgMenuFigure('00.jpg', 2000, 1124, [], 'Le Mans Ultimate main menu'));
     pair.appendChild(a);
     var b = _rccEl('div', 'rcc-sg-pair-item');
     var yrs = { WEC: { 2026: [624, 830, 60, 44], 2025: [696, 830, 60, 44], 2024: [768, 830, 62, 44], 2023: [841, 830, 62, 44] }, ELMS: { 2026: [1297, 570, 62, 44], 2025: [1369, 570, 62, 44] } };
