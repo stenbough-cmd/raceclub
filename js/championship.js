@@ -3453,7 +3453,7 @@ function rccOpenSetupGuide(roundNum) {
     var ser = String(x.series).toUpperCase() === 'ELMS' ? 'ELMS' : 'WEC';
     var yb = (yrs[ser] || {})[x.year];
     b.appendChild(_rccText('div', 'rcc-sg-step', '2. Choose ' + ser + (x.year ? ' ' + x.year : '')));
-    b.appendChild(_rccSgMenuFigure('01.jpg', 2000, 1122, yb ? [yb] : [], 'Le Mans Ultimate series picker'));
+    b.appendChild(_rccSgMenuFigure('01.jpg', 2000, 1122, [], 'Le Mans Ultimate series picker'));
     pair.appendChild(b);
     s0.appendChild(pair);
     var rg = page.registration || {};
