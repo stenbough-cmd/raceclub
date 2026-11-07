@@ -3412,7 +3412,7 @@ function rccOpenSetupGuide(roundNum) {
   cal.forEach(function (c) { if (roundNum && Number(c.roundNum) === Number(roundNum)) current = c; });
   _rccSgFonts();
   var m = rccOpenModal('Race Setup Guide', { wide: true });
-  m.dialog.classList.add('rcc-light-dialog');
+  m.dialog.classList.add('rcc-light-dialog', 'rcc-sg-dialog');
   m.body.classList.add('rcc-sg-body');
 
   var top = _rccEl('div', 'rcc-sg-top');

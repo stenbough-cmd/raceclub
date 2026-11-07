@@ -980,3 +980,6 @@ body.rcc-page.rcl-hub .rcl-lr-mention-title { color: #F21B0C; }
 .rcc-sg-ov-carline { margin-top: 0.3cqw; }
 
 .rcc-sg-ov-qcard { width: 100%; height: 100%; display: block; }
+
+/* Race Setup Guide: as wide as the Helmet Designer popup (1120px), on this page and inside the dashboard. */
+.rcl-modal-dialog.rcc-sg-dialog, .rcc-modal-overlay.rcc-page .rcl-modal-dialog.rcc-sg-dialog { max-width: 1120px; }
