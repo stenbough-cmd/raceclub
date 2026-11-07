@@ -1995,7 +1995,7 @@
     // grid instead of the old single-column list of links, so more of the Rulebook's table of
     // contents is visible without scrolling.
     var rulebook = el('div', 'rc-panel rc-dash-card');
-    rulebook.appendChild(el('h3', 'rc-dash-card-title', 'Rules and Regulations'));
+    rulebook.appendChild(el('h3', 'rc-dash-card-title', 'Online League: Rules and Regulations'));
 
     var rbNav = el('div', 'rc-rulebook-nav');
     rbNav.appendChild(el('div', 'rc-rulebook-nav-title', 'Jump To A Section'));

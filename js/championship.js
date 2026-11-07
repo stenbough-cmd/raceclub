@@ -2407,12 +2407,6 @@ function rccOpenHelp() {
   var m = rccOpenModal('Help: Single Player Championship', { wide: true });
   m.body.classList.add('rcc-help-body');
   var sections = typeof RCC_HELP_SECTIONS !== 'undefined' ? RCC_HELP_SECTIONS : [];
-  // Quick start for new drivers (Matt, 2026-10-13), above Jump To A Section.
-  if (typeof RCC_HELP_QUICKSTART !== 'undefined') {
-    var qs = _rccEl('div', 'rcc-quick');
-    qs.innerHTML = RCC_HELP_QUICKSTART;
-    m.body.appendChild(qs);
-  }
   var nav = _rccEl('div', 'rc-rulebook-nav');
   nav.appendChild(_rccText('div', 'rc-rulebook-nav-title', 'Jump To A Section'));
   var grid = _rccEl('div', 'rc-rulebook-nav-grid');

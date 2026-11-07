@@ -348,11 +348,6 @@
     helpLoading.then(function () {
       wrap.innerHTML = '';
       var sections = typeof RCC_HELP_SECTIONS !== 'undefined' ? RCC_HELP_SECTIONS : [];
-      if (typeof RCC_HELP_QUICKSTART !== 'undefined') {
-        var qs = mk('div', 'rcc-quick');
-        qs.innerHTML = RCC_HELP_QUICKSTART;
-        wrap.appendChild(qs);
-      }
       var card = mk('div', 'rc-panel rc-dash-card');
       card.appendChild(mk('h3', 'rc-dash-card-title', 'Single Player Championship'));
       var nav = mk('div', 'rc-rulebook-nav');

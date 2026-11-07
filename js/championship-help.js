@@ -6,16 +6,6 @@
 // Writing rules for this text (Matt): plain, correct English in full sentences. No em dashes, and no
 // colon followed by a lowercase clause. Callout titles are their own line (.rcc-help-callout-title)
 // rather than "Label:". Apostrophes are typographic (’) so the strings need no escaping.
-// Quick start (Matt, 2026-10-13; simplified 2026-11-06): three steps shown above Jump To A Section.
-var RCC_HELP_QUICKSTART =
-  '<div class="rcc-quick-title">How the Single Player Championship Works</div>' +
-  '<ol class="rcc-quick-steps">' +
-  '<li><span class="rcc-quick-num">1</span><strong>Set Up Your Season</strong><span>Once per season, create it and choose your team and car on your Dashboard.</span></li>' +
-  '<li><span class="rcc-quick-num">2</span><strong>Race a Round</strong><span>Match the round\u2019s settings in Le Mans Ultimate, then drive the race.</span></li>' +
-  '<li><span class="rcc-quick-num">3</span><strong>Upload Your Results</strong><span>Upload the results file from the game. This page does the rest.</span></li>' +
-  '</ol>' +
-  '<div class="rcc-quick-done">Repeat steps 2 and 3 for every round.</div>';
-
 var RCC_HELP_SECTIONS = [
   {
     id: 'what-it-is', num: '1', title: 'What It Is',
@@ -38,7 +28,7 @@ var RCC_HELP_SECTIONS = [
       '<p>Then press <strong>Choose Your Team</strong>, pick a class and a car, and press <strong>Join This Team</strong>. That car is yours for the whole season.</p>' +
       '<div class="rc-rulebook-callout"><strong class="rcc-help-callout-title">Good to Know</strong><ul>' +
       '<li><strong>Season Preview</strong> shows every setting and round on one screen. Keep it open while you set up the game.</li>' +
-      '<li>Edit Season can change the name, the Difficulty and Advanced settings, the start type and any round that has not been raced. The series, year, classes and points cannot change once the season exists.</li>' +
+      '<li>Edit Season can change the name, the Difficulty and Advanced settings, the start type and any round that has not been raced. The series, year, classes and points cannot change once the season exists, and the qualifying choice is fixed once any round has results.</li>' +
       '<li>Your team is final for the season.</li>' +
       '</ul></div>'
   },
@@ -46,12 +36,12 @@ var RCC_HELP_SECTIONS = [
     id: 'set-up-race', num: '3', title: 'Race a Round in the Game',
     html:
       '<p>Each round is one Race Weekend in Le Mans Ultimate. Open <strong>Season Preview</strong> here, then in the game choose <strong>Race Weekend</strong> and match the round.</p>' +
-      '<div class="rc-rulebook-callout"><strong class="rcc-help-callout-title">Race Setup Guide</strong>On the Championship calendar, press <strong>Race Setup Guide</strong> beside Upload Results on any round. It shows each game screen with your season\u2019s values on it, so you can match them one for one. Red values must match or the upload is refused, blue values keep your records accurate, and grey values are your choice.</div>' +
-      '<div class="rc-rulebook-callout"><strong class="rcc-help-callout-title">These Five Settings Must Match or the Upload Fails</strong><ul>' +
-      '<li><strong>Series and year</strong>, as in your season</li>' +
-      '<li><strong>Track and layout</strong>, as in the round. If the track is missing, switch the filter to All.</li>' +
+      '<div class="rc-rulebook-callout"><strong class="rcc-help-callout-title">Race Setup Guide</strong>On the Championship calendar, press <strong>Race Setup Guide</strong> beside Upload Results on any round of your current season. It shows each game screen with your season\u2019s values on it, so you can match them one for one. Red values must match or the upload is refused, blue values keep your records accurate, and grey values are your choice.</div>' +
+      '<div class="rc-rulebook-callout"><strong class="rcc-help-callout-title">Settings That Must Match</strong><ul>' +
+      '<li><strong>Series and year</strong>, as in your season. The upload is refused if the files hold cars your season does not have.</li>' +
+      '<li><strong>Track and layout</strong>, as in the round. If the track is missing, switch the filter to All. If the files show a different track, you are asked whether to upload anyway.</li>' +
       '<li><strong>Class, car and team</strong>, the seat you signed for</li>' +
-      '<li><strong>Starting Grid</strong>, set to your season of cars, such as Season 2023. Never choose Fill Grid, and only race your season\u2019s classes.</li>' +
+      '<li><strong>Starting Grid</strong>, set to your season of cars, such as Season 2023. Never choose Fill Grid, and only race your season\u2019s classes. A car in a class your season does not have is refused.</li>' +
       '<li><strong>Race length</strong>, the same as the round or longer. A shorter race is refused.</li>' +
       '</ul></div>' +
       '<p>Everything else only affects how accurate your records are. Copy the Difficulty and Advanced settings, the start type and the RealRoad time scale from your season, and choose the weather and start time the round shows. Assists are up to you, and the ones you use appear in the race recap.</p>' +
