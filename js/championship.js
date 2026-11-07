@@ -3160,7 +3160,7 @@ var RCC_SG_SHOTS = [
   [/daytona/, '05-daytona.jpg', 1], [/fuji/, '05-fuji.jpg'], [/imola|enzo/, '05-imola.jpg', 0, 1], [/interlagos|paulo/, '05-interlagos.jpg', 0, 1],
   [/laguna/, '05-laguna.jpg'], [/le mans|sarthe/, '05-le mans.jpg'], [/long beach/, '05-long beach.jpg'], [/lusail|qatar/, '05-lusail.jpg'],
   [/monza/, '05-monza.jpg', 0, 1], [/ricard|castellet/, '05-paul ricard.jpg'], [/portim|algarve/, '05-portimao.jpg', 0, 1],
-  [/road atlanta|petit/, '05-road atlants.jpg'], [/sebring/, '05-sebring.jpg'], [/spa|francorchamps/, '05-spa.jpg']
+  [/road atlanta|petit/, '05-road atlanta.jpg'], [/sebring/, '05-sebring.jpg'], [/silverstone/, '05-silverstone.jpg'], [/\bspa\b|francorchamps/, '05-spa.jpg']
 ];
 function _rccSgTrackShot(c) {
   var t = (String((c && c.trackName) || '') + ' ' + String((c && c.track) || '')).toLowerCase();
