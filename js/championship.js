@@ -3109,7 +3109,7 @@ function _rccSgContext(page, c) {
     d: d, rs: rs, classes: _rccSortClasses(classes, function (k) { return k; }), year: yr, series: d.series || 'WEC',
     mins: mins, h: Math.floor(mins / 60), m: mins % 60, tod: tod, clock: RCC_START_CLOCK[tod],
     preset: _rccSgPreset(c.weatherPreset), presetName: c.weatherPreset || 'Sunny',
-    counts: null, round: c, reg: page.registration || null,
+    counts: null, round: c, shot: _rccSgTrackShot(c), hasShot: !!_rccSgTrackShot(c), reg: page.registration || null,
     teamLine: (function () {
       var r = page.registration || {};
       if (!r.teamName) return { name: 'YOUR TEAM NAME #NN', car: 'YOUR CAR' };
@@ -3151,39 +3151,74 @@ function _rccSgFit(root) {
     el.style.transform = 'scaleX(' + k.toFixed(3) + ')';
   }
 }
+// Matt's Event Settings screenshot for each track (assets/championship_help/05-<name>.jpg). The names are his file names, typos included.
+var RCC_SG_SHOTS = [
+  [/bahrain|sakhir/, '05-bahrain.jpg'], [/barcelona|catalunya|cataluyna|montmel/, '05-cataluyna.jpg'], [/americas|cota|austin/, '05-COTA.jpg'],
+  [/daytona/, '05-daytona.jpg'], [/fuji/, '05-fuji.jpg'], [/imola|enzo/, '05-imola.jpg'], [/interlagos|paulo/, '05-interlagos.jpg'],
+  [/laguna/, '05-laguna.jpg'], [/le mans|sarthe/, '05-le mans.jpg'], [/long beach/, '05-long beach.jpg'], [/lusail|qatar/, '05-lusail.jpg'],
+  [/monza/, '05-monza.jpg'], [/ricard|castellet/, '05-paul ricard.jpg'], [/portim|algarve/, '05-portimao.jpg'],
+  [/road atlanta|petit/, '05-road atlants.jpg'], [/sebring/, '05-sebring.jpg'], [/spa|francorchamps/, '05-spa.jpg']
+];
+function _rccSgTrackShot(c) {
+  var t = (String((c && c.trackName) || '') + ' ' + String((c && c.track) || '')).toLowerCase();
+  for (var n = 0; n < RCC_SG_SHOTS.length; n++) if (RCC_SG_SHOTS[n][0].test(t)) return encodeURI(RCC_SG_SHOTS[n][1]);
+  return '';
+}
 function _rccSgCarName(r) {
   var mk = String((r && r.manufacturer) || '').trim(), md = String((r && r.carModel) || '').trim();
   return (mk && md.toLowerCase().indexOf(mk.toLowerCase()) !== 0) ? (mk + ' ' + md).trim() : (md || mk);
 }
-// Event Settings: the round's track (flag, name, place) top left, and the driver's team, number and car on the right.
+// Splits a team line into two balanced lines at a space (the game wraps a long team name the same way).
+function _rccSgSplit(text) {
+  var words = text.split(' ');
+  if (words.length < 2) return [text];
+  var best = 1, bestDiff = 1e9;
+  for (var k = 1; k < words.length; k++) {
+    var a = words.slice(0, k).join(' ').length, b = words.slice(k).join(' ').length;
+    if (Math.abs(a - b) < bestDiff) { bestDiff = Math.abs(a - b); best = k; }
+  }
+  return [words.slice(0, best).join(' '), words.slice(best).join(' ')];
+}
+// Event Settings, right side: the maker's logo left of the game's vertical line, the team name, number and car name to the
+// right of it, and the car's livery underneath. With no screenshot for the track, the round's track is drawn too.
 function _rccSgHeader(scr, x) {
   var c = x.round || {};
   var r = x.reg || {};
-  var flagSrc = (c.country && typeof countryFlagSrc === 'function') ? countryFlagSrc(c.country) : '';
-  if (flagSrc) scr.items.push({ kind: 'ov', x: 188, y: 153, w: 150, h: 92, build: function (b) {
-    var im = document.createElement('img'); im.src = flagSrc; im.alt = c.country; im.className = 'rcc-sg-ov-flag'; b.appendChild(im);
-  } });
-  var tn = String(c.trackName || c.track || '').toUpperCase();
-  if (tn) scr.items.push({ kind: 'ov', x: 356, y: 140, w: 1110, h: 110, build: function (b) {
-    var t = _rccEl('span', 'rcc-sg-ov-title'); _rccSgSqueeze(t, tn, 6.6); b.appendChild(t);
-  } });
-  var place = [c.region, c.country].filter(Boolean).join(', ').toUpperCase();
-  if (place) scr.items.push({ kind: 'ov', x: 190, y: 270, w: 1260, h: 70, build: function (b) {
-    var t = _rccEl('span', 'rcc-sg-ov-place'); _rccSgSqueeze(t, place, 2.6); b.appendChild(t);
-  } });
-  if (r.teamName) {
-    var tl = (String(r.teamName) + (x.year ? ' ' + x.year : '') + (r.carNumber ? ' #' + r.carNumber : '')).toUpperCase();
-    var car = _rccSgCarName(r).toUpperCase();
-    scr.items.push({ kind: 'ov', x: 1420, y: 478, w: 575, h: 170, build: function (b) {
-      var t = _rccEl('div', 'rcc-sg-ov-team'); t.textContent = tl; t.style.fontSize = (tl.length > 28 ? 2.5 : 3.1) + 'cqw'; b.appendChild(t);
-      if (car) { var cn = _rccEl('div', 'rcc-sg-ov-carname'); cn.textContent = car; b.appendChild(cn); }
+  if (!x.hasShot) {
+    var flagSrc = (c.country && typeof countryFlagSrc === 'function') ? countryFlagSrc(c.country) : '';
+    if (flagSrc) scr.items.push({ kind: 'ov', x: 188, y: 153, w: 150, h: 92, build: function (b) {
+      var im = document.createElement('img'); im.src = flagSrc; im.alt = c.country; im.className = 'rcc-sg-ov-flag'; b.appendChild(im);
     } });
-    if (r.carNumber && x.year) scr.items.push({ kind: 'ov', x: 1420, y: 680, w: 520, h: 190, build: function (b) {
-      var im = document.createElement('img'); im.className = 'rcc-sg-ov-car'; im.alt = '';
-      _rccCarImg(im, x.year, r.carNumber, x.series, function () { im.style.display = 'none'; });
-      b.appendChild(im);
+    var tn = String(c.trackName || c.track || '').toUpperCase();
+    if (tn) scr.items.push({ kind: 'ov', x: 356, y: 140, w: 1110, h: 110, build: function (b) {
+      var t = _rccEl('span', 'rcc-sg-ov-title'); _rccSgSqueeze(t, tn, 6.6); b.appendChild(t);
+    } });
+    var place = [c.region, c.country].filter(Boolean).join(', ').toUpperCase();
+    if (place) scr.items.push({ kind: 'ov', x: 190, y: 270, w: 1260, h: 70, build: function (b) {
+      var t = _rccEl('span', 'rcc-sg-ov-place'); _rccSgSqueeze(t, place, 2.6); b.appendChild(t);
     } });
   }
+  if (!r.teamName) return;
+  if (r.manufacturer) scr.items.push({ kind: 'ov', x: 1420, y: 462, w: 112, h: 104, build: function (b) {
+    var im = document.createElement('img'); im.className = 'rcc-sg-ov-logo'; im.alt = '';
+    im.src = manufacturerLogoSrc(r.manufacturer, 'white');
+    manufacturerLogoFallback(im, r.manufacturer, function () { im.style.display = 'none'; });
+    b.appendChild(im);
+  } });
+  var tl = (String(r.teamName) + (r.carNumber ? ' #' + r.carNumber : '')).toUpperCase();
+  var car = _rccSgCarName(r).toUpperCase();
+  scr.items.push({ kind: 'ov', x: 1613, y: 462, w: 355, h: 180, build: function (b) {
+    b.classList.add('rcc-sg-ov-teambox');
+    (tl.length > 22 ? _rccSgSplit(tl) : [tl]).forEach(function (ln) {
+      var d = _rccEl('div', 'rcc-sg-ov-teamline'); var t = _rccEl('span', 'rcc-sg-ov-team'); _rccSgSqueeze(t, ln, 3.2); d.appendChild(t); b.appendChild(d);
+    });
+    if (car) { var d2 = _rccEl('div', 'rcc-sg-ov-carline'); var t2 = _rccEl('span', 'rcc-sg-ov-carname'); _rccSgSqueeze(t2, car, 1.55); d2.appendChild(t2); b.appendChild(d2); }
+  } });
+  if (r.carNumber && x.year) scr.items.push({ kind: 'ov', x: 1420, y: 680, w: 520, h: 190, build: function (b) {
+    var im = document.createElement('img'); im.className = 'rcc-sg-ov-car'; im.alt = '';
+    _rccCarImg(im, x.year, r.carNumber, x.series, function () { im.style.display = 'none'; });
+    b.appendChild(im);
+  } });
 }
 
 // One screen: { img, W, H, title, intro, items: [{ x, y, w, h, kind, level, text, label, value }] }.
@@ -3199,7 +3234,7 @@ function _rccSgScreens(x) {
   var screens = [];
 
   // 05 Event Settings
-  var s5 = { img: '05-Update.jpg', W: 2000, H: 1123, title: 'Event Settings', intro: 'This is the first screen you see after choosing your track and car. Match the red and blue values, then click Advanced Settings to adjust the AI Difficulty, Session details, Weather forecast and Advanced settings.', items: [] };
+  var s5 = { img: x.hasShot ? x.shot : '05-no-track.jpg', W: 2000, H: 1123, title: 'Event Settings', intro: 'This is the first screen you see after choosing your track and car. Match the red and blue values, then click Advanced Settings to adjust the AI Difficulty, Session details, Weather forecast and Advanced settings.', items: [] };
   _rccSgHeader(s5, x);
   s5.items.push({ kind: 'box', level: 'free', x: 167, y: 462, w: 376, h: 198, label: 'Practice', value: 'Your choice. Practice is never uploaded.' });
   s5.items.push({ kind: 'box', level: x.qual ? 'free' : 'should', x: 565, y: 462, w: 375, h: 198, label: 'Qualifying', value: x.qual ? 'On. The length is your choice.' : 'Off. Untick Qualifying so the race starts from a random grid.' });
@@ -3207,9 +3242,10 @@ function _rccSgScreens(x) {
   s5.items.push({ kind: 'chip', level: 'should', x: 1022, y: 606, w: 96, h: 40, text: startShort, label: 'Race Start', value: x.rolling });
   s5.items.push({ kind: 'chip', level: 'must', x: 343, y: 693, w: 121, h: 38, light: true, text: seasonTab, label: 'Starting Grid', value: (x.year ? x.year + ' Season' : 'Your season') + '. Never Fill Grid.' });
   // Only the classes that have cars for this season's series and year (from the uploaded car list); until that list has loaded, the season's own classes.
-  s5.items.push({ kind: 'cover', level: 'free', x: 160, y: 742, w: 480, h: 134 });
   var CL = { Hypercar: ['HY', 'HYPERCAR'], LMP2: ['P2', 'LMP2'], LMP3: ['P3', 'LMP3'], LMGT3: ['GT3', 'LMGT3'], LMGTE: ['GTE', 'LMGTE'] };
   var shown = RCC_CLASS_ORDER.filter(function (k) { return x.counts ? x.counts[k] > 0 : x.classes.indexOf(k) !== -1; });
+  // The screenshot's own three tiles stay under ours; cover whatever ours leave uncovered.
+  if (shown.length < 3) s5.items.push({ kind: 'cover', level: 'free', x: 167 + shown.length * 158 - 6, y: 742, w: 640 - (167 + shown.length * 158 - 6), h: 134 });
   shown.forEach(function (k, i) {
     var cnt = x.counts ? x.counts[k] : null;
     s5.items.push({ kind: 'class', level: 'must', x: 167 + i * 158, y: 747, w: 145, h: 122, big: CL[k][0], sub: CL[k][1], count: (cnt === null || cnt === undefined) ? '' : String(cnt), on: x.classes.indexOf(k) !== -1,
