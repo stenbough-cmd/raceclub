@@ -2447,7 +2447,7 @@ function _rclLoadMyStoryVotes() {
 function _rclAddStoryVoteBar(wrap, item) {
   if (!item || !item.isStory) return;
   _rclLoadMyStoryVotes().then(function (me) {
-    if (!me.signedIn || me.eligibleSeasonIds.indexOf(item.seasonId) === -1) return;
+    if (!me.signedIn) return;   // any signed-in member can rate a story
     var token = getToken();
     // Same look and behavior as the Championship page's story rating: round thumbs (green up, red down),
     // thumbs down opens a box asking what was not liked, and a toast confirms the vote.
