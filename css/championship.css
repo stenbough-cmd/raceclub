@@ -990,3 +990,9 @@ body.rcc-page.rcl-hub .rcl-lr-mention-title { color: #F21B0C; }
 .rcc-sg-chip.rcc-sg-center { justify-content: center; padding: 0; }
 .rcc-sg-slider.rcc-sg-bare { padding: 0 0.3cqw; }
 .rcc-sg-slider.rcc-sg-bare .rcc-sg-slider-track { flex: 1 1 auto; margin: 0; }
+
+/* Race Too Short popup: three choices, each a button with a line of explanation under it */
+.rcc-short-choices { display: flex; flex-direction: column; gap: 14px; }
+.rcc-short-choice { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.rcc-short-note { font-size: 13px; color: var(--rc-steel); line-height: 1.45; }
+.rcc-short-none { padding: 8px 10px; border: 1px solid var(--rc-silver); border-radius: 6px; background: var(--rc-offwhite); }

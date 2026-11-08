@@ -2311,7 +2311,7 @@ function rccOpenUpload(roundId, lockRound) {
   // The race in the game has to be at least as long as the round's planned length.
   if (c.plannedRaceLengthMinutes) {
     m.body.appendChild(_rccText('div', 'rc-hint', 'This round is a ' + (c.plannedRaceLengthTier || '') + ' race of ' + c.plannedRaceLengthMinutes +
-      ' minutes. The race in the game has to be the same length or longer, or the upload is refused.'));
+      ' minutes. Race it at the same length or longer. If it is shorter, you will be asked whether to upload it anyway, change the round to a shorter length, or reject the files.'));
   }
   function fileInput() {
     var f = document.createElement('input');
@@ -2346,13 +2346,15 @@ function rccOpenUpload(roundId, lockRound) {
 
   // send(extra): reads the chosen files and uploads them; extra adds { confirmTrack: true } after the
   // player answers Upload Anyway in the "Different Track?" popup.
+  var flags = {};   // answers given in the popups so far (confirmTrack, shortChoice); cleared on every new Upload click
   function send(extra) {
+    if (extra) Object.keys(extra).forEach(function (k) { flags[k] = extra[k]; });
     var reads = qFile ? [readFile(qFile.files[0]), readFile(rFile.files[0])] : [readFile(rFile.files[0])];
     return Promise.all(reads).then(function (read) {
       var q = qFile ? read[0] : null, r = qFile ? read[1] : read[0];
       var body = { seasonId: page.seasonId, roundId: c.roundId, raceFilename: r.name, raceXml: r.text };
       if (q) { body.qualifyFilename = q.name; body.qualifyXml = q.text; }
-      if (extra) Object.keys(extra).forEach(function (k) { body[k] = extra[k]; });
+      Object.keys(flags).forEach(function (k) { body[k] = flags[k]; });
       return _rccApi('champImportXml', body, { post: true });
     });
   }
@@ -2373,11 +2375,63 @@ function rccOpenUpload(roundId, lockRound) {
     first.parentNode.insertBefore(_rccText('p', 'rcc-confirm-text', qFile ? 'Upload them to this round anyway?' : 'Upload it to this round anyway?'), first.nextSibling);
   }
 
+  // The race was shorter than the round's planned length (Matt, 2026-11-08): ask instead of refusing.
+  // 1) Upload Anyway keeps the round's planned length and points, 2) Change The Round sets the round to
+  // the longest length the race qualifies for and scores it on that points table, 3) Reject Results
+  // closes this popup and goes back to the upload window with the files still chosen.
+  function askShort(res) {
+    var m = rccOpenModal('Race Too Short', { narrow: true });
+    var rn = res.roundNum || c.roundNum;
+    m.body.appendChild(_rccText('p', 'rcc-confirm-text', (qFile ? 'The Race file was ' : 'This race was ') + (res.racedText || 'shorter') + ' long, but Round ' + rn + ' is a ' + (res.plannedTier || '') + ' race of ' + (res.plannedText || 'a longer length') + '. What would you like to do?'));
+    var col = _rccEl('div', 'rcc-short-choices');
+    m.body.appendChild(col);
+    var errLine = _rccEl('div', 'rcc-error-line');
+    function choice(label, note, primary, run) {
+      var wrap = _rccEl('div', 'rcc-short-choice');
+      var b = _rccText('button', primary ? 'rc-btn-primary rc-btn-sm' : 'rc-btn-secondary rc-btn-sm', label); b.type = 'button';
+      wrap.appendChild(b); wrap.appendChild(_rccText('div', 'rcc-short-note', note)); col.appendChild(wrap);
+      if (primary) {
+        b.addEventListener('click', function () {
+          errLine.textContent = '';
+          Array.prototype.forEach.call(col.querySelectorAll('button'), function (x) { x.disabled = true; });
+          rccRunWrite(b, 'Uploading...', run).then(function (r2) {
+            Array.prototype.forEach.call(col.querySelectorAll('button'), function (x) { x.disabled = false; });
+            if (_rccHandleAuthError(r2)) return;
+            if (r2 && r2.needsConfirm && r2.confirmKind === 'track') { m.close(false); askTrack(r2); return; }
+            if (!r2 || !r2.success) { _rccToast((r2 && r2.message) || 'That did not work. Try again.', 'error'); return; }
+            m.close(true);
+            uploaded(r2);
+          }).catch(function () {
+            Array.prototype.forEach.call(col.querySelectorAll('button'), function (x) { x.disabled = false; });
+            _rccToast('No answer from the server. Reload the page to see whether it went through.', 'error');
+          });
+        });
+      } else {
+        b.addEventListener('click', function () { m.close(false); });
+      }
+      return b;
+    }
+    choice('Upload Anyway', 'Round ' + rn + ' stays a ' + (res.plannedTier || '') + ' race and is scored on the ' + (res.plannedTier || '') + ' points table.', true, function () { return send({ shortChoice: 'continue' }); });
+    if (res.adjustTier) {
+      choice('Change The Round To ' + res.adjustTier, 'Round ' + rn + ' becomes a ' + res.adjustTier + ' race of ' + (res.adjustText || '') + ' on your calendar, and is scored on the ' + res.adjustTier + ' points table.', true, function () { return send({ shortChoice: 'adjust' }); });
+    } else {
+      col.appendChild(_rccText('div', 'rcc-short-note rcc-short-none', 'This race is shorter than every race length in your season, so the round cannot be changed to fit it.'));
+    }
+    choice('Reject Results', 'Nothing is uploaded. You go back to choose different files.', false);
+    m.body.appendChild(errLine);
+  }
+
   go.addEventListener('click', function () {
     if (!bothChosen()) { _rccToast(qFile ? 'Choose both files. File 1 is the Qualify results and file 2 is the Race results.' : 'Choose the Race results file.', 'error'); return; }
     lockInputs(true);
+    flags = {};
     rccRunWrite(go, 'Uploading...', function () { return send(null); }).then(function (res) {
       if (_rccHandleAuthError(res)) return;
+      if (res && res.needsConfirm && res.confirmKind === 'short') {
+        lockInputs(false);
+        askShort(res);
+        return;
+      }
       if (res && res.needsConfirm && res.confirmKind === 'track') {
         lockInputs(false);
         askTrack(res);
@@ -3244,7 +3298,7 @@ function _rccSgScreens(x) {
   _rccSgHeader(s5, x);
   s5.items.push({ kind: 'box', level: 'free', x: 158, y: 453, w: 394, h: 216, label: 'Practice', value: 'Disabled. Practice is never uploaded.' });
   s5.items.push({ kind: 'box', level: x.qual ? 'free' : 'should', x: 556, y: 453, w: 393, h: 216, label: 'Qualifying', value: x.qual ? 'On. The length is your choice.' : 'Off. Untick Qualifying so the race starts from a random grid.' });
-  if (lenShort) s5.items.push({ kind: 'chip', level: 'must', x: 1198, y: 606, w: 74, h: 40, text: lenShort, label: 'Race Length', value: _rccSgClock(x.mins) + ' or longer' });
+  if (lenShort) s5.items.push({ kind: 'chip', level: 'should', x: 1198, y: 606, w: 74, h: 40, text: lenShort, label: 'Race Length', value: _rccSgClock(x.mins) + ' or longer' });
   s5.items.push({ kind: 'chip', level: 'should', x: 1022, y: 606, w: 96, h: 40, text: startShort, label: 'Race Start', value: x.rolling });
   // The box goes AROUND the game's white rectangle; the rectangle itself is redrawn exactly on top of it with this season's name.
   s5.items.push({ kind: 'box', level: 'must', x: 336, y: 687, w: 137, h: 53, label: 'Starting Grid', value: (x.year ? x.year + ' Season' : 'Your season') + '. Never Fill Grid.' });

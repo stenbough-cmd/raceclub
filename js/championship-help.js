@@ -42,9 +42,8 @@ var RCC_HELP_SECTIONS = [
       '<li><strong>Track and layout</strong>, as in the round. If the track is missing, switch the filter to All. If the files show a different track, you are asked whether to upload anyway.</li>' +
       '<li><strong>Class, car and team</strong>, the seat you signed for</li>' +
       '<li><strong>Starting Grid</strong>, set to your season of cars, such as Season 2023. Never choose Fill Grid, and only race your season\u2019s classes. A car in a class your season does not have is refused.</li>' +
-      '<li><strong>Race length</strong>, the same as the round or longer. A shorter race is refused.</li>' +
       '</ul></div>' +
-      '<p>Everything else only affects how accurate your records are. Copy the Difficulty and Advanced settings, the start type and the RealRoad time scale from your season, and choose the weather and start time the round shows. Assists are up to you, and the ones you use appear in the race recap.</p>' +
+      '<p>Race the same length as the round or longer. If the race is shorter, you are asked whether to upload it anyway and keep the round\u2019s length and points, change the round to the length the race qualifies for and score it on that points table, or reject the files. Everything else only affects how accurate your records are. Copy the Difficulty and Advanced settings, the start type and the RealRoad time scale from your season, and choose the weather and start time the round shows. Assists are up to you, and the ones you use appear in the race recap.</p>' +
       '<ol class="rcc-help-steps">' +
       '<li><strong>Qualifying.</strong> If your season has it, run Qualifying first. Practice is optional and is never uploaded. If your season has no qualifying, turn it off in the game so the race starts from a random grid.</li>' +
       '<li><strong>Race.</strong> Drive the Race to the checkered flag so the game saves the results.</li>' +
@@ -64,7 +63,7 @@ var RCC_HELP_SECTIONS = [
       '<li><strong>Click Upload Results</strong> and wait up to a minute. The page reloads with your standings, recap and story.</li>' +
       '</ol>' +
       '<p>The files are checked before anything is saved. If something is wrong, a message explains it and nothing is saved, so you can fix it and try again. If the track name in the files looks different from the round\u2019s track, you are asked whether to upload anyway. Choose Upload Anyway only when it really is the same track.</p>' +
-      '<div class="rc-rulebook-callout"><strong class="rcc-help-callout-title">Wrong Files?</strong>Click <strong>Erase Results</strong> on your latest round and upload again. The round stays on the calendar. If the race was shorter than the round, use Edit Season to shorten the round before you upload.</div>'
+      '<div class="rc-rulebook-callout"><strong class="rcc-help-callout-title">Wrong Files?</strong>Click <strong>Erase Results</strong> on your latest round and upload again. The round stays on the calendar. If the race was shorter than the round, you are asked whether to upload it anyway, change the round to a shorter length, or reject the files.</div>'
   },
   {
     id: 'recap', num: '5', title: 'Recaps, Reports and Stories',
