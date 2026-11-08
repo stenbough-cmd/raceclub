@@ -904,7 +904,10 @@
         busy = true;
         // A small size is drawn at twice its size and shown at its size, the way the avatars around the site are.
         var rw = prevSize ? prevSize * 2 : (quick ? 560 : 760);
-        var jobs = [H.render(R, { width: rw, player: previewPlayer }).then(function (cv) { if (prevSize) { cv.style.width = prevSize + 'px'; cv.style.height = 'auto'; } put(stage, cv); updateSelBox(); if (!quick) renderLayers(cv.missingLogos); })];
+        var jobs = [H.render(R, { width: rw, player: previewPlayer }).then(function (cv) {
+          // A quick draw (sliders, dragging) is made smaller to be fast, but the preview must not change size, so it is stretched back to the full width.
+          if (!prevSize && cv.width !== 760) { var big = document.createElement('canvas'); big.width = 760; big.height = Math.round(cv.height * 760 / cv.width); var bg = big.getContext('2d'); bg.imageSmoothingQuality = 'high'; bg.drawImage(cv, 0, 0, big.width, big.height); big.missingLogos = cv.missingLogos; cv = big; }
+          if (prevSize) { cv.style.width = prevSize + 'px'; cv.style.height = 'auto'; } put(stage, cv); updateSelBox(); if (!quick) renderLayers(cv.missingLogos); })];
         Promise.all(jobs).then(function () {}).catch(function (e) { toast('Render problem: ' + e.message, 'error'); }).then(function () { busy = false; if (again) { again = false; draw(lastQuick); } });
       }
 
