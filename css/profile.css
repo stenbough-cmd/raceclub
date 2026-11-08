@@ -122,8 +122,8 @@ body.rc-league-page { min-height: 100vh; display: flex; flex-direction: column; 
 .rdp-story-more { margin-top: 8px; background: none; border: 0; padding: 0; color: #8fb0cf; font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; }
 .rdp-story-more:hover { text-decoration: underline; }
 
-.rdp-modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,.72); z-index: 2500; display: flex; align-items: center; justify-content: center; padding: calc(var(--rc-band-top, 70px) + 16px) 20px calc(var(--rc-band-bottom, 0px) + 16px); }
-.rdp-modal { background: var(--rcl-bg-raised); border: 1px solid var(--rcl-line-bright); border-radius: 10px; width: 100%; max-width: 760px; max-height: calc(100vh - var(--rc-band-top, 70px) - var(--rc-band-bottom, 0px) - 32px); display: flex; flex-direction: column; box-shadow: var(--rc-shadow-lg-dark); }
+.rdp-modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,.72); z-index: 2500; display: flex; align-items: center; justify-content: center; padding: 16px 20px; }
+.rdp-modal { background: var(--rcl-bg-raised); border: 1px solid var(--rcl-line-bright); border-radius: 10px; width: 100%; max-width: 760px; max-height: calc(100vh - 32px); display: flex; flex-direction: column; box-shadow: var(--rc-shadow-lg-dark); }
 .rdp-modal-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 18px 20px; border-bottom: 1px solid var(--rcl-line); background: var(--rcl-bg-raised); border-radius: 10px 10px 0 0; } /* same header as the Account page popups, in the dark colors */
 .rdp-modal-title { margin: 0; font-family: var(--rc-font-heading); font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: var(--rcl-ink); font-size: 18px; }
 .rdp-modal-x { flex: none; width: 30px; height: 30px; padding: 0; border: 0; border-radius: 4px; background: none; color: var(--rcl-ink-faint); font-size: 20px; line-height: 1; cursor: pointer; }

@@ -2156,15 +2156,15 @@ a.rc-needs-item:hover { background: rgba(255, 255, 255, 0.06); }
   display: flex;
   align-items: center;
   justify-content: center;
-  /* Popups centre between the bottom of the header/navbar and the top of the footer (js/footer-stick.js publishes the two numbers). */
-  padding: calc(var(--rc-band-top, 0px) + 24px) 24px calc(var(--rc-band-bottom, 0px) + 24px);
+  /* Every popup is centred vertically in the browser window (Matt, 2026-11-08), equal space above and below. */
+  padding: 24px;
   z-index: 2000;
 }
 /* There is no sidebar any more, so every popup sits in the middle of the screen. */
 .rc-modal {
   width: 100%;
   max-width: 460px;
-  max-height: calc(100vh - var(--rc-band-top, 0px) - var(--rc-band-bottom, 0px) - 48px);
+  max-height: calc(100vh - 48px);
   overflow-y: auto;
   background: var(--rc-white);
   border-radius: 10px;

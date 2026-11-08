@@ -1582,10 +1582,10 @@ body.rc-league-page:not(.rcc-page) .rcl-allresults-session-select { min-width: 1
      that high renders partly behind/under the navbar and reads as "cut off." 86px = 70px navbar + a
      16px gap, so even a dialog tall enough to hit its own max-height ceiling (below) never starts
      above the navbar. */
-  /* Centred between the bottom of the header/navbar and the top of the footer (js/footer-stick.js). */
-  padding: calc(var(--rc-band-top, 70px) + 16px) 20px calc(var(--rc-band-bottom, 0px) + 16px);
+  /* Centred vertically in the browser window, equal space above and below (Matt, 2026-11-08). Sits above the navbar so a tall popup is never hidden behind it. */
+  padding: 16px 20px;
   overflow-y: auto;
-  z-index: 500;
+  z-index: 1001;
 }
 /* Dims the navbar along with the rest of the page -- .rc-fixed-header (css/style.css) is
    z-index:1000, above this overlay's own default 500, so every other league.html popup (News,
@@ -1602,7 +1602,7 @@ body.rc-league-page:not(.rcc-page) .rcl-allresults-session-select { min-width: 1
   /* Capped to fit inside the overlay's own top/bottom padding (86px + 24px = 110px, kept in sync
      with .rcl-modal-overlay above), so the dialog always sits fully inside the page -- clear of the
      fixed navbar at the top -- and scrolls its own content internally once it hits this ceiling. */
-  max-height: calc(100vh - var(--rc-band-top, 70px) - var(--rc-band-bottom, 0px) - 32px);
+  max-height: calc(100vh - 32px);
   margin: auto;
   overflow-y: auto;
   /* Same gutters as Account.html's popups (.rc-modal-body: 20px). */
