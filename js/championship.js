@@ -2940,14 +2940,21 @@ function rccRenderStories(page) {
   curTitle.addEventListener('click', function () { rccOpenStory(0); });
   curTitle.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); rccOpenStory(0); } });
   wrap.appendChild(curHead);
-  var pv = _rccStoryPreview(cur.body, RCC_STORY_PREVIEW_CHARS);
-  _rccPlaceStoryPhotos(pv.el, cur, true);
-  wrap.appendChild(pv.el);
+  // The preview shows at least RCC_STORY_PREVIEW_CHARS characters, and more when the Older Stories list beside it is taller (js/story-fit.js).
+  var bodyEl = null;
+  function drawPreview(n) {
+    var pv = _rccStoryPreview(cur.body, n);
+    _rccPlaceStoryPhotos(pv.el, cur, true);
+    if (bodyEl) wrap.replaceChild(pv.el, bodyEl); else wrap.appendChild(pv.el);
+    bodyEl = pv.el;
+  }
+  drawPreview(RCC_STORY_PREVIEW_CHARS);
   var more = _rccText('button', 'rcl-news-continue', 'Continue Reading');
   more.type = 'button';
   more.addEventListener('click', function () { rccOpenStory(0); });
   wrap.appendChild(more);
   layout.appendChild(wrap);
+  layout.__fit = { current: wrap, fullLength: String(cur.body || '').length, render: drawPreview };
   if (published.length > 1) {
     // Older stories under the preview, newest first; each opens by itself in a popup, with a subheading like the League Hub's.
     var prev = _rccEl('div', 'rcl-news-previous');
@@ -2967,6 +2974,7 @@ function rccRenderStories(page) {
     layout.appendChild(prev);
   }
   body.appendChild(layout);
+  if (typeof rcFitStoryPreview === 'function') rcFitStoryPreview({ layout: layout, current: layout.__fit.current, fullLength: layout.__fit.fullLength, minChars: RCC_STORY_PREVIEW_CHARS, render: layout.__fit.render });
 }
 
 // Thumbs up / down under a story (owner only; a thumbs down asks why).

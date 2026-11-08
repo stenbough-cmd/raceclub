@@ -1481,7 +1481,7 @@ body.rc-league-page:not(.rcc-page) .rcl-allresults-session-select { min-width: 1
 .rcl-news-current-body strong { color: var(--rcl-ink); }
 .rcl-news-continue {
   display: inline-block;
-  margin-top: 8px;
+  margin-top: 14px;
   font-family: var(--rc-font-heading);
   font-size: 13px;
   font-weight: 800;

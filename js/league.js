@@ -2577,10 +2577,16 @@ function _rclRenderNews(hub) {
   curTitle.addEventListener('click', function () { _rclOpenStoryModal(0, true); });
   curTitle.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); _rclOpenStoryModal(0, true); } });
   current.appendChild(curHead);
-  var pv = _rclStoryPreviewHtml(cur.body, 1000);
-  var curBody = _rclEl('div', 'rcl-news-current-body', pv.html);
-  _rclPlaceStoryPhotos(curBody, cur, true);
-  current.appendChild(curBody);
+  // The preview shows at least 1000 characters, and more when the Older Stories list beside it is taller (js/story-fit.js).
+  var curBody = null;
+  function drawPreview(n) {
+    var pv = _rclStoryPreviewHtml(cur.body, n);
+    var nb = _rclEl('div', 'rcl-news-current-body', pv.html);
+    _rclPlaceStoryPhotos(nb, cur, true);
+    if (curBody) current.replaceChild(nb, curBody); else current.appendChild(nb);
+    curBody = nb;
+  }
+  drawPreview(1000);
   var cont = _rclEl('button', 'rcl-news-continue', 'Continue Reading');
   cont.type = 'button';
   cont.addEventListener('click', function () { _rclOpenStoryModal(0, true); });
@@ -2601,6 +2607,7 @@ function _rclRenderNews(hub) {
     layout.appendChild(older);
   }
   body.appendChild(layout);
+  if (typeof rcFitStoryPreview === 'function') rcFitStoryPreview({ layout: layout, current: current, fullLength: String(cur.body || '').length, minChars: 1000, render: drawPreview });
 }
 
 // Track photos for a story. A round story has one to three photos; a Season Preview has two (photoFile "a|b", photoCaption "ca|cb").
