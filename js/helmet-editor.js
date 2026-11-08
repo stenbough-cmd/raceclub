@@ -894,21 +894,25 @@
         if (document.activeElement !== ta) ta.value = JSON.stringify(R);
       }
 
-      var busy = false, again = false, lastQuick = false;
+      var busy = false, again = false, lastQuick = false, lastFinal = false, settleT = 0;
       function put(el, cv) { el.innerHTML = ''; el.appendChild(cv); }
-      function draw(quick) {
+      // quick: a smaller, faster draw while a slider or the mouse is moving. Once it stops for a moment, one full-size draw
+      // (final: no list or panel rebuild) follows, so the helmet is sharp again and always shows at the same size.
+      function draw(quick, final) {
         if (pvTouched) syncPv();
         syncControls(); updateTab();
-        if (!quick) { renderLayers(); renderDetail(); }
-        if (busy) { again = true; lastQuick = !!quick; return; }
+        clearTimeout(settleT);
+        if (quick && !prevSize) settleT = setTimeout(function () { draw(false, true); }, 350);
+        if (!quick && !final) { renderLayers(); renderDetail(); }
+        if (busy) { again = true; lastQuick = !!quick; lastFinal = !!final; return; }
         busy = true;
         // A small size is drawn at twice its size and shown at its size, the way the avatars around the site are.
         var rw = prevSize ? prevSize * 2 : (quick ? 560 : 760);
         var jobs = [H.render(R, { width: rw, player: previewPlayer }).then(function (cv) {
-          // A quick draw (sliders, dragging) is made smaller to be fast, but the preview must not change size, so it is stretched back to the full width.
+          // The quick draw is smaller to be fast; it is stretched to the full width meanwhile so the preview never changes size (the full-size draw follows when the movement stops).
           if (!prevSize && cv.width !== 760) { var big = document.createElement('canvas'); big.width = 760; big.height = Math.round(cv.height * 760 / cv.width); var bg = big.getContext('2d'); bg.imageSmoothingQuality = 'high'; bg.drawImage(cv, 0, 0, big.width, big.height); big.missingLogos = cv.missingLogos; cv = big; }
-          if (prevSize) { cv.style.width = prevSize + 'px'; cv.style.height = 'auto'; } put(stage, cv); updateSelBox(); if (!quick) renderLayers(cv.missingLogos); })];
-        Promise.all(jobs).then(function () {}).catch(function (e) { toast('Render problem: ' + e.message, 'error'); }).then(function () { busy = false; if (again) { again = false; draw(lastQuick); } });
+          if (prevSize) { cv.style.width = prevSize + 'px'; cv.style.height = 'auto'; } put(stage, cv); updateSelBox(); if (!quick && !final) renderLayers(cv.missingLogos); })];
+        Promise.all(jobs).then(function () {}).catch(function (e) { toast('Render problem: ' + e.message, 'error'); }).then(function () { busy = false; if (again) { again = false; draw(lastQuick, lastFinal); } });
       }
 
       // A red outline on the helmet around the layer that is selected, so you can see which one you are moving.
