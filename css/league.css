@@ -1551,16 +1551,17 @@ body.rc-league-page:not(.rcc-page) .rcl-allresults-session-select { min-width: 1
 .rcl-news-previous-title { display: flex; align-items: flex-start; gap: 10px; }
 .rcl-news-previous-text { min-width: 0; }
 /* Thumbs on an AI story (drivers who raced that season only). */
-.rcl-story-vote { margin-top: 14px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.rcl-story-vote-label { font-size: 12px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--rcl-ink-faint); margin-right: 4px; }
-.rcl-story-thumb { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; background: none; border: 1px solid var(--rcl-line-bright); color: var(--rcl-ink-dim); cursor: pointer; }
-.rcl-story-thumb:hover { color: var(--rcl-ink); border-color: var(--rcl-ink-dim); }
-.rcl-story-thumb-on { color: #fff; background: var(--rc-red); border-color: var(--rc-red); }
-.rcl-story-vote-note { font-size: 13px; color: var(--rcl-ink-faint); }
-.rcl-story-vote-form { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; max-width: 520px; }
-.rcl-story-vote-form textarea { width: 100%; box-sizing: border-box; background: var(--rcl-bg-raised-2); color: var(--rcl-ink); border: 1px solid var(--rcl-line-bright); padding: 8px; font-family: var(--rc-font-body); font-size: 14px; }
-.rcl-story-vote-send { align-self: flex-start; background: var(--rc-red); color: #fff; border: none; padding: 8px 14px; font-family: var(--rc-font-heading); font-size: 12px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; }
-.rcl-story-vote-send:hover { background: var(--rc-red-dark); }
+.rcl-story-vote { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--rc-offwhite); }
+.rcl-story-vote-label { font-size: 13px; font-weight: 700; color: var(--rc-steel); }
+.rcl-story-thumb { width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--rc-silver); background: #fff; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; }
+.rcl-story-thumb svg { width: 18px; height: 18px; fill: #8a94a3; }
+.rcl-story-thumb-down svg { transform: rotate(180deg); }
+.rcl-story-thumb:hover svg { fill: var(--rc-carbon); }
+.rcl-story-thumb-up.rcl-story-thumb-on { background: #2e9e5b; border-color: #2e9e5b; }
+.rcl-story-thumb-down.rcl-story-thumb-on { background: var(--rc-red); border-color: var(--rc-red); }
+.rcl-story-thumb-on svg { fill: #fff; }
+.rcl-story-vote-form { flex: 1 1 100%; display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
+.rcl-story-vote-form textarea { width: 100%; box-sizing: border-box; font: inherit; font-size: 14px; padding: 8px 10px; border: 1px solid var(--rc-silver); border-radius: 6px; resize: vertical; background: #fff; color: var(--rc-carbon); }
 
 /* -------------------------------------------------------------------- */
 /* Read-story popup -- centered card over a dimmed backdrop, opened from */

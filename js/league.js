@@ -2449,45 +2449,51 @@ function _rclAddStoryVoteBar(wrap, item) {
   _rclLoadMyStoryVotes().then(function (me) {
     if (!me.signedIn || me.eligibleSeasonIds.indexOf(item.seasonId) === -1) return;
     var token = getToken();
+    // Same look and behavior as the Championship page's story rating: round thumbs (green up, red down),
+    // thumbs down opens a box asking what was not liked, and a toast confirms the vote.
     var bar = _rclEl('div', 'rcl-story-vote');
-    bar.appendChild(_rclEl('span', 'rcl-story-vote-label', 'Rate this story'));
-    var up = _rclEl('button', 'rcl-story-thumb rcl-story-thumb-up', RCL_THUMB_UP_SVG_);
-    var down = _rclEl('button', 'rcl-story-thumb rcl-story-thumb-down', RCL_THUMB_DOWN_SVG_);
+    bar.appendChild(_rclEl('span', 'rcl-story-vote-label', 'Did you enjoy this story?'));
+    var THUMB = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 11v9H4v-9h3zm2 9h8.2a2 2 0 0 0 2-1.6l1.3-6.4A2 2 0 0 0 18.5 9H14l.7-3.4A1.6 1.6 0 0 0 13.1 4L9 9.6V20z"/></svg>';
+    var up = _rclEl('button', 'rcl-story-thumb rcl-story-thumb-up', THUMB);
+    var down = _rclEl('button', 'rcl-story-thumb rcl-story-thumb-down', THUMB);
     up.type = 'button'; down.type = 'button';
     up.setAttribute('aria-label', 'Thumbs up'); down.setAttribute('aria-label', 'Thumbs down');
     bar.appendChild(up); bar.appendChild(down);
-    var note = _rclEl('span', 'rcl-story-vote-note', '');
-    bar.appendChild(note);
     var form = _rclEl('div', 'rcl-story-vote-form');
     form.style.display = 'none';
     var ta = document.createElement('textarea');
-    ta.rows = 3; ta.maxLength = 1000; ta.placeholder = 'What did you not like about this story?';
-    var send = _rclEl('button', 'rcl-story-vote-send', 'Send Feedback');
+    ta.rows = 3; ta.maxLength = 1000; ta.placeholder = 'What didn\u2019t you like about this story?';
+    var send = _rclEl('button', 'rc-btn-primary rc-btn-sm', 'Send Feedback');
     send.type = 'button';
     form.appendChild(ta); form.appendChild(send);
+    bar.appendChild(form);
     function mark(vote) {
-      up.classList.toggle('rcl-story-thumb-on', vote === 'up');
-      down.classList.toggle('rcl-story-thumb-on', vote === 'down');
+      [[up, 'up'], [down, 'down']].forEach(function (p) {
+        var on = vote === p[1];
+        p[0].classList.toggle('rcl-story-thumb-on', on);
+        p[0].setAttribute('aria-pressed', on ? 'true' : 'false');
+      });
     }
     mark(me.votes[item.newsId] || '');
     function submit(vote, comment) {
-      note.textContent = 'Saving...';
       fetchApi('leagueStory', { method: 'POST', token: token, body: { op: 'feedback', storyId: item.newsId, vote: vote, comment: comment || '' } }).then(function (res) {
-        if (!res || !res.success) { note.textContent = (res && res.message) || 'Could not save your feedback.'; return; }
+        if (!res || !res.success) { showToast((res && res.message) || 'Could not save your feedback.', 'error'); return; }
         me.votes[item.newsId] = vote;
         mark(vote);
         form.style.display = 'none';
-        note.textContent = 'Thanks for the feedback.';
-      }).catch(function () { note.textContent = 'Could not reach the server.'; });
+        showToast('Thanks for the feedback. Your next stories will take it into account.', 'success');
+      }).catch(function () { showToast('Could not reach the server. Try again.', 'error'); });
     }
-    up.addEventListener('click', function () { form.style.display = 'none'; submit('up', ''); });
-    down.addEventListener('click', function () { form.style.display = ''; ta.focus(); });
+    up.addEventListener('click', function () { submit('up', ''); });
+    down.addEventListener('click', function () {
+      form.style.display = form.style.display === 'none' ? '' : 'none';
+      if (form.style.display === '') ta.focus();
+    });
     send.addEventListener('click', function () {
-      if (!ta.value.trim()) { note.textContent = 'Please say what you did not like.'; return; }
+      if (!ta.value.trim()) { showToast('Tell us what you didn\u2019t like about the story.', 'error'); return; }
       submit('down', ta.value.trim());
     });
     wrap.appendChild(bar);
-    wrap.appendChild(form);
   });
 }
 
