@@ -4,7 +4,7 @@
 // Do NOT edit by hand: run  node tools/bump-version.js 0.9.1  from the site folder, which changes this number
 // AND the "?v=" on every <script>/<link> tag in every .html file in one go.
 // Numbering rule (Matt, 2026-11-03): the site is not ready for release, so after 0.9.99 the next version is 0.10.0 (then 0.10.1 ...), not 1.0.
-var RC_VERSION = '0.10.103';
+var RC_VERSION = '0.10.104';
 // rcAsset('js/helmet.js') -> 'js/helmet.js?v=0.9.0'. Used by scripts that load other files on demand.
 function rcAsset(path) { return path + '?v=' + RC_VERSION; }
 
