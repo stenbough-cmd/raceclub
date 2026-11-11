@@ -3313,7 +3313,7 @@ body:has(> .rc-auth-page) > .rc-site-footer { flex: none; }
 
 /* Index "See Inside" section: tabs above a browser-style frame that shows the League Hub, a Driver Profile, the Dashboard and the Single Player
    Championship, one at a time (the script is right after the section in index.html). */
-.rc-inside-section { background: var(--rc-carbon); border-top: 18px solid var(--rc-red); overflow: hidden; }
+.rc-inside-section { background: var(--rc-carbon); overflow: hidden; }
 .rc-inside-section h2, .rc-inside-section .rc-eyebrow { color: var(--rc-white); }
 .rc-inside-section .rc-landing-tagline { color: var(--rc-silver); }
 .rc-inside-inner { max-width: 1120px; }
