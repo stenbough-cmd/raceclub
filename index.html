@@ -16,17 +16,17 @@
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="assets/images/favicon-32.png">
 <link rel="apple-touch-icon" href="assets/images/apple-touch-icon.png">
-<link rel="stylesheet" href="css/style.css?v=0.10.112">
-<script src="js/version.js?v=0.10.112"></script>
-<script src="js/footer-stick.js?v=0.10.112" defer></script>
-<script src="js/img-loader.js?v=0.10.112"></script>
-<script src="js/api.js?v=0.10.112"></script>
-<script src="js/auth.js?v=0.10.112"></script>
-<script src="js/header.js?v=0.10.112"></script>
+<link rel="stylesheet" href="css/style.css?v=0.10.113">
+<script src="js/version.js?v=0.10.113"></script>
+<script src="js/footer-stick.js?v=0.10.113" defer></script>
+<script src="js/img-loader.js?v=0.10.113"></script>
+<script src="js/api.js?v=0.10.113"></script>
+<script src="js/auth.js?v=0.10.113"></script>
+<script src="js/header.js?v=0.10.113"></script>
 <!-- reference-data.js + edit-profile.js -- let the header's Edit Profile menu item open its
      popup in place on this page instead of navigating to Account.html first. -->
-<script src="js/reference-data.js?v=0.10.112"></script>
-<script src="js/edit-profile.js?v=0.10.112"></script>
+<script src="js/reference-data.js?v=0.10.113"></script>
+<script src="js/edit-profile.js?v=0.10.113"></script>
 </head>
 <body>
 
@@ -199,11 +199,11 @@ var RC_DATA_BASE = 'https://stenbough-cmd.github.io/race-club-data/website/data/
           <ul><li>Your helmet, number and current seat</li><li>Season and career stats</li><li>Form guide and race-by-race charts</li></ul>
         </div>
       </div>
-      <div class="rc-tilt-row rc-tilt-left">
+      <div class="rc-tilt-row rc-tilt-multi rc-tilt-left">
         <div class="rc-tilt-scene">
           <div class="rc-browser rc-tilt-browser">
             <div class="rc-browser-bar" aria-hidden="true"><i></i><i></i><i></i><span>Dashboard</span></div>
-            <div class="rc-browser-stage"><img class="rc-inside-img rc-inside-img-on" src="assets/images/showcase/dashboard.webp" width="1800" height="1102" alt="The Race Club Dashboard: season registration, current seat, next race and protests." loading="lazy" decoding="async"></div>
+            <div class="rc-browser-stage"><img data-label="Dashboard" class="rc-inside-img rc-inside-img-on" src="assets/images/showcase/dashboard.webp" width="1800" height="1102" alt="The Race Club Dashboard: season registration, current seat, next race and protests." loading="lazy" decoding="async"><img class="rc-inside-img" src="assets/images/showcase/dashboard-help.webp" width="1800" height="1102" alt="The Help popup: rules and regulations for the Online League, with a jump-to-section menu." data-label="Help" loading="lazy" decoding="async"><img class="rc-inside-img" src="assets/images/showcase/dashboard-helmet.webp" width="1800" height="1102" alt="The Helmet Designer: pick a design, base and accent colors, and a visor." data-label="Helmet Designer" loading="lazy" decoding="async"></div>
           </div>
         </div>
         <div class="rc-tilt-card">
@@ -212,11 +212,11 @@ var RC_DATA_BASE = 'https://stenbough-cmd.github.io/race-club-data/website/data/
           <ul><li>Register for the season</li><li>See your seat and your next race</li><li>File and follow protests</li></ul>
         </div>
       </div>
-      <div class="rc-tilt-row rc-tilt-right">
+      <div class="rc-tilt-row rc-tilt-multi rc-tilt-right">
         <div class="rc-tilt-scene">
           <div class="rc-browser rc-tilt-browser">
             <div class="rc-browser-bar" aria-hidden="true"><i></i><i></i><i></i><span>Race Recap</span></div>
-            <div class="rc-browser-stage" style="aspect-ratio: 1800 / 946;"><img class="rc-inside-img rc-inside-img-on" src="assets/images/showcase/race-recap.webp" width="1800" height="946" alt="A Race Recap driver report: start-to-finish, best lap, laps, pit stops and contacts, plus a lap-by-lap race position chart." loading="lazy" decoding="async"></div>
+            <div class="rc-browser-stage" style="aspect-ratio: 1800 / 1059;"><img data-label="Race Recap: Driver Report" class="rc-inside-img rc-inside-img-on" src="assets/images/showcase/race-recap.webp" width="1800" height="1059" alt="A Race Recap driver report: start-to-finish, best lap, laps, pit stops and contacts, plus a lap-by-lap race position chart." loading="lazy" decoding="async"><img class="rc-inside-img" src="assets/images/showcase/recap-results.webp" width="1800" height="1059" alt="Race Results: the full class classification with gaps, average speed, best lap and points." data-label="Race Results" loading="lazy" decoding="async"><img class="rc-inside-img" src="assets/images/showcase/recap-qualifying.webp" width="1800" height="1059" alt="Qualifying Results: best lap and all three sector times for every driver." data-label="Qualifying Results" loading="lazy" decoding="async"><img class="rc-inside-img" src="assets/images/showcase/recap-report.webp" width="1800" height="1059" alt="The Race Report: a lap-by-lap account of contacts and position changes." data-label="Race Report" loading="lazy" decoding="async"></div>
           </div>
         </div>
         <div class="rc-tilt-card">
@@ -227,6 +227,39 @@ var RC_DATA_BASE = 'https://stenbough-cmd.github.io/race-club-data/website/data/
       </div>
     </div>
   </section>
+
+  <script>
+    // See Inside: hovering (or tapping, or tabbing to) a picture that has more views fades through them.
+    (function () {
+      var rows = document.querySelectorAll('.rc-tilt-multi');
+      Array.prototype.forEach.call(rows, function (row) {
+        var imgs = row.querySelectorAll('.rc-inside-img');
+        var bar = row.querySelector('.rc-browser-bar span');
+        var browser = row.querySelector('.rc-tilt-browser');
+        var stage = row.querySelector('.rc-browser-stage');
+        if (imgs.length < 2 || !bar || !stage) return;
+        var dots = document.createElement('div'); dots.className = 'rc-tilt-dots'; dots.setAttribute('aria-hidden', 'true');
+        Array.prototype.forEach.call(imgs, function () { dots.appendChild(document.createElement('i')); });
+        stage.appendChild(dots);
+        browser.setAttribute('tabindex', '0');
+        var idx = 0, timer = null;
+        function show(i) {
+          idx = (i + imgs.length) % imgs.length;
+          Array.prototype.forEach.call(imgs, function (m, k) { m.classList.toggle('rc-inside-img-on', k === idx); });
+          Array.prototype.forEach.call(dots.children, function (d, k) { d.className = k === idx ? 'rc-tilt-dot-on' : ''; });
+          bar.textContent = imgs[idx].getAttribute('data-label') || '';
+        }
+        function start() { row.classList.add('rc-tilt-playing'); if (timer) return; timer = setInterval(function () { show(idx + 1); }, 2600); setTimeout(function () { if (timer && idx === 0) show(1); }, 350); }
+        function stop() { row.classList.remove('rc-tilt-playing'); clearInterval(timer); timer = null; show(0); }
+        row.addEventListener('mouseenter', start);
+        row.addEventListener('mouseleave', stop);
+        browser.addEventListener('focus', start);
+        browser.addEventListener('blur', stop);
+        browser.addEventListener('click', function () { clearInterval(timer); timer = null; show(idx + 1); });
+        show(0);
+      });
+    })();
+  </script>
 
   <!-- Photo showcase: rotates every 10 seconds (js/index-showcase.js). Hidden until at least one photo is listed there. -->
   <section class="rc-showcase-section" id="rc-showcase" hidden>
@@ -830,6 +863,6 @@ var RC_DATA_BASE = 'https://stenbough-cmd.github.io/race-club-data/website/data/
 
 </div>
 
-<script src="js/index-showcase.js?v=0.10.112"></script>
+<script src="js/index-showcase.js?v=0.10.113"></script>
 </body>
 </html>

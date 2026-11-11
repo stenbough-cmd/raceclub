@@ -3331,7 +3331,15 @@ body:has(> .rc-auth-page) > .rc-site-footer { flex: none; }
 .rc-browser-bar i { width: 10px; height: 10px; border-radius: 50%; background: var(--rc-silver); flex: none; }
 .rc-browser-bar span { flex: 1 1 auto; min-width: 0; margin-left: 10px; padding: 4px 12px; border-radius: 6px; background: var(--rc-white); border: 1px solid var(--rc-silver); font-size: 12px; color: var(--rc-steel); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .rc-browser-stage { position: relative; aspect-ratio: 1800 / 1102; background: var(--rc-offwhite); }
-.rc-inside-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top; }
+.rc-inside-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top; opacity: 0; transition: opacity 0.7s ease; }
+.rc-inside-img-on { opacity: 1; }
+.rc-tilt-multi .rc-tilt-browser { cursor: pointer; outline: none; }
+.rc-tilt-dots { position: absolute; left: 0; right: 0; bottom: 12px; display: flex; justify-content: center; gap: 7px; z-index: 3; pointer-events: none; }
+.rc-tilt-dots i { width: 8px; height: 8px; border-radius: 50%; background: rgba(23, 23, 23, 0.28); box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.7); transition: background 0.3s ease, transform 0.3s ease; }
+.rc-tilt-dots i.rc-tilt-dot-on { background: var(--rc-red); transform: scale(1.25); }
+.rc-tilt-multi .rc-browser-stage::after { content: 'Hover to explore'; position: absolute; top: 12px; right: 12px; z-index: 3; padding: 5px 11px; border-radius: 999px; background: rgba(23, 23, 23, 0.82); color: var(--rc-white); font-family: var(--rc-font-heading); font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; transition: opacity 0.3s ease; pointer-events: none; }
+.rc-tilt-playing .rc-browser-stage::after { opacity: 0; }
+@media (hover: none) { .rc-tilt-multi .rc-browser-stage::after { content: 'Tap to explore'; } }
 .rc-tilt-card { position: absolute; bottom: -26px; width: 36%; padding: 20px 22px 22px; background: var(--rc-white); border-radius: 10px; border-bottom: 4px solid var(--rc-red); box-shadow: 0 20px 44px rgba(0, 0, 0, 0.5); z-index: 2; }
 .rc-tilt-left .rc-tilt-card { right: 0; }
 .rc-tilt-right .rc-tilt-card { left: 0; }
@@ -3347,4 +3355,4 @@ body:has(> .rc-auth-page) > .rc-site-footer { flex: none; }
   .rc-tilt-right .rc-tilt-browser { transform: rotateY(-8deg) rotateX(3deg); }
   .rc-tilt-card { position: relative; bottom: auto; left: auto; right: auto; width: auto; margin: -28px 12px 0; }
 }
-@media (prefers-reduced-motion: reduce) { .rc-tilt-browser { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .rc-tilt-browser, .rc-inside-img { transition: none; } }
