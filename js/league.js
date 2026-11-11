@@ -3220,8 +3220,9 @@ function _rclRenderSeasonTitle_(hub) {
   if (!el) return;
   el.innerHTML = '';
   if (!hub || !hub.hasSeason || !hub.seasonName) { el.hidden = true; return; }
-  el.appendChild(_rclEl('div', 'rcl-season-eyebrow', hub.seasonNumber ? 'Season ' + hub.seasonNumber : 'Season'));
-  el.appendChild(_rclEl('h1', 'rcl-season-name', _rclSeasonTitleText_(hub.seasonName)));
+  // One line: S1 | Season Name (the old red "Season N" line above it is gone).
+  var nm = _rclSeasonTitleText_(hub.seasonName).replace(/^\s*season\s*\d+\s*[:\-]?\s*/i, '').trim() || _rclSeasonTitleText_(hub.seasonName);
+  el.appendChild(_rclEl('h1', 'rcl-season-name', hub.seasonNumber ? 'S' + hub.seasonNumber + ' | ' + nm : nm));
   var line = _rclSeasonDateLine_(hub.seasonStartUtc, hub.seasonEndUtc);
   if (line) el.appendChild(_rclEl('div', 'rcl-season-line', line));
   el.hidden = false;

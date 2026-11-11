@@ -433,8 +433,9 @@ function rccRenderSeasonTitle(page) {
   var title = name;
   if (!title) title = n ? 'Season ' + n : 'Season';
   title = title.replace(/\s*[\u2014\u2013]\s*/g, ': ').replace(/\s+-\s+/g, ': ');
-  el.appendChild(_rccText('div', 'rcl-season-eyebrow', n ? 'Season ' + n : 'Season'));
-  el.appendChild(_rccText('h1', 'rcl-season-name', title));
+  // One line: S1 | Season Name (the old red "Season N" line above it is gone).
+  var nm = title.replace(/^\s*season\s*\d+\s*[:\-]?\s*/i, '').trim() || title;
+  el.appendChild(_rccText('h1', 'rcl-season-name', n ? 'S' + n + ' | ' + nm : nm));
   var bits = [];
   var made = rec.createdAt ? new Date(rec.createdAt) : null;
   if (made && !isNaN(made.getTime())) bits.push('Created ' + made.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }));
