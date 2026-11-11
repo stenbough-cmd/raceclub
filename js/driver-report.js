@@ -3,7 +3,8 @@
 // apart (championship-report.js, league-report.js, profile-report.js). The helper functions just below are
 // fallbacks for pages that do not load championship.js (League Hub, Driver Profile).
 //   _rccDriverReport(dr)                       -> Championship and League Hub report (heading, switch, every section)
-//   _rccDriverReport(dr, {variant:'profile'})  -> Driver Profile report (whole class only, with the AI notes,
+//   _rccDriverReport(dr, {aiNotes:true})       -> Championship only: adds the two notes about the AI
+//   _rccDriverReport(dr, {variant:'profile'})  -> Driver Profile report (whole class only,
 //                                                 two-column layouts, 4 stat tiles)
 // ---------------------------------------------------------------------------------------------
 if (typeof _rccEl !== 'function') {
@@ -390,6 +391,9 @@ function _rcrCar(shape, tread) {
 // ---------------------------------------------------------------------------
 function _rccDriverReport(dr, opts) {
   var prof = !!(opts && opts.variant === 'profile');
+  // The notes about the AI (tyre wear, starting fuel) only make sense for Single Player Championship races, so only the
+  // Championship page asks for them with {aiNotes:true}. The League Hub and Driver Profile reports never show them.
+  var aiNotes = !!(opts && opts.aiNotes);
   var sec = _rccEl('div', 'rcr-report');
   if (!dr) return null;
   var head = _rccEl('div', 'rcr-head');
@@ -416,14 +420,14 @@ function _rccDriverReport(dr, opts) {
   if (!prof) sec.appendChild(head);
   var body = _rccEl('div', 'rcr-body');
   sec.appendChild(body);
-  function draw() { body.innerHTML = ''; _rcrDraw(body, dr, mode, prof); }
+  function draw() { body.innerHTML = ''; _rcrDraw(body, dr, mode, prof, aiNotes); }
   draw();
   return sec;
 }
 
 function _rcrCol(parent) { var c = _rccEl('div', 'rcr-col'); parent.appendChild(c); return c; }
 
-function _rcrDraw(body, dr, mode, prof) {
+function _rcrDraw(body, dr, mode, prof, aiNotes) {
   var you = dr.you || {};
   var cls = dr.classAvg || null;
   var rivals = dr.rivals || [];
@@ -550,7 +554,7 @@ function _rcrDraw(body, dr, mode, prof) {
     tb.appendChild(grid);
     // (The "Tread used per lap (front left)" bar graph was removed, Matt 2026-10-13.)
     // Between the tyre chart and the tyre sets table (Matt, 2026-10-11).
-    tb.appendChild(_rcrTipBox('Comparing tyre wear with the AI', [
+    if (aiNotes) tb.appendChild(_rcrTipBox('Comparing tyre wear with the AI', [
       'Le Mans Ultimate adjusts the AI\u2019s tyre wear and fuel use so the AI can match a player\u2019s pace over a whole session. Compare compounds, tyre sets and the pace on each set first, and treat the wear numbers against the AI as a rough guide.'
     ]));
     // Tyre sets (Matt): compounds each car used, how many tyres it went through, and the pace and
@@ -614,7 +618,7 @@ function _rcrDraw(body, dr, mode, prof) {
         .sort(function (a, b) { return a.value - b.value; });
       fb.appendChild(_rcrBars(frows, function (v) { return (v * 100).toFixed(1) + '%'; }));
     }
-    fb.appendChild(_rcrTipBox('Why the AI starts with more fuel', [
+    if (aiNotes) fb.appendChild(_rcrTipBox('Why the AI starts with more fuel', [
       'Your own fuel numbers are accurate, but comparing them with the AI tells you very little. The AI burns more fuel per lap than a player, so the game gives AI cars more fuel to start with. That is a workaround in the game\u2019s older engine and the way the AI is coded, not an advantage.',
       'AI cars in Le Mans Ultimate often start with different or larger fuel loads because of how the game\u2019s base car files, its practice and qualifying fuel calculations and the AI\u2019s fuel logic work together at each track. Compare your fuel use with your own earlier races instead.'
     ]));

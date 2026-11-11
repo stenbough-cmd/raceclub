@@ -1312,7 +1312,7 @@ function _rccSeatIdentity(page, seat) {
 // Driver Report and Race Details each have their own page in the Race Recap dropdown (Matt).
 function _rccDriverReportBody(result, el) {
   el.innerHTML = '';
-  var drEl = result && result.driverReport && typeof _rccDriverReport === 'function' ? _rccDriverReport(result.driverReport) : null;
+  var drEl = result && result.driverReport && typeof _rccDriverReport === 'function' ? _rccDriverReport(result.driverReport, { aiNotes: true }) : null;
   if (!drEl) { el.appendChild(_rccEmpty('No Data To Display', 'The Driver Report appears once this round\u2019s race results are uploaded.')); return; }
   var who = _rccSeatLine(RCC.page || {}, result.driverReport || {}, false);
   who.classList.add('rcr-report-who');
