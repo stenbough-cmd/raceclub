@@ -16,17 +16,17 @@
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="assets/images/favicon-32.png">
 <link rel="apple-touch-icon" href="assets/images/apple-touch-icon.png">
-<link rel="stylesheet" href="css/style.css?v=0.10.107">
-<script src="js/version.js?v=0.10.107"></script>
-<script src="js/footer-stick.js?v=0.10.107" defer></script>
-<script src="js/img-loader.js?v=0.10.107"></script>
-<script src="js/api.js?v=0.10.107"></script>
-<script src="js/auth.js?v=0.10.107"></script>
-<script src="js/header.js?v=0.10.107"></script>
+<link rel="stylesheet" href="css/style.css?v=0.10.108">
+<script src="js/version.js?v=0.10.108"></script>
+<script src="js/footer-stick.js?v=0.10.108" defer></script>
+<script src="js/img-loader.js?v=0.10.108"></script>
+<script src="js/api.js?v=0.10.108"></script>
+<script src="js/auth.js?v=0.10.108"></script>
+<script src="js/header.js?v=0.10.108"></script>
 <!-- reference-data.js + edit-profile.js -- let the header's Edit Profile menu item open its
      popup in place on this page instead of navigating to Account.html first. -->
-<script src="js/reference-data.js?v=0.10.107"></script>
-<script src="js/edit-profile.js?v=0.10.107"></script>
+<script src="js/reference-data.js?v=0.10.108"></script>
+<script src="js/edit-profile.js?v=0.10.108"></script>
 </head>
 <body>
 
@@ -166,71 +166,67 @@ var RC_DATA_BASE = 'https://stenbough-cmd.github.io/race-club-data/website/data/
     </div>
   </section>
 
-  <!-- Take a look inside: the League Hub, a Driver Profile, the Dashboard and the Single Player Championship, one at a time in a browser-style
-       frame. Pictures are in assets/images/showcase/ (the member's name is covered); the tabs are wired by the script just below the section. -->
+  <!-- See Inside: the League Hub, a Driver Profile, the Dashboard and the Single Player Championship, each shown as an angled browser window
+       with its features listed on a card over the picture. Pictures are in assets/images/showcase/ (the member's name is covered). Pure CSS, no script. -->
   <section class="rc-landing-section rc-inside-section" id="inside">
     <div class="rc-landing-inner rc-inside-inner">
       <div class="rc-eyebrow">See Inside</div>
       <h2>Take A Look Inside Race Club</h2>
       <p class="rc-landing-tagline">Here is what you get when you join: a league hub that follows every race, a profile for every driver, and a dashboard that runs your season.</p>
-
-      <div class="rc-inside-tabs" role="tablist" aria-label="Pages inside Race Club">
-        <button type="button" class="rc-inside-tab rc-inside-tab-on" role="tab" id="rc-inside-tab-0" aria-selected="true" aria-controls="rc-inside-panel" data-i="0">League Hub</button>
-        <button type="button" class="rc-inside-tab" role="tab" id="rc-inside-tab-1" aria-selected="false" aria-controls="rc-inside-panel" data-i="1">Driver Profile</button>
-        <button type="button" class="rc-inside-tab" role="tab" id="rc-inside-tab-2" aria-selected="false" aria-controls="rc-inside-panel" data-i="2">Dashboard</button>
-        <button type="button" class="rc-inside-tab" role="tab" id="rc-inside-tab-3" aria-selected="false" aria-controls="rc-inside-panel" data-i="3">Single Player</button>
-      </div>
-
-      <figure class="rc-inside-figure" id="rc-inside-panel" role="tabpanel" aria-labelledby="rc-inside-tab-0">
-        <div class="rc-browser">
-          <div class="rc-browser-bar" aria-hidden="true"><i></i><i></i><i></i><span id="rc-inside-label">Online League Hub</span></div>
-          <div class="rc-browser-stage">
-            <img class="rc-inside-img rc-inside-img-on" src="assets/images/showcase/league-hub.webp" width="1800" height="1102" alt="The Race Club League Hub: league news with an AI-written race story, older stories, and the season's standings." decoding="async">
-            <img class="rc-inside-img" src="assets/images/showcase/driver-profile.webp" width="1800" height="1102" alt="A Race Club driver profile: helmet, current seat, league stats and form guide." loading="lazy" decoding="async">
-            <img class="rc-inside-img" src="assets/images/showcase/dashboard.webp" width="1800" height="1102" alt="The Race Club Dashboard: season registration, current seat, next race and protests." loading="lazy" decoding="async">
-            <img class="rc-inside-img" src="assets/images/showcase/single-player.webp" width="1800" height="1102" alt="The Single Player Championship section of the Dashboard: your seasons and championship calendar." loading="lazy" decoding="async">
+      <div class="rc-tilt-row rc-tilt-left">
+        <div class="rc-tilt-scene">
+          <div class="rc-browser rc-tilt-browser">
+            <div class="rc-browser-bar" aria-hidden="true"><i></i><i></i><i></i><span>Online League Hub</span></div>
+            <div class="rc-browser-stage"><img class="rc-inside-img rc-inside-img-on" src="assets/images/showcase/league-hub.webp" width="1800" height="1102" alt="The Race Club League Hub: league news with an AI-written race story, older stories, and the season's standings." decoding="async"></div>
           </div>
         </div>
-        <figcaption class="rc-inside-caption" id="rc-inside-caption" aria-live="polite"></figcaption>
-      </figure>
+        <div class="rc-tilt-card">
+          <div class="rc-tilt-num">01</div>
+          <h3>The League Hub</h3>
+          <ul><li>Race stories written after every round</li><li>Standings for drivers, teams and manufacturers</li><li>Season calendar and class highlights</li></ul>
+        </div>
+      </div>
+      <div class="rc-tilt-row rc-tilt-right">
+        <div class="rc-tilt-scene">
+          <div class="rc-browser rc-tilt-browser">
+            <div class="rc-browser-bar" aria-hidden="true"><i></i><i></i><i></i><span>Driver Profile</span></div>
+            <div class="rc-browser-stage"><img class="rc-inside-img rc-inside-img-on" src="assets/images/showcase/driver-profile.webp" width="1800" height="1102" alt="A Race Club driver profile: helmet, current seat, league stats and form guide." loading="lazy" decoding="async"></div>
+          </div>
+        </div>
+        <div class="rc-tilt-card">
+          <div class="rc-tilt-num">02</div>
+          <h3>Driver Profiles</h3>
+          <ul><li>Your helmet, number and current seat</li><li>Season and career stats</li><li>Form guide and race-by-race charts</li></ul>
+        </div>
+      </div>
+      <div class="rc-tilt-row rc-tilt-left">
+        <div class="rc-tilt-scene">
+          <div class="rc-browser rc-tilt-browser">
+            <div class="rc-browser-bar" aria-hidden="true"><i></i><i></i><i></i><span>Dashboard</span></div>
+            <div class="rc-browser-stage"><img class="rc-inside-img rc-inside-img-on" src="assets/images/showcase/dashboard.webp" width="1800" height="1102" alt="The Race Club Dashboard: season registration, current seat, next race and protests." loading="lazy" decoding="async"></div>
+          </div>
+        </div>
+        <div class="rc-tilt-card">
+          <div class="rc-tilt-num">03</div>
+          <h3>Your Dashboard</h3>
+          <ul><li>Register for the season</li><li>See your seat and your next race</li><li>File and follow protests</li></ul>
+        </div>
+      </div>
+      <div class="rc-tilt-row rc-tilt-right">
+        <div class="rc-tilt-scene">
+          <div class="rc-browser rc-tilt-browser">
+            <div class="rc-browser-bar" aria-hidden="true"><i></i><i></i><i></i><span>Dashboard</span></div>
+            <div class="rc-browser-stage"><img class="rc-inside-img rc-inside-img-on" src="assets/images/showcase/single-player.webp" width="1800" height="1102" alt="The Single Player Championship section of the Dashboard: your seasons and championship calendar." loading="lazy" decoding="async"></div>
+          </div>
+        </div>
+        <div class="rc-tilt-card">
+          <div class="rc-tilt-num">04</div>
+          <h3>Single Player Championship</h3>
+          <ul><li>Build your own season against the AI</li><li>Upload your Le Mans Ultimate results</li><li>Standings, recaps and news stories of your own</li></ul>
+        </div>
+      </div>
     </div>
   </section>
-  <script>
-    (function () {
-      var tabs = Array.prototype.slice.call(document.querySelectorAll('.rc-inside-tab'));
-      var imgs = Array.prototype.slice.call(document.querySelectorAll('.rc-inside-img'));
-      var cap = document.getElementById('rc-inside-caption');
-      var label = document.getElementById('rc-inside-label');
-      var panel = document.getElementById('rc-inside-panel');
-      if (!tabs.length || !cap) return;
-      var info = [
-        { bar: 'Online League Hub', head: 'The League Hub', text: 'The whole season in one place: race stories written after every round, class highlights, the calendar, and standings for drivers, teams and manufacturers.' },
-        { bar: 'Driver Profile', head: 'Driver Profiles', text: 'Every driver gets a profile with their helmet, current seat, season and career stats, form guide, and charts for every race they ran.' },
-        { bar: 'Dashboard', head: 'Your Dashboard', text: 'Your home base. Register for the season, see your seat, your next race and any protests, and jump to everything else.' },
-        { bar: 'Dashboard', head: 'Single Player Championship', text: 'Build your own season against the AI, upload your Le Mans Ultimate results, and get standings, race recaps and news stories of your own.' }
-      ];
-      function show(i) {
-        tabs.forEach(function (t, k) { var on = k === i; t.classList.toggle('rc-inside-tab-on', on); t.setAttribute('aria-selected', on ? 'true' : 'false'); t.tabIndex = on ? 0 : -1; });
-        imgs.forEach(function (m, k) { m.classList.toggle('rc-inside-img-on', k === i); });
-        cap.innerHTML = '';
-        var h = document.createElement('strong'); h.textContent = info[i].head;
-        var p = document.createElement('span'); p.textContent = info[i].text;
-        cap.appendChild(h); cap.appendChild(p);
-        if (label) label.textContent = info[i].bar;
-        if (panel) panel.setAttribute('aria-labelledby', 'rc-inside-tab-' + i);
-      }
-      tabs.forEach(function (t, k) {
-        t.addEventListener('click', function () { show(k); });
-        t.addEventListener('keydown', function (e) {
-          var n = null;
-          if (e.key === 'ArrowRight') n = (k + 1) % tabs.length;
-          else if (e.key === 'ArrowLeft') n = (k + tabs.length - 1) % tabs.length;
-          if (n !== null) { e.preventDefault(); show(n); tabs[n].focus(); }
-        });
-      });
-      show(0);
-    })();
-  </script>
 
   <!-- Photo showcase: rotates every 10 seconds (js/index-showcase.js). Hidden until at least one photo is listed there. -->
   <section class="rc-showcase-section" id="rc-showcase" hidden>
@@ -834,6 +830,6 @@ var RC_DATA_BASE = 'https://stenbough-cmd.github.io/race-club-data/website/data/
 
 </div>
 
-<script src="js/index-showcase.js?v=0.10.107"></script>
+<script src="js/index-showcase.js?v=0.10.108"></script>
 </body>
 </html>
