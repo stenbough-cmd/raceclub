@@ -16,17 +16,17 @@
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="assets/images/favicon-32.png">
 <link rel="apple-touch-icon" href="assets/images/apple-touch-icon.png">
-<link rel="stylesheet" href="css/style.css?v=0.10.113">
-<script src="js/version.js?v=0.10.113"></script>
-<script src="js/footer-stick.js?v=0.10.113" defer></script>
-<script src="js/img-loader.js?v=0.10.113"></script>
-<script src="js/api.js?v=0.10.113"></script>
-<script src="js/auth.js?v=0.10.113"></script>
-<script src="js/header.js?v=0.10.113"></script>
+<link rel="stylesheet" href="css/style.css?v=0.10.114">
+<script src="js/version.js?v=0.10.114"></script>
+<script src="js/footer-stick.js?v=0.10.114" defer></script>
+<script src="js/img-loader.js?v=0.10.114"></script>
+<script src="js/api.js?v=0.10.114"></script>
+<script src="js/auth.js?v=0.10.114"></script>
+<script src="js/header.js?v=0.10.114"></script>
 <!-- reference-data.js + edit-profile.js -- let the header's Edit Profile menu item open its
      popup in place on this page instead of navigating to Account.html first. -->
-<script src="js/reference-data.js?v=0.10.113"></script>
-<script src="js/edit-profile.js?v=0.10.113"></script>
+<script src="js/reference-data.js?v=0.10.114"></script>
+<script src="js/edit-profile.js?v=0.10.114"></script>
 </head>
 <body>
 
@@ -173,11 +173,11 @@ var RC_DATA_BASE = 'https://stenbough-cmd.github.io/race-club-data/website/data/
       <div class="rc-eyebrow">See Inside</div>
       <h2>Take A Look Inside Race Club</h2>
       <p class="rc-landing-tagline">Here is what you get when you join: a league hub that follows every race, a profile for every driver, and a dashboard that runs your season.</p>
-      <div class="rc-tilt-row rc-tilt-left">
+      <div class="rc-tilt-row rc-tilt-multi rc-tilt-left">
         <div class="rc-tilt-scene">
           <div class="rc-browser rc-tilt-browser">
             <div class="rc-browser-bar" aria-hidden="true"><i></i><i></i><i></i><span>Online League Hub</span></div>
-            <div class="rc-browser-stage"><img class="rc-inside-img rc-inside-img-on" src="assets/images/showcase/league-hub.webp" width="1800" height="1102" alt="The Race Club League Hub: league news with an AI-written race story, older stories, and the season's standings." decoding="async"></div>
+            <div class="rc-browser-stage" style="aspect-ratio: 1800 / 923;"><img data-label="Online League Hub" class="rc-inside-img rc-inside-img-on" src="assets/images/showcase/league-hub.webp" width="1800" height="923" alt="The Race Club League Hub: league news with an AI-written race story, older stories, and the season's standings." decoding="async"><img class="rc-inside-img" src="assets/images/showcase/hub-highlights.webp" width="1800" height="923" alt="League Hub highlights: class podiums plus closing-in, fallen-favorite, photo-finish and streak cards from the latest round." data-label="Highlights" loading="lazy" decoding="async"><img class="rc-inside-img" src="assets/images/showcase/hub-standings.webp" width="1800" height="923" alt="The Manufacturers' Standings podium and full table for a class." data-label="Manufacturers' Standings" loading="lazy" decoding="async"></div>
           </div>
         </div>
         <div class="rc-tilt-card">
@@ -216,7 +216,7 @@ var RC_DATA_BASE = 'https://stenbough-cmd.github.io/race-club-data/website/data/
         <div class="rc-tilt-scene">
           <div class="rc-browser rc-tilt-browser">
             <div class="rc-browser-bar" aria-hidden="true"><i></i><i></i><i></i><span>Race Recap</span></div>
-            <div class="rc-browser-stage" style="aspect-ratio: 1800 / 1059;"><img data-label="Race Recap: Driver Report" class="rc-inside-img rc-inside-img-on" src="assets/images/showcase/race-recap.webp" width="1800" height="1059" alt="A Race Recap driver report: start-to-finish, best lap, laps, pit stops and contacts, plus a lap-by-lap race position chart." loading="lazy" decoding="async"><img class="rc-inside-img" src="assets/images/showcase/recap-results.webp" width="1800" height="1059" alt="Race Results: the full class classification with gaps, average speed, best lap and points." data-label="Race Results" loading="lazy" decoding="async"><img class="rc-inside-img" src="assets/images/showcase/recap-qualifying.webp" width="1800" height="1059" alt="Qualifying Results: best lap and all three sector times for every driver." data-label="Qualifying Results" loading="lazy" decoding="async"><img class="rc-inside-img" src="assets/images/showcase/recap-report.webp" width="1800" height="1059" alt="The Race Report: a lap-by-lap account of contacts and position changes." data-label="Race Report" loading="lazy" decoding="async"></div>
+            <div class="rc-browser-stage" style="aspect-ratio: 1800 / 1059;"><img data-label="Race Recap: Driver Report" class="rc-inside-img rc-inside-img-on" src="assets/images/showcase/race-recap.webp" width="1800" height="1059" alt="A Race Recap driver report: start-to-finish, best lap, laps, pit stops and contacts, plus a lap-by-lap race position chart." loading="lazy" decoding="async"><img class="rc-inside-img" src="assets/images/showcase/recap-results.webp" width="1800" height="1059" alt="Race Results: the full class classification with gaps, average speed, best lap and points." data-label="Race Results" loading="lazy" decoding="async"><img class="rc-inside-img" src="assets/images/showcase/recap-report.webp" width="1800" height="1059" alt="The Race Report: a lap-by-lap account of contacts and position changes." data-label="Race Report" loading="lazy" decoding="async"></div>
           </div>
         </div>
         <div class="rc-tilt-card">
@@ -863,6 +863,6 @@ var RC_DATA_BASE = 'https://stenbough-cmd.github.io/race-club-data/website/data/
 
 </div>
 
-<script src="js/index-showcase.js?v=0.10.113"></script>
+<script src="js/index-showcase.js?v=0.10.114"></script>
 </body>
 </html>
